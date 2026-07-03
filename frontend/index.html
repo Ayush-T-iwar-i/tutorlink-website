@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TutorLink — Home Tuition, Matched by Distance</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="login.html">Log in</a>
+      <a href="signup.html" class="btn btn-primary btn-sm">Sign up</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div>
+      <div class="eyebrow">Home tuition · distance-matched</div>
+      <h1>Find a tutor <em>on your street</em>, not across town.</h1>
+      <p class="lead">TutorLink shows you only verified teachers within a radius you choose — search, book a free demo class, then start recurring lessons at home.</p>
+      <div class="hero-actions">
+        <a href="signup.html?role=student" class="btn btn-accent">Find a tutor</a>
+        <a href="signup.html?role=teacher" class="btn btn-outline">Become a tutor</a>
+      </div>
+      <div class="hero-stats">
+        <div><span class="stat-num">5 km</span><span class="stat-label">Default match radius</span></div>
+        <div><span class="stat-num">100%</span><span class="stat-label">Verified teachers</span></div>
+        <div><span class="stat-num">₹0</span><span class="stat-label">First demo class</span></div>
+      </div>
+    </div>
+
+    <div class="radius-visual" role="img" aria-label="Diagram showing a student at the center with tutors matched inside a 5 kilometre radius, and unmatched tutors outside it">
+      <svg viewBox="0 0 400 400">
+        <circle class="ring" cx="200" cy="200" r="90"></circle>
+        <circle class="ring" cx="200" cy="200" r="150"></circle>
+        <text class="ring-label" x="200" y="106">5 km</text>
+        <text class="ring-label" x="200" y="46">10 km</text>
+
+        <!-- you (student) -->
+        <circle class="center-pin" cx="200" cy="200" r="7"></circle>
+        <text class="ring-label" x="212" y="204" font-weight="600" fill="#16233F">You</text>
+
+        <!-- matched tutors, inside radius -->
+        <circle class="tutor-pin" cx="240" cy="160" r="5.5"></circle>
+        <circle class="tutor-pin" cx="150" cy="230" r="5.5"></circle>
+        <circle class="tutor-pin" cx="220" cy="255" r="5.5"></circle>
+        <circle class="tutor-pin" cx="160" cy="165" r="5.5"></circle>
+
+        <!-- unmatched tutors, outside radius -->
+        <circle class="tutor-pin out" cx="330" cy="120" r="5.5"></circle>
+        <circle class="tutor-pin out" cx="70" cy="310" r="5.5"></circle>
+        <circle class="tutor-pin out" cx="340" cy="300" r="5.5"></circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="process" id="how-it-works">
+  <div class="container">
+    <div class="process-head">
+      <div class="eyebrow">The process</div>
+      <h2>From search to your first class, in three steps.</h2>
+    </div>
+    <div class="process-steps">
+      <div class="process-step">
+        <span class="step-num">01</span>
+        <h3>Set your location</h3>
+        <p>Share your live location or address. We show only teachers within the radius you choose — 5 km by default.</p>
+      </div>
+      <div class="process-step">
+        <span class="step-num">02</span>
+        <h3>Book a free demo</h3>
+        <p>Pick a nearby teacher, review their subjects and fee, and book a no-cost trial class before committing.</p>
+      </div>
+      <div class="process-step">
+        <span class="step-num">03</span>
+        <h3>Start recurring classes</h3>
+        <p>Happy with the demo? Set a weekly schedule, pay online, and manage everything from your dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trust-section">
+  <div class="container">
+    <div class="eyebrow">Why TutorLink</div>
+    <h2 style="font-size:32px; max-width:520px;">Built for trust, not just proximity.</h2>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <div class="glyph">✓</div>
+        <h3>ID-verified teachers</h3>
+        <p>Every teacher submits identity and qualification documents before they can appear in search results.</p>
+      </div>
+      <div class="trust-card">
+        <div class="glyph">◎</div>
+        <h3>Live location matching</h3>
+        <p>Distance is calculated from real-time location, so you always see teachers who can realistically reach you.</p>
+      </div>
+      <div class="trust-card">
+        <div class="glyph">☆</div>
+        <h3>Demo before you commit</h3>
+        <p>No long-term contracts upfront — try a class first, then decide on a recurring schedule.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 TutorLink</span>
+    <span>Made for students and teachers, one street at a time.</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <div class="user-chip">
+        <span class="avatar-sm" id="avatarInitials"></span>
+        <span id="welcomeText"></span>
+      </div>
+      <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container">
+
+    <div class="eyebrow">Teacher dashboard</div>
+    <h1 class="page-title">Your teaching profile</h1>
+    <p class="page-subtitle">Keep this up to date — it's what nearby students will see.</p>
+
+    <div id="msgBox" class="msg-box"></div>
+
+    <div class="panel">
+      <div class="panel-title">Profile details</div>
+      <p class="panel-hint">Subjects, experience and fee shown to students.</p>
+      <form id="profileForm">
+        <div class="form-group">
+          <label for="subjects">Subjects you teach</label>
+          <input type="text" id="subjects" placeholder="e.g. Maths, Physics">
+        </div>
+        <div class="form-group">
+          <label for="grades">Classes / grades</label>
+          <input type="text" id="grades" placeholder="e.g. Class 6-10">
+        </div>
+        <div class="form-group">
+          <label for="experience">Experience (years)</label>
+          <input type="number" id="experience" min="0" placeholder="e.g. 5">
+        </div>
+        <div class="form-group">
+          <label for="fee">Fee per hour (₹)</label>
+          <input type="number" id="fee" min="0" placeholder="e.g. 400">
+        </div>
+        <div class="form-group">
+          <label for="bio">Short bio</label>
+          <textarea id="bio" rows="3" placeholder="Tell students a bit about yourself"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save profile</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Location & travel radius</div>
+      <p class="panel-hint">Students within this radius of your live location will see you in search results.</p>
+      <div class="location-panel">
+        <button id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my current location</button>
+        <span id="locationStatus" class="status-pill">Not set yet</span>
+      </div>
+
+      <div class="form-group" style="margin-top:20px; max-width:320px;">
+        <label for="radius">Travel radius</label>
+        <input type="range" id="radius" min="1" max="15" value="5">
+        <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--green-700); font-weight:600; margin-top:4px;">5 km</div>
+      </div>
+      <button id="saveLocationBtn" class="btn btn-accent btn-sm">Save location settings</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Incoming booking requests</div>
+      <p class="panel-hint">Accept or decline demo and recurring class requests.</p>
+      <div id="bookingsArea"><div class="empty-state">Loading requests...</div></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('teacher');
+  if (session) {
+    document.getElementById('welcomeText').textContent = session.user.name;
+    document.getElementById('avatarInitials').textContent =
+      session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearSession();
+    window.location.href = 'login.html';
+  });
+
+  const msgBox = document.getElementById('msgBox');
+  let currentLat = null;
+  let currentLng = null;
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgBox.className = 'msg-box';
+
+    try {
+      await apiRequest(`/api/teachers/${session.user.id}/profile`, 'PUT', {
+        subjects: document.getElementById('subjects').value.trim(),
+        grades: document.getElementById('grades').value.trim(),
+        experience_years: document.getElementById('experience').value || 0,
+        fee_per_hour: document.getElementById('fee').value || 0,
+        bio: document.getElementById('bio').value.trim()
+      });
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Profile saved successfully.';
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    }
+  });
+
+  const radiusSlider = document.getElementById('radius');
+  const radiusValue = document.getElementById('radiusValue');
+  radiusSlider.addEventListener('input', () => {
+    radiusValue.textContent = `${radiusSlider.value} km`;
+  });
+
+  document.getElementById('useLocationBtn').addEventListener('click', () => {
+    const status = document.getElementById('locationStatus');
+    if (!navigator.geolocation) {
+      status.textContent = 'Geolocation not supported by your browser.';
+      return;
+    }
+    status.textContent = 'Fetching your location...';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        currentLat = position.coords.latitude;
+        currentLng = position.coords.longitude;
+        status.textContent = `Location captured (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
+        status.classList.add('active');
+      },
+      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+    );
+  });
+
+  document.getElementById('saveLocationBtn').addEventListener('click', async () => {
+    if (currentLat === null) {
+      alert('Please click "Set my current location" first.');
+      return;
+    }
+    try {
+      await apiRequest(`/api/teachers/${session.user.id}/location`, 'PUT', {
+        latitude: currentLat,
+        longitude: currentLng,
+        travel_radius_km: radiusSlider.value
+      });
+      alert('Location and radius saved.');
+    } catch (err) {
+      alert('Could not save: ' + err.message);
+    }
+  });
+
+  async function loadBookings() {
+    const area = document.getElementById('bookingsArea');
+    try {
+      const bookings = await apiRequest('/api/bookings/teacher/me');
+
+      if (bookings.length === 0) {
+        area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
+        return;
+      }
+
+      area.innerHTML = bookings.map(b => `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${b.student_name}</strong> requested a ${b.type} class ${b.subject ? 'for ' + b.subject : ''}
+            <br><span class="status-tag ${b.status}">${b.status}</span>
+          </div>
+          ${b.status === 'requested' ? `
+            <div>
+              <button class="btn btn-primary btn-sm" onclick="respondToBooking(${b.id}, 'accepted')">Accept</button>
+              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'declined')">Decline</button>
+            </div>` : ''}
+        </div>
+      `).join('');
+    } catch (err) {
+      area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
+    }
+  }
+
+  async function respondToBooking(bookingId, status) {
+    try {
+      await apiRequest(`/api/bookings/${bookingId}/status`, 'PUT', { status });
+      loadBookings();
+    } catch (err) {
+      alert('Could not update booking: ' + err.message);
+    }
+  }
+
+  loadBookings();
+</script>
+
+</body>
+</html>

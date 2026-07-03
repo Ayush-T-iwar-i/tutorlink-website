@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find a Tutor — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <div class="user-chip">
+        <span class="avatar-sm" id="avatarInitials"></span>
+        <span id="welcomeText"></span>
+      </div>
+      <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container">
+
+    <div class="eyebrow">Student dashboard</div>
+    <h1 class="page-title">Find a tutor near you</h1>
+    <p class="page-subtitle">We'll only show teachers who are verified and within your chosen radius.</p>
+
+    <div class="panel">
+      <div class="panel-title">Your location</div>
+      <p class="panel-hint">Needed to match you with nearby teachers.</p>
+      <div class="location-panel">
+        <button id="useLocationBtn" class="btn btn-primary btn-sm">📍 Use my current location</button>
+        <span id="locationStatus" class="status-pill">Not set yet</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="form-group">
+        <label for="subjectFilter">Subject</label>
+        <input type="text" id="subjectFilter" placeholder="e.g. Maths">
+      </div>
+      <div class="form-group">
+        <label for="radiusFilter">Search radius</label>
+        <select id="radiusFilter">
+          <option value="3">3 km</option>
+          <option value="5" selected>5 km (default)</option>
+          <option value="10">10 km</option>
+          <option value="15">15 km</option>
+        </select>
+      </div>
+      <button id="searchBtn" class="btn btn-accent">Search teachers</button>
+    </div>
+
+    <div id="resultsArea">
+      <div class="empty-state">Set your location above, then search to see nearby teachers.</div>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('student');
+  if (session) {
+    document.getElementById('welcomeText').textContent = session.user.name;
+    document.getElementById('avatarInitials').textContent =
+      session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearSession();
+    window.location.href = 'login.html';
+  });
+
+  let currentLat = null;
+  let currentLng = null;
+
+  document.getElementById('useLocationBtn').addEventListener('click', () => {
+    const status = document.getElementById('locationStatus');
+    if (!navigator.geolocation) {
+      status.textContent = 'Geolocation not supported by your browser.';
+      return;
+    }
+    status.textContent = 'Fetching your location...';
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        currentLat = position.coords.latitude;
+        currentLng = position.coords.longitude;
+        status.textContent = `Location set (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
+        status.classList.add('active');
+
+        try {
+          await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
+            address: 'Live location',
+            latitude: currentLat,
+            longitude: currentLng
+          });
+        } catch (e) { /* non-blocking */ }
+      },
+      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+    );
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', async () => {
+    const resultsArea = document.getElementById('resultsArea');
+
+    if (currentLat === null || currentLng === null) {
+      resultsArea.innerHTML = '<div class="empty-state">Please set your location first.</div>';
+      return;
+    }
+
+    const subject = document.getElementById('subjectFilter').value.trim();
+    const radius = document.getElementById('radiusFilter').value;
+
+    resultsArea.innerHTML = '<div class="empty-state">Searching nearby teachers...</div>';
+
+    try {
+      let url = `/api/teachers/nearby?lat=${currentLat}&lng=${currentLng}&radius=${radius}`;
+      if (subject) url += `&subject=${encodeURIComponent(subject)}`;
+
+      const data = await apiRequest(url);
+
+      if (data.teachers.length === 0) {
+        resultsArea.innerHTML = `<div class="empty-state">No teachers found within ${radius} km. Try increasing the search radius.</div>`;
+        return;
+      }
+
+      resultsArea.innerHTML = `<div class="teacher-grid">${data.teachers.map(renderTeacherCard).join('')}</div>`;
+    } catch (err) {
+      resultsArea.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  });
+
+  function renderTeacherCard(t) {
+    const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `
+      <div class="teacher-card">
+        <div class="teacher-card-top">
+          <div class="avatar">${initials}</div>
+          <div>
+            <h3>${t.name}</h3>
+            <div class="meta">${t.subjects || 'Subjects not listed'}${t.grades ? ' · ' + t.grades : ''}</div>
+          </div>
+        </div>
+        <div class="badge-row">
+          <span class="badge badge-distance">${t.distance_km.toFixed(1)} km away</span>
+          <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0})</span>
+        </div>
+        <div class="fee">₹${t.fee_per_hour || 0} <span>/ hour</span></div>
+        <button class="btn btn-primary btn-sm btn-block" onclick="bookDemo(${t.id})">Book free demo class</button>
+      </div>
+    `;
+  }
+
+  async function bookDemo(teacherId) {
+    try {
+      await apiRequest('/api/bookings', 'POST', {
+        student_id: session.user.id,
+        teacher_id: teacherId,
+        type: 'demo',
+        fee: 0
+      });
+      alert('Demo class requested! The teacher will confirm shortly.');
+    } catch (err) {
+      alert('Could not book demo: ' + err.message);
+    }
+  }
+</script>
+
+</body>
+</html>

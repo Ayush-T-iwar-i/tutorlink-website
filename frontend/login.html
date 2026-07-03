@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="nav-links">
+      <a href="signup.html">Need an account?</a>
+    </div>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-side">
+    <div>
+      <div class="eyebrow" style="color:#8FD1AE;">Welcome back</div>
+      <h2>Pick up right where your last class left off.</h2>
+      <p>Manage your bookings, chat with your tutor, and keep track of every upcoming class from one dashboard.</p>
+    </div>
+    <div class="quote">"Found a Maths tutor 900 metres from home within a day."</div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-card">
+      <h2>Log in</h2>
+      <p class="subtitle">Enter your details to access your account</p>
+
+      <div id="msgBox" class="msg-box"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="Your password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="signup.html">Sign up</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const form = document.getElementById('loginForm');
+  const msgBox = document.getElementById('msgBox');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgBox.className = 'msg-box';
+    msgBox.textContent = '';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const data = await apiRequest('/api/auth/login', 'POST', { email, password });
+      saveSession(data.user, data.token);
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Login successful! Redirecting...';
+
+      setTimeout(() => {
+        window.location.href = data.user.role === 'teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+      }, 600);
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

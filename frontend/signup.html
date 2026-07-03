@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="nav-links">
+      <a href="login.html">Already have an account?</a>
+    </div>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-side">
+    <div>
+      <div class="eyebrow" style="color:#8FD1AE;">Join TutorLink</div>
+      <h2>Home tuition, matched by real distance — not guesswork.</h2>
+      <p>Whether you're looking for a tutor or ready to teach nearby students, your first step starts here.</p>
+    </div>
+    <div class="quote">"Set up my profile and got my first student within the week."</div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-card">
+      <h2>Create your account</h2>
+      <p class="subtitle">Join as a student or a teacher</p>
+
+      <div id="msgBox" class="msg-box"></div>
+
+      <div class="role-toggle">
+        <label>
+          <input type="radio" name="role" value="student" checked>
+          <span>🎒 Student</span>
+        </label>
+        <label>
+          <input type="radio" name="role" value="teacher">
+          <span>🧑‍🏫 Teacher</span>
+        </label>
+      </div>
+
+      <form id="signupForm">
+        <div class="form-group">
+          <label for="name">Full name</label>
+          <input type="text" id="name" required placeholder="e.g. Priya Sharma">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" required placeholder="9876543210">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html">Log in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const preselectedRole = urlParams.get('role');
+  if (preselectedRole) {
+    const radio = document.querySelector(`input[name="role"][value="${preselectedRole}"]`);
+    if (radio) radio.checked = true;
+  }
+
+  const form = document.getElementById('signupForm');
+  const msgBox = document.getElementById('msgBox');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgBox.className = 'msg-box';
+    msgBox.textContent = '';
+
+    const role = document.querySelector('input[name="role"]:checked').value;
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const data = await apiRequest('/api/auth/signup', 'POST', { name, email, phone, password, role });
+      saveSession(data.user, data.token);
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Account created! Redirecting...';
+
+      setTimeout(() => {
+        window.location.href = role === 'teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+      }, 800);
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    }
+  });
+</script>
+
+</body>
+</html>
