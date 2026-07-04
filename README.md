@@ -127,6 +127,35 @@ Since `server.js` also serves the `frontend/` folder as static files, your entir
 Most platforms let you add a custom domain (e.g. `www.tutorlink.com`) under project settings,
 then update your domain's DNS records as instructed.
 
+## ⚠️ If you already ran this project before (existing database)
+
+New features were added: Google Sign-In, teacher qualifications, and area/location names.
+**Run this migration once** — do NOT re-run `schema.sql` on an existing database:
+
+```powershell
+mysql -u root -p tutorlink < backend/database/migration_2_add_profile_and_google.sql
+```
+(or copy the contents of that file into phpMyAdmin's SQL tab and run it)
+
+Then run `npm install` again inside `backend` to get the new `google-auth-library` package.
+
+## Setting up Google Sign-In (optional)
+1. Go to https://console.cloud.google.com/apis/credentials
+2. Create a project → "Create Credentials" → "OAuth client ID" → Application type: **Web application**
+3. Under "Authorized JavaScript origins" add: `http://localhost:5000` (and your live domain later)
+4. Copy the generated **Client ID** into `backend/.env` as `GOOGLE_CLIENT_ID=...`
+5. Restart the server. The Google button will now appear on login/signup automatically.
+   (If left blank, the site works fine with just email/password — the Google button
+   will show a small "not set up yet" message instead of breaking.)
+
+## Approving teachers (until the admin panel is built)
+New teacher accounts are created with `verification_status = 'pending'` and will **not**
+appear in student search results until approved. Until the admin panel exists, approve a
+teacher manually for testing:
+```sql
+UPDATE teachers SET verification_status = 'approved' WHERE user_id = <their user id>;
+```
+
 ## What's Next (Not Yet Built)
 - Document upload for teacher verification (ID, certificates)
 - Admin panel (approve/reject teachers, manage disputes)

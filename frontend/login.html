@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Log In — TutorLink</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -48,6 +49,9 @@
         <button type="submit" class="btn btn-primary btn-block">Log in</button>
       </form>
 
+      <div class="auth-divider">or continue with</div>
+      <div id="googleButtonContainer"></div>
+
       <div class="auth-footer">
         Don't have an account? <a href="signup.html">Sign up</a>
       </div>
@@ -56,9 +60,16 @@
 </div>
 
 <script src="js/api.js"></script>
+<script src="js/google-auth.js"></script>
 <script>
   const form = document.getElementById('loginForm');
   const msgBox = document.getElementById('msgBox');
+
+  initGoogleSignIn(
+    document.getElementById('googleButtonContainer'),
+    null,
+    (message) => { msgBox.className = 'msg-box error'; msgBox.textContent = message; }
+  );
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

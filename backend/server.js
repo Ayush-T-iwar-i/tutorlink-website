@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth.routes');
 const teacherRoutes = require('./routes/teacher.routes');
 const studentRoutes = require('./routes/student.routes');
 const bookingRoutes = require('./routes/booking.routes');
+const configRoutes = require('./routes/config.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/config', configRoutes);
 
 // ---------- Health check (used by hosting platforms to confirm the app is alive) ----------
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

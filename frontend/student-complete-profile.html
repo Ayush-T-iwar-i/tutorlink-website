@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Your Profile — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="student-dashboard.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <a href="student-dashboard.html" class="btn btn-outline btn-sm">Back to dashboard</a>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container form-page">
+
+    <div class="eyebrow">Student profile</div>
+    <h1 class="page-title">Complete your profile</h1>
+    <p class="page-subtitle">Helps us match you with the right nearby teachers.</p>
+
+    <div id="msgBox" class="msg-box"></div>
+
+    <form id="profileForm">
+
+      <div class="form-section">
+        <h3>What are you looking for</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="preferredSubjects">Preferred subjects</label>
+            <input type="text" id="preferredSubjects" placeholder="e.g. Maths, Science">
+          </div>
+          <div class="form-group">
+            <label for="preferredGrade">Class / grade</label>
+            <input type="text" id="preferredGrade" placeholder="e.g. Class 8">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Your location</h3>
+        <p class="section-hint">We use this to show only teachers within your chosen radius.</p>
+
+        <div class="form-group">
+          <label for="address">Area / locality name</label>
+          <input type="text" id="address" placeholder="e.g. Sector 21, Near Green Park">
+        </div>
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" placeholder="e.g. Gurugram">
+        </div>
+
+        <div class="location-panel" style="margin-top:6px;">
+          <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
+          <span id="locationStatus" class="status-pill">Not set yet</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Save profile</button>
+    </form>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('student');
+  const msgBox = document.getElementById('msgBox');
+  let currentLat = null;
+  let currentLng = null;
+
+  async function loadExisting() {
+    try {
+      const s = await apiRequest(`/api/students/by-user/${session.user.id}`);
+      document.getElementById('preferredSubjects').value = s.preferred_subjects || '';
+      document.getElementById('preferredGrade').value = s.preferred_grade || '';
+      document.getElementById('address').value = s.address || '';
+      document.getElementById('city').value = s.city || '';
+      if (s.latitude && s.longitude) {
+        currentLat = s.latitude;
+        currentLng = s.longitude;
+        document.getElementById('locationStatus').textContent = 'Location already set';
+        document.getElementById('locationStatus').classList.add('active');
+      }
+    } catch (e) { /* new profile, nothing to pre-fill */ }
+  }
+  loadExisting();
+
+  document.getElementById('useLocationBtn').addEventListener('click', () => {
+    const status = document.getElementById('locationStatus');
+    if (!navigator.geolocation) {
+      status.textContent = 'Geolocation not supported by your browser.';
+      return;
+    }
+    status.textContent = 'Fetching your location...';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        currentLat = position.coords.latitude;
+        currentLng = position.coords.longitude;
+        status.textContent = `Location captured (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
+        status.classList.add('active');
+      },
+      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+    );
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgBox.className = 'msg-box';
+
+    if (currentLat === null) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please set your live location so we can find nearby teachers.';
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/students/${session.user.id}/preferences`, 'PUT', {
+        preferred_subjects: document.getElementById('preferredSubjects').value.trim(),
+        preferred_grade: document.getElementById('preferredGrade').value.trim()
+      });
+
+      await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
+        address: document.getElementById('address').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        latitude: currentLat,
+        longitude: currentLng
+      });
+
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Profile saved! Redirecting to your dashboard...';
+      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 900);
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

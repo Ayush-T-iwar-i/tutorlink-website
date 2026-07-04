@@ -27,53 +27,13 @@
   <div class="container">
 
     <div class="eyebrow">Teacher dashboard</div>
-    <h1 class="page-title">Your teaching profile</h1>
-    <p class="page-subtitle">Keep this up to date — it's what nearby students will see.</p>
+    <h1 class="page-title">Welcome back</h1>
+    <p class="page-subtitle">Here's what's happening with your teaching profile.</p>
 
-    <div id="msgBox" class="msg-box"></div>
+    <div id="profileBanner"></div>
 
-    <div class="panel">
-      <div class="panel-title">Profile details</div>
-      <p class="panel-hint">Subjects, experience and fee shown to students.</p>
-      <form id="profileForm">
-        <div class="form-group">
-          <label for="subjects">Subjects you teach</label>
-          <input type="text" id="subjects" placeholder="e.g. Maths, Physics">
-        </div>
-        <div class="form-group">
-          <label for="grades">Classes / grades</label>
-          <input type="text" id="grades" placeholder="e.g. Class 6-10">
-        </div>
-        <div class="form-group">
-          <label for="experience">Experience (years)</label>
-          <input type="number" id="experience" min="0" placeholder="e.g. 5">
-        </div>
-        <div class="form-group">
-          <label for="fee">Fee per hour (₹)</label>
-          <input type="number" id="fee" min="0" placeholder="e.g. 400">
-        </div>
-        <div class="form-group">
-          <label for="bio">Short bio</label>
-          <textarea id="bio" rows="3" placeholder="Tell students a bit about yourself"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Save profile</button>
-      </form>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">Location & travel radius</div>
-      <p class="panel-hint">Students within this radius of your live location will see you in search results.</p>
-      <div class="location-panel">
-        <button id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my current location</button>
-        <span id="locationStatus" class="status-pill">Not set yet</span>
-      </div>
-
-      <div class="form-group" style="margin-top:20px; max-width:320px;">
-        <label for="radius">Travel radius</label>
-        <input type="range" id="radius" min="1" max="15" value="5">
-        <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--green-700); font-weight:600; margin-top:4px;">5 km</div>
-      </div>
-      <button id="saveLocationBtn" class="btn btn-accent btn-sm">Save location settings</button>
+    <div class="panel" id="profileSummary">
+      <div class="empty-state">Loading your profile...</div>
     </div>
 
     <div class="panel">
@@ -99,71 +59,62 @@
     window.location.href = 'login.html';
   });
 
-  const msgBox = document.getElementById('msgBox');
-  let currentLat = null;
-  let currentLng = null;
-
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    msgBox.className = 'msg-box';
+  // ---------- Profile summary + completeness banner ----------
+  async function loadProfileSummary() {
+    const banner = document.getElementById('profileBanner');
+    const summary = document.getElementById('profileSummary');
 
     try {
-      await apiRequest(`/api/teachers/${session.user.id}/profile`, 'PUT', {
-        subjects: document.getElementById('subjects').value.trim(),
-        grades: document.getElementById('grades').value.trim(),
-        experience_years: document.getElementById('experience').value || 0,
-        fee_per_hour: document.getElementById('fee').value || 0,
-        bio: document.getElementById('bio').value.trim()
-      });
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = 'Profile saved successfully.';
+      const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
+      const isComplete = t.subjects && t.qualification && t.address && t.latitude;
+
+      if (isComplete) {
+        banner.innerHTML = `
+          <div class="banner done">
+            <div class="banner-text">
+              <strong>Your profile is live</strong>
+              <span>Students within ${t.travel_radius_km || 5} km of ${t.city || 'your area'} can find you.</span>
+            </div>
+            <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">Edit profile</a>
+          </div>`;
+
+        const location = [t.address, t.city].filter(Boolean).join(', ');
+        summary.innerHTML = `
+          <div class="panel-title">Your profile</div>
+          <div class="info-grid" style="margin-top:14px;">
+            <div class="info-tile"><div class="label">Qualification</div><div class="value">${t.qualification}</div></div>
+            <div class="info-tile"><div class="label">Subjects</div><div class="value">${t.subjects}</div></div>
+            <div class="info-tile"><div class="label">Fee / hour</div><div class="value">₹${t.fee_per_hour || 0}</div></div>
+            <div class="info-tile"><div class="label">Location</div><div class="value">${location}</div></div>
+            <div class="info-tile"><div class="label">Travel radius</div><div class="value">${t.travel_radius_km || 5} km</div></div>
+            <div class="info-tile"><div class="label">Rating</div><div class="value">★ ${t.rating_avg || 'New'}</div></div>
+          </div>`;
+      } else {
+        banner.innerHTML = `
+          <div class="banner">
+            <div class="banner-text">
+              <strong>Your profile isn't complete yet</strong>
+              <span>Add your qualifications and location — students can't find you until this is done.</span>
+            </div>
+            <a href="teacher-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
+          </div>`;
+        summary.innerHTML = '<div class="empty-state">Complete your profile to start appearing in student search results.</div>';
+      }
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
+      banner.innerHTML = `
+        <div class="banner">
+          <div class="banner-text">
+            <strong>Complete your profile</strong>
+            <span>Add your qualifications and location to start receiving bookings.</span>
+          </div>
+          <a href="teacher-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
+        </div>`;
+      summary.innerHTML = '<div class="empty-state">Complete your profile to start appearing in student search results.</div>';
     }
-  });
+  }
+  loadProfileSummary();
 
-  const radiusSlider = document.getElementById('radius');
-  const radiusValue = document.getElementById('radiusValue');
-  radiusSlider.addEventListener('input', () => {
-    radiusValue.textContent = `${radiusSlider.value} km`;
-  });
-
-  document.getElementById('useLocationBtn').addEventListener('click', () => {
-    const status = document.getElementById('locationStatus');
-    if (!navigator.geolocation) {
-      status.textContent = 'Geolocation not supported by your browser.';
-      return;
-    }
-    status.textContent = 'Fetching your location...';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        currentLat = position.coords.latitude;
-        currentLng = position.coords.longitude;
-        status.textContent = `Location captured (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
-        status.classList.add('active');
-      },
-      () => { status.textContent = 'Could not get location. Please allow location access.'; }
-    );
-  });
-
-  document.getElementById('saveLocationBtn').addEventListener('click', async () => {
-    if (currentLat === null) {
-      alert('Please click "Set my current location" first.');
-      return;
-    }
-    try {
-      await apiRequest(`/api/teachers/${session.user.id}/location`, 'PUT', {
-        latitude: currentLat,
-        longitude: currentLng,
-        travel_radius_km: radiusSlider.value
-      });
-      alert('Location and radius saved.');
-    } catch (err) {
-      alert('Could not save: ' + err.message);
-    }
-  });
-
+  // ---------- Incoming bookings ----------
   async function loadBookings() {
     const area = document.getElementById('bookingsArea');
     try {

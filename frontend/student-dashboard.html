@@ -30,6 +30,8 @@
     <h1 class="page-title">Find a tutor near you</h1>
     <p class="page-subtitle">We'll only show teachers who are verified and within your chosen radius.</p>
 
+    <div id="profileBanner"></div>
+
     <div class="panel">
       <div class="panel-title">Your location</div>
       <p class="panel-hint">Needed to match you with nearby teachers.</p>
@@ -76,6 +78,36 @@
     clearSession();
     window.location.href = 'login.html';
   });
+
+  // ---------- Show a banner prompting profile completion, if needed ----------
+  async function checkProfileComplete() {
+    const banner = document.getElementById('profileBanner');
+    try {
+      const s = await apiRequest(`/api/students/by-user/${session.user.id}`);
+      if (s.address && s.preferred_subjects) {
+        banner.innerHTML = '';
+      } else {
+        banner.innerHTML = `
+          <div class="banner">
+            <div class="banner-text">
+              <strong>Your profile isn't complete yet</strong>
+              <span>Add your preferences and area so we can match you with the right teachers.</span>
+            </div>
+            <a href="student-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
+          </div>`;
+      }
+    } catch (e) {
+      banner.innerHTML = `
+        <div class="banner">
+          <div class="banner-text">
+            <strong>Complete your profile</strong>
+            <span>Tell us what you're looking for and where you're located.</span>
+          </div>
+          <a href="student-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
+        </div>`;
+    }
+  }
+  checkProfileComplete();
 
   let currentLat = null;
   let currentLng = null;
@@ -138,8 +170,9 @@
 
   function renderTeacherCard(t) {
     const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const location = t.city ? ` · ${t.city}` : '';
     return `
-      <div class="teacher-card">
+      <div class="teacher-card" style="cursor:pointer;" onclick="viewProfile(${t.id})">
         <div class="teacher-card-top">
           <div class="avatar">${initials}</div>
           <div>
@@ -148,27 +181,17 @@
           </div>
         </div>
         <div class="badge-row">
-          <span class="badge badge-distance">${t.distance_km.toFixed(1)} km away</span>
+          <span class="badge badge-distance">${t.distance_km.toFixed(1)} km away${location}</span>
           <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0})</span>
         </div>
         <div class="fee">₹${t.fee_per_hour || 0} <span>/ hour</span></div>
-        <button class="btn btn-primary btn-sm btn-block" onclick="bookDemo(${t.id})">Book free demo class</button>
+        <button class="btn btn-primary btn-sm btn-block" onclick="event.stopPropagation(); viewProfile(${t.id})">View profile & book demo</button>
       </div>
     `;
   }
 
-  async function bookDemo(teacherId) {
-    try {
-      await apiRequest('/api/bookings', 'POST', {
-        student_id: session.user.id,
-        teacher_id: teacherId,
-        type: 'demo',
-        fee: 0
-      });
-      alert('Demo class requested! The teacher will confirm shortly.');
-    } catch (err) {
-      alert('Could not book demo: ' + err.message);
-    }
+  function viewProfile(teacherId) {
+    window.location.href = `teacher-profile-view.html?id=${teacherId}`;
   }
 </script>
 

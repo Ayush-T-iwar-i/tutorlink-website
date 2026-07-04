@@ -595,6 +595,149 @@ input[type="range"] {
   width: 100%;
 }
 
+/* ---------------- Divider ("or continue with") ---------------- */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--ink-500);
+  font-size: 12.5px;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+#googleButtonContainer {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+.google-unavailable {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-500);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+/* ---------------- Complete-profile banner ---------------- */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--amber-100);
+  border: 1px solid #EFCE93;
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+.banner-text strong { color: #7A4E11; display: block; font-size: 15px; margin-bottom: 2px; }
+.banner-text span { font-size: 13.5px; color: #8A6A33; }
+.banner.done {
+  background: var(--green-100);
+  border-color: #B7DCC5;
+}
+.banner.done .banner-text strong { color: var(--green-900); }
+.banner.done .banner-text span { color: var(--green-700); }
+
+/* ---------------- Complete-profile form pages ---------------- */
+.form-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.form-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.form-section h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.form-section .section-hint {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-bottom: 18px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+/* ---------------- Teacher profile view page ---------------- */
+.profile-hero {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-bottom: 22px;
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.profile-hero .avatar-lg {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--ink-900);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.profile-hero h1 { font-size: 26px; margin-bottom: 4px; }
+.profile-hero .qualification { color: var(--ink-500); font-size: 14.5px; margin-bottom: 10px; }
+.profile-hero .location-line {
+  font-size: 13.5px;
+  color: var(--ink-700);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.profile-hero .book-col {
+  margin-left: auto;
+  text-align: right;
+  min-width: 180px;
+}
+.profile-hero .fee-big {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 10px;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.info-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.info-tile .label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-500);
+  margin-bottom: 6px;
+}
+.info-tile .value { font-size: 15px; font-weight: 600; color: var(--ink-900); }
+@media (max-width: 720px) { .info-grid { grid-template-columns: 1fr 1fr; } }
+
 @media (max-width: 860px) {
   .hero .container { grid-template-columns: 1fr; }
   .radius-visual { max-width: 280px; }

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Profile — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="student-dashboard.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to search</a>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container">
+    <div id="content">
+      <div class="empty-state">Loading teacher profile...</div>
+    </div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('student');
+  const params = new URLSearchParams(window.location.search);
+  const teacherId = params.get('id');
+  const content = document.getElementById('content');
+
+  async function loadProfile() {
+    if (!teacherId) {
+      content.innerHTML = '<div class="empty-state">No teacher selected.</div>';
+      return;
+    }
+
+    try {
+      const t = await apiRequest(`/api/teachers/${teacherId}`);
+      const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const location = [t.address, t.city].filter(Boolean).join(', ') || 'Location not specified';
+
+      content.innerHTML = `
+        <div class="profile-hero">
+          <div class="avatar-lg">${initials}</div>
+          <div>
+            <h1>${t.name}</h1>
+            <div class="qualification">${t.qualification || 'Qualification not specified'}</div>
+            <div class="location-line">📍 ${location}</div>
+            <div class="badge-row">
+              <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0} reviews)</span>
+            </div>
+          </div>
+          <div class="book-col">
+            <div class="fee-big">₹${t.fee_per_hour || 0} <span style="font-size:13px; color:var(--ink-500); font-weight:500;">/ hour</span></div>
+            <button class="btn btn-primary btn-block" onclick="bookDemo()">Book free demo class</button>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-tile">
+            <div class="label">Subjects</div>
+            <div class="value">${t.subjects || 'Not listed'}</div>
+          </div>
+          <div class="info-tile">
+            <div class="label">Classes / grades</div>
+            <div class="value">${t.grades || 'Not listed'}</div>
+          </div>
+          <div class="info-tile">
+            <div class="label">Experience</div>
+            <div class="value">${t.experience_years || 0} years</div>
+          </div>
+          <div class="info-tile">
+            <div class="label">Languages</div>
+            <div class="value">${t.languages || 'Not listed'}</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">About</div>
+          <p style="font-size:14.5px; color:var(--ink-700);">${t.bio || 'This teacher has not added a bio yet.'}</p>
+        </div>
+      `;
+    } catch (err) {
+      content.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  async function bookDemo() {
+    try {
+      await apiRequest('/api/bookings', 'POST', {
+        teacher_id: teacherId,
+        type: 'demo',
+        fee: 0
+      });
+      alert('Demo class requested! The teacher will confirm shortly.');
+      window.location.href = 'student-dashboard.html';
+    } catch (err) {
+      alert('Could not book demo: ' + err.message);
+    }
+  }
+
+  loadProfile();
+</script>
+
+</body>
+</html>

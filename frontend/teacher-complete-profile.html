@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Your Profile — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="teacher-dashboard.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <a href="teacher-dashboard.html" class="btn btn-outline btn-sm">Back to dashboard</a>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container form-page">
+
+    <div class="eyebrow">Teacher profile</div>
+    <h1 class="page-title">Complete your teaching profile</h1>
+    <p class="page-subtitle">This is exactly what students will see before booking a demo class with you.</p>
+
+    <div id="msgBox" class="msg-box"></div>
+
+    <form id="profileForm">
+
+      <div class="form-section">
+        <h3>Qualifications & subjects</h3>
+        <p class="section-hint">Your academic background and what you teach.</p>
+
+        <div class="form-group">
+          <label for="qualification">Highest qualification</label>
+          <input type="text" id="qualification" placeholder="e.g. B.Sc Mathematics, B.Ed">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="subjects">Subjects you teach</label>
+            <input type="text" id="subjects" placeholder="e.g. Maths, Physics">
+          </div>
+          <div class="form-group">
+            <label for="grades">Classes / grades</label>
+            <input type="text" id="grades" placeholder="e.g. Class 6-10">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="experience">Experience (years)</label>
+            <input type="number" id="experience" min="0" placeholder="e.g. 5">
+          </div>
+          <div class="form-group">
+            <label for="fee">Fee per hour (₹)</label>
+            <input type="number" id="fee" min="0" placeholder="e.g. 400">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="languages">Languages you teach in</label>
+          <input type="text" id="languages" placeholder="e.g. English, Hindi">
+        </div>
+
+        <div class="form-group">
+          <label for="bio">About you</label>
+          <textarea id="bio" rows="4" placeholder="Tell students about your teaching style and experience"></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Where you teach</h3>
+        <p class="section-hint">Students within your travel radius of this location will see you in search results.</p>
+
+        <div class="form-group">
+          <label for="address">Area / locality name</label>
+          <input type="text" id="address" placeholder="e.g. Sector 14, Near City Hospital">
+        </div>
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city" placeholder="e.g. Gurugram">
+        </div>
+
+        <div class="location-panel" style="margin-top:6px;">
+          <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
+          <span id="locationStatus" class="status-pill">Not set yet</span>
+        </div>
+
+        <div class="form-group" style="margin-top:20px; max-width:320px;">
+          <label for="radius">Travel radius</label>
+          <input type="range" id="radius" min="1" max="15" value="5">
+          <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--green-700); font-weight:600; margin-top:4px;">5 km</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Save profile</button>
+    </form>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('teacher');
+  const msgBox = document.getElementById('msgBox');
+  let currentLat = null;
+  let currentLng = null;
+
+  // Pre-fill the form with any existing data
+  async function loadExisting() {
+    try {
+      const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
+      document.getElementById('qualification').value = t.qualification || '';
+      document.getElementById('subjects').value = t.subjects || '';
+      document.getElementById('grades').value = t.grades || '';
+      document.getElementById('experience').value = t.experience_years || '';
+      document.getElementById('fee').value = t.fee_per_hour || '';
+      document.getElementById('languages').value = t.languages || '';
+      document.getElementById('bio').value = t.bio || '';
+      document.getElementById('address').value = t.address || '';
+      document.getElementById('city').value = t.city || '';
+      document.getElementById('radius').value = t.travel_radius_km || 5;
+      document.getElementById('radiusValue').textContent = `${t.travel_radius_km || 5} km`;
+      if (t.latitude && t.longitude) {
+        currentLat = t.latitude;
+        currentLng = t.longitude;
+        document.getElementById('locationStatus').textContent = 'Location already set';
+        document.getElementById('locationStatus').classList.add('active');
+      }
+    } catch (e) { /* new profile, nothing to pre-fill */ }
+  }
+  loadExisting();
+
+  const radiusSlider = document.getElementById('radius');
+  radiusSlider.addEventListener('input', () => {
+    document.getElementById('radiusValue').textContent = `${radiusSlider.value} km`;
+  });
+
+  document.getElementById('useLocationBtn').addEventListener('click', () => {
+    const status = document.getElementById('locationStatus');
+    if (!navigator.geolocation) {
+      status.textContent = 'Geolocation not supported by your browser.';
+      return;
+    }
+    status.textContent = 'Fetching your location...';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        currentLat = position.coords.latitude;
+        currentLng = position.coords.longitude;
+        status.textContent = `Location captured (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
+        status.classList.add('active');
+      },
+      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+    );
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msgBox.className = 'msg-box';
+
+    if (currentLat === null) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please set your live location so students can find you.';
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/teachers/${session.user.id}/profile`, 'PUT', {
+        qualification: document.getElementById('qualification').value.trim(),
+        subjects: document.getElementById('subjects').value.trim(),
+        grades: document.getElementById('grades').value.trim(),
+        experience_years: document.getElementById('experience').value || 0,
+        fee_per_hour: document.getElementById('fee').value || 0,
+        languages: document.getElementById('languages').value.trim(),
+        bio: document.getElementById('bio').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        city: document.getElementById('city').value.trim()
+      });
+
+      await apiRequest(`/api/teachers/${session.user.id}/location`, 'PUT', {
+        latitude: currentLat,
+        longitude: currentLng,
+        travel_radius_km: radiusSlider.value
+      });
+
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Profile saved! Redirecting to your dashboard...';
+      setTimeout(() => { window.location.href = 'teacher-dashboard.html'; }, 900);
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    }
+  });
+</script>
+
+</body>
+</html>

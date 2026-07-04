@@ -10,11 +10,11 @@ const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth
 router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('student'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { address, latitude, longitude } = req.body;
+    const { address, city, latitude, longitude } = req.body;
 
     await db.query(
-      'UPDATE students SET address = ?, latitude = ?, longitude = ? WHERE user_id = ?',
-      [address, latitude, longitude, userId]
+      'UPDATE students SET address = ?, city = ?, latitude = ?, longitude = ? WHERE user_id = ?',
+      [address, city, latitude, longitude, userId]
     );
 
     res.json({ message: 'Location updated successfully.' });

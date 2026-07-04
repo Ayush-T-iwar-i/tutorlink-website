@@ -6,16 +6,18 @@ const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth
 // ---------- UPDATE TEACHER PROFILE (protected: must be logged-in teacher, own account) ----------
 // PUT /api/teachers/:userId/profile
 // header: Authorization: Bearer <token>
-// body: { subjects, grades, experience_years, fee_per_hour, bio }
+// body: { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city }
 router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { subjects, grades, experience_years, fee_per_hour, bio } = req.body;
+    const { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city } = req.body;
 
     await db.query(
-      `UPDATE teachers SET subjects = ?, grades = ?, experience_years = ?, fee_per_hour = ?, bio = ?
+      `UPDATE teachers SET
+        qualification = ?, subjects = ?, grades = ?, experience_years = ?,
+        fee_per_hour = ?, languages = ?, bio = ?, address = ?, city = ?
        WHERE user_id = ?`,
-      [subjects, grades, experience_years, fee_per_hour, bio, userId]
+      [qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, userId]
     );
 
     res.json({ message: 'Profile updated successfully.' });
@@ -60,8 +62,9 @@ router.get('/nearby', async (req, res) => {
 
     let sql = `
       SELECT
-        t.id, u.name, u.profile_photo, t.subjects, t.grades,
-        t.experience_years, t.fee_per_hour, t.rating_avg, t.total_reviews,
+        t.id, u.name, u.profile_photo, t.qualification, t.subjects, t.grades,
+        t.experience_years, t.fee_per_hour, t.address, t.city,
+        t.rating_avg, t.total_reviews,
         t.latitude, t.longitude,
         (6371 * ACOS(
           COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
@@ -118,10 +121,11 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await db.query(
-      `SELECT t.id, t.subjects, t.grades, t.experience_years, t.fee_per_hour, t.bio,
+      `SELECT t.id, t.qualification, t.subjects, t.grades, t.experience_years,
+              t.fee_per_hour, t.languages, t.bio, t.address, t.city,
               t.rating_avg, t.total_reviews, u.name, u.profile_photo
        FROM teachers t JOIN users u ON u.id = t.user_id
-       WHERE t.id = ?`,
+       WHERE t.id = ? AND t.verification_status = 'approved'`,
       [id]
     );
 
