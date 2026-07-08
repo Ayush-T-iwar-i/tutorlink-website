@@ -3,65 +3,94 @@
 // All fetch() calls to the backend go through here
 // ===========================================
 
-const API_BASE = ''; // same origin — backend serves this frontend too
+const API_BASE = 'http://localhost:5000'; // same origin — backend serves this frontend too
+/* =====================================================
+   TutorLink — API helper + session storage
+   ===================================================== */
 
-async function apiRequest(path, method = 'GET', body = null) {
-  const session = getSession();
+async function apiRequest(path, method = "GET", body = null) {
+  const headers = { "Content-Type": "application/json" };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const options = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-
-  // Automatically attach the login token to every request, if we have one
-  if (session && session.token) {
-    options.headers['Authorization'] = `Bearer ${session.token}`;
+  let response;
+  try {
+   response = await fetch(`${API_BASE}${path}`, {
+  method,
+  headers,
+  body: body ? JSON.stringify(body) : undefined,
+});
+  } catch (networkErr) {
+    throw new Error("Can't reach TutorLink right now. Check your connection and try again.");
   }
 
-  if (body) options.body = JSON.stringify(body);
-
-  const res = await fetch(API_BASE + path, options);
-  const data = await res.json().catch(() => ({}));
-
-  if (res.status === 401) {
-    // Session expired or invalid — send the user back to login
-    clearSession();
-    window.location.href = 'login.html';
-    throw new Error('Session expired. Please log in again.');
+  let data = null;
+  const text = await response.text();
+  if (text) {
+    try { data = JSON.parse(text); } catch { /* non-JSON response body */ }
   }
 
-  if (!res.ok) {
-    throw new Error(data.error || 'Something went wrong. Please try again.');
+  if (!response.ok) {
+    const message =
+      (data && (data.message || data.error)) ||
+      defaultErrorFor(response.status);
+    throw new Error(message);
   }
+
   return data;
 }
 
-// ---------- Session helpers ----------
+function defaultErrorFor(status) {
+  if (status === 401) return "That email and password don't match.";
+  if (status === 409) return "An account with that email already exists.";
+  if (status === 422) return "Please check the details you entered.";
+  if (status >= 500) return "Something went wrong on our end. Please try again shortly.";
+  return "Something went wrong. Please try again.";
+}
+
+/* ---------- session ---------- */
+
+const SESSION_USER_KEY = "tutorlink.user";
+const SESSION_TOKEN_KEY = "tutorlink.token";
+
 function saveSession(user, token) {
-  sessionStorage.setItem('tl_token', token);
-  sessionStorage.setItem('tl_user', JSON.stringify(user));
+  localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+  localStorage.setItem(SESSION_TOKEN_KEY, token);
 }
 
 function getSession() {
-  const token = sessionStorage.getItem('tl_token');
-  const user = sessionStorage.getItem('tl_user');
-  return token && user ? { token, user: JSON.parse(user) } : null;
+  const raw = localStorage.getItem(SESSION_USER_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function getToken() {
+  return localStorage.getItem(SESSION_TOKEN_KEY);
 }
 
 function clearSession() {
-  sessionStorage.removeItem('tl_token');
-  sessionStorage.removeItem('tl_user');
+  localStorage.removeItem(SESSION_USER_KEY);
+  localStorage.removeItem(SESSION_TOKEN_KEY);
 }
 
-function requireLogin(expectedRole) {
-  const session = getSession();
-  if (!session) {
-    window.location.href = 'login.html';
+
+
+
+function requireLogin(requiredRole = null) {
+  const user = getSession();
+  const token = getToken();
+
+  if (!user || !token) {
+    window.location.href = "login.html";
     return null;
   }
-  if (expectedRole && session.user.role !== expectedRole) {
-    window.location.href = 'login.html';
+
+  if (requiredRole && user.role !== requiredRole) {
+    window.location.href = "login.html";
     return null;
   }
-  return session;
+
+  return {
+    user,
+    token
+  };
 }

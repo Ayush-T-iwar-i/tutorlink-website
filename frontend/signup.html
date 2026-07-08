@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-role="student">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,12 +22,31 @@
 
 <div class="auth-page">
   <div class="auth-side">
-    <div>
-      <div class="eyebrow" style="color:#8FD1AE;">Join TutorLink</div>
-      <h2>Home tuition, matched by real distance — not guesswork.</h2>
-      <p>Whether you're looking for a tutor or ready to teach nearby students, your first step starts here.</p>
+    <div class="side-top">
+      <div class="eyebrow" id="sideEyebrow">Join as a student</div>
+      <h2 id="sideHeadline">Home tuition, matched by real distance — not guesswork.</h2>
+      <p id="sideSub">Tell us what you want to learn, and we'll surface qualified tutors within walking distance.</p>
     </div>
-    <div class="quote">"Set up my profile and got my first student within the week."</div>
+
+    <div class="radius-visual" aria-hidden="true">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <circle class="ring" cx="150" cy="150" r="50"/>
+        <circle class="ring" cx="150" cy="150" r="90"/>
+        <circle class="ring" cx="150" cy="150" r="130"/>
+        <text class="ring-label" x="156" y="104">1 km</text>
+        <text class="ring-label" x="156" y="64">3 km</text>
+        <text class="ring-label" x="156" y="24">5 km</text>
+        <circle class="tutor-pin" cx="185" cy="120" r="5"/>
+        <circle class="tutor-pin" cx="118" cy="178" r="5"/>
+        <circle class="tutor-pin" cx="197" cy="192" r="5"/>
+        <circle class="tutor-pin out" cx="258" cy="78" r="5"/>
+        <circle class="tutor-pin out" cx="55" cy="252" r="5"/>
+        <circle class="center-pin" cx="150" cy="150" r="7"/>
+      </svg>
+    </div>
+    <div class="radar-caption" id="radarCaption">Tutors near you</div>
+
+    <div class="quote" id="sideQuote">"Found a Maths tutor 900 metres from home within a day."</div>
   </div>
 
   <div class="auth-form-wrap">
@@ -35,7 +54,7 @@
       <h2>Create your account</h2>
       <p class="subtitle">Join as a student or a teacher</p>
 
-      <div id="msgBox" class="msg-box"></div>
+      <div id="msgBox" class="msg-box" role="alert"></div>
 
       <div class="role-toggle">
         <label>
@@ -48,29 +67,83 @@
         </label>
       </div>
 
-      <form id="signupForm">
+      <form id="signupForm" novalidate>
+
+        <div class="field-section-label">Basic details</div>
         <div class="form-group">
           <label for="name">Full name</label>
-          <input type="text" id="name" required placeholder="e.g. Priya Sharma">
+          <input type="text" id="name" required placeholder="e.g. Priya Sharma" autocomplete="name">
         </div>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com">
+          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
         </div>
         <div class="form-group">
           <label for="phone">Phone number</label>
-          <input type="tel" id="phone" required placeholder="9876543210">
+          <input type="tel" id="phone" required placeholder="9876543210" autocomplete="tel"
+                 inputmode="numeric" maxlength="10" pattern="[6-9][0-9]{9}">
         </div>
-        <div class="form-group">
+        <div class="form-group password-field">
           <label for="password">Password</label>
-          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters">
+          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">👁️</button>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        <div class="strength-meter" id="strengthMeter" style="display:none;">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="strength-label" id="strengthLabel"></span>
+
+        <!-- ---------------- Student-only fields ---------------- -->
+        <div class="role-fields open" id="studentFields">
+          <div class="role-fields-inner">
+            <div class="field-section-label" style="margin-top:20px;">What you're looking for</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="studentGrade">Class / grade</label>
+                <input type="text" id="studentGrade" placeholder="e.g. Class 8">
+              </div>
+              <div class="form-group">
+                <label for="studentSubjects">Subjects needed</label>
+                <input type="text" id="studentSubjects" placeholder="e.g. Maths, Science">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------------- Teacher-only fields ---------------- -->
+        <div class="role-fields" id="teacherFields">
+          <div class="role-fields-inner">
+            <div class="field-section-label" style="margin-top:20px;">Your teaching profile</div>
+            <div class="form-group">
+              <label for="teacherSubjects">Subjects you teach</label>
+              <input type="text" id="teacherSubjects" placeholder="e.g. Maths, Physics">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="teacherQualification">Highest qualification</label>
+                <input type="text" id="teacherQualification" placeholder="e.g. M.Sc Maths, B.Ed">
+              </div>
+              <div class="form-group">
+                <label for="teacherExperience">Years of experience</label>
+                <input type="number" id="teacherExperience" min="0" max="50" placeholder="e.g. 3">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="agreeTerms" required>
+          <label for="agreeTerms">I agree to TutorLink's <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+          <span class="btn-label">Create account</span>
+        </button>
       </form>
 
       <div class="auth-divider">or continue with</div>
       <div id="googleButtonContainer"></div>
-      <p style="font-size:12px; color:var(--ink-500); text-align:center; margin-top:8px;">
+      <p style="font-size:12px; color:var(--ink-500); text-align:center; margin-top:10px;">
         Uses the role selected above.
       </p>
 
@@ -84,15 +157,84 @@
 <script src="js/api.js"></script>
 <script src="js/google-auth.js"></script>
 <script>
+  const ROLE_CONTENT = {
+    student: {
+      eyebrow: "Join as a student",
+      headline: "Home tuition, matched by real distance — not guesswork.",
+      sub: "Tell us what you want to learn, and we'll surface qualified tutors within walking distance.",
+      caption: "Tutors near you",
+      quote: "\u201CFound a Maths tutor 900 metres from home within a day.\u201D",
+    },
+    teacher: {
+      eyebrow: "Join as a teacher",
+      headline: "Turn your expertise into a nearby classroom.",
+      sub: "List your subjects and availability — we'll connect you with students who live minutes away.",
+      caption: "Students near you",
+      quote: "\u201CSet up my profile and got my first student within the week.\u201D",
+    },
+  };
+
+  function applyRole(role) {
+    document.documentElement.dataset.role = role;
+    const c = ROLE_CONTENT[role];
+    document.getElementById('sideEyebrow').textContent = c.eyebrow;
+    document.getElementById('sideHeadline').textContent = c.headline;
+    document.getElementById('sideSub').textContent = c.sub;
+    document.getElementById('radarCaption').textContent = c.caption;
+    document.getElementById('sideQuote').textContent = c.quote;
+
+    document.getElementById('studentFields').classList.toggle('open', role === 'student');
+    document.getElementById('teacherFields').classList.toggle('open', role === 'teacher');
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const preselectedRole = urlParams.get('role');
-  if (preselectedRole) {
+  if (preselectedRole && ROLE_CONTENT[preselectedRole]) {
     const radio = document.querySelector(`input[name="role"][value="${preselectedRole}"]`);
     if (radio) radio.checked = true;
   }
+  applyRole(document.querySelector('input[name="role"]:checked').value);
+
+  document.querySelectorAll('input[name="role"]').forEach((radio) => {
+    radio.addEventListener('change', (e) => applyRole(e.target.value));
+  });
+
+  // ---- phone: digits only ----
+  document.getElementById('phone').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+  });
+
+  // ---- password show/hide ----
+  const passwordInput = document.getElementById('password');
+  document.getElementById('togglePassword').addEventListener('click', function () {
+    const isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    this.textContent = isHidden ? '🙈' : '👁️';
+    this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+  });
+
+  // ---- password strength meter ----
+  const strengthMeter = document.getElementById('strengthMeter');
+  const strengthLabel = document.getElementById('strengthLabel');
+  passwordInput.addEventListener('input', () => {
+    const val = passwordInput.value;
+    if (!val) { strengthMeter.style.display = 'none'; strengthLabel.textContent = ''; return; }
+    strengthMeter.style.display = 'flex';
+
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+    if (val.length >= 10 && /[^A-Za-z0-9]/.test(val)) score++;
+
+    strengthMeter.className = 'strength-meter';
+    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Weak — try adding numbers or a symbol'; }
+    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good — could still be stronger'; }
+    else { strengthMeter.classList.add('strong'); strengthLabel.textContent = 'Strong password'; }
+  });
 
   const form = document.getElementById('signupForm');
   const msgBox = document.getElementById('msgBox');
+  const submitBtn = document.getElementById('submitBtn');
 
   initGoogleSignIn(
     document.getElementById('googleButtonContainer'),
@@ -105,14 +247,33 @@
     msgBox.className = 'msg-box';
     msgBox.textContent = '';
 
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     const role = document.querySelector('input[name="role"]:checked').value;
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value;
 
+    const payload = { name, email, phone, password, role };
+
+    if (role === 'student') {
+      payload.preferred_grade = document.getElementById('studentGrade').value.trim();
+      payload.preferred_subjects = document.getElementById('studentSubjects').value.trim();
+    } else {
+      payload.subjects = document.getElementById('teacherSubjects').value.trim();
+      payload.qualification = document.getElementById('teacherQualification').value.trim();
+      payload.experience_years = document.getElementById('teacherExperience').value.trim();
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('btn-loading');
+
     try {
-      const data = await apiRequest('/api/auth/signup', 'POST', { name, email, phone, password, role });
+      const data = await apiRequest('/api/auth/signup', 'POST', payload);
       saveSession(data.user, data.token);
       msgBox.className = 'msg-box success';
       msgBox.textContent = 'Account created! Redirecting...';
@@ -123,6 +284,8 @@
     } catch (err) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = err.message;
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('btn-loading');
     }
   });
 </script>

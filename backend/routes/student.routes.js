@@ -10,12 +10,38 @@ const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth
 router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('student'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { address, city, latitude, longitude } = req.body;
+    const {
+  address,
+  city,
+  area,
+  district,
+  pincode,
+  latitude,
+  longitude
+} = req.body;
 
-    await db.query(
-      'UPDATE students SET address = ?, city = ?, latitude = ?, longitude = ? WHERE user_id = ?',
-      [address, city, latitude, longitude, userId]
-    );
+   await db.query(
+  `UPDATE students
+   SET
+     address = ?,
+     city = ?,
+     area = ?,
+     district = ?,
+     pincode = ?,
+     latitude = ?,
+     longitude = ?
+   WHERE user_id = ?`,
+  [
+    address,
+    city,
+    area,
+    district,
+    pincode,
+    latitude,
+    longitude,
+    userId
+  ]
+);
 
     res.json({ message: 'Location updated successfully.' });
   } catch (err) {
@@ -24,10 +50,7 @@ router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('studen
   }
 });
 
-// ---------- UPDATE STUDENT PREFERENCES (protected: own account only) ----------
-// PUT /api/students/:userId/preferences
-// header: Authorization: Bearer <token>
-// body: { preferred_subjects, preferred_grade }
+
 router.put('/:userId/preferences', verifyToken, requireOwnUser, requireRole('student'), async (req, res) => {
   try {
     const { userId } = req.params;

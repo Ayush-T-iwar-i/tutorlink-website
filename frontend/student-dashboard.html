@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Find a Tutor — TutorLink</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -14,10 +15,11 @@
       <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
     </a>
     <div class="header-actions">
-      <div class="user-chip">
+      <a href="student-complete-profile.html" class="user-chip" style="text-decoration:none; cursor:pointer;" title="Edit your profile">
         <span class="avatar-sm" id="avatarInitials"></span>
         <span id="welcomeText"></span>
-      </div>
+      </a>
+      <a href="student-complete-profile.html" class="btn btn-outline btn-sm">👤 My profile</a>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
@@ -26,21 +28,71 @@
 <main class="dashboard-body">
   <div class="container">
 
-    <div class="eyebrow">Student dashboard</div>
-    <h1 class="page-title">Find a tutor near you</h1>
-    <p class="page-subtitle">We'll only show teachers who are verified and within your chosen radius.</p>
-
-    <div id="profileBanner"></div>
-
-    <div class="panel">
-      <div class="panel-title">Your location</div>
-      <p class="panel-hint">Needed to match you with nearby teachers.</p>
-      <div class="location-panel">
-        <button id="useLocationBtn" class="btn btn-primary btn-sm">📍 Use my current location</button>
-        <span id="locationStatus" class="status-pill">Not set yet</span>
+    <!-- ---------------- Hero / greeting band ---------------- -->
+    <div class="dash-hero">
+      <div class="dash-hero-top">
+        <div>
+          <div class="eyebrow">Student dashboard</div>
+          <h1 id="heroGreeting">Find a tutor near you</h1>
+          <p>We'll only show teachers who are verified and within your chosen radius.</p>
+        </div>
+      </div>
+      <div class="dash-stat-row">
+        <div class="dash-stat">
+          <span class="num" id="statBookings">—</span>
+          <span class="lbl">Bookings</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statUpcoming">—</span>
+          <span class="lbl">Upcoming</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statLocation">—</span>
+          <span class="lbl">Location</span>
+        </div>
       </div>
     </div>
 
+    <div id="profileBanner"></div>
+
+    <!-- ---------------- Location panel ---------------- -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon-title">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          </span>
+          <div>
+            <div class="panel-title" style="margin-bottom:0;">Your location</div>
+            <p class="panel-hint" style="margin-bottom:0;">Needed to match you with nearby teachers.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="locationNotSet" class="location-panel" style="margin-top:16px;">
+        <button id="useLocationBtn" class="btn btn-primary btn-sm">📍 Use my current location</button>
+        <button id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
+        <span id="locationStatus" class="status-pill">Not set yet</span>
+      </div>
+
+      <div id="locationSet" class="location-set" style="display:none; margin-top:16px;">
+        <div class="location-trail">
+          <span class="pin-ic">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          </span>
+          <span class="crumb" id="crumbArea">Area</span>
+          <span class="sep">›</span>
+          <span class="crumb" id="crumbDistrict">District</span>
+          <span class="pincode" id="crumbPincode">000000</span>
+        </div>
+        <div class="location-actions">
+          <button id="openMapBtnSet" class="btn btn-outline btn-sm">Change on map</button>
+          <button id="useLocationBtn2" class="btn btn-outline btn-sm">Re-detect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------------- Search filters ---------------- -->
     <div class="filter-bar">
       <div class="form-group">
         <label for="subjectFilter">Subject</label>
@@ -62,9 +114,110 @@
       <div class="empty-state">Set your location above, then search to see nearby teachers.</div>
     </div>
 
+    <!-- ---------------- My bookings ---------------- -->
+    <div class="panel" style="margin-top:34px;">
+      <div class="panel-icon-title">
+        <span class="ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">My bookings</div>
+          <p class="panel-hint" style="margin-bottom:0;">Demo classes you've requested, upcoming and past.</p>
+        </div>
+      </div>
+      <div id="bookingsArea" style="margin-top:14px;">
+        <div class="skeleton-card">
+          <div class="skel-line w-40"></div>
+          <div class="skel-line w-60"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </main>
 
+<!-- ================= Map picker modal ================= -->
+<div class="modal-backdrop" id="mapModalBackdrop">
+  <div class="modal modal-map">
+    <div class="modal-header">
+      <div>
+        <h3 id="mapModalTitle">Set your location</h3>
+        <p id="mapModalSub">Drag the pin, or click anywhere on the map, to place it exactly.</p>
+      </div>
+      <button class="modal-close" id="mapModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="map-search-row">
+        <input type="text" id="mapSearchInput" placeholder="Search for an area, e.g. Shastri Nagar, Meerut">
+        <button id="mapSearchBtn" class="btn btn-outline btn-sm">Search</button>
+      </div>
+      <div class="map-wrap">
+        <div id="pickerMap"></div>
+        <span class="map-zoom-hint">Scroll or pinch to zoom</span>
+        <button type="button" id="mapLocateBtn" class="map-locate-btn" title="Use my current location">📍</button>
+      </div>
+      <div id="accuracyNote" class="accuracy-note" style="display:none;"></div>
+      <div class="map-hint">📍 <span id="mapLoadingHint">Tip: use the search box or drag the pin to fine-tune your spot.</span></div>
+      <div class="map-picked-address" id="mapPickedAddress">Move the pin to see the address here.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="mapModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="mapModalConfirm">Confirm this location</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Booking modal ================= -->
+<div class="modal-backdrop" id="bookingModalBackdrop">
+  <div class="modal modal-booking">
+    <div class="modal-header">
+      <div>
+        <h3>Book a demo class</h3>
+        <p>Pick a date and a time that works for you.</p>
+      </div>
+      <button class="modal-close" id="bookingModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="booking-teacher-brief">
+        <div class="avatar" id="bookingAvatar">--</div>
+        <div>
+          <h4 id="bookingTeacherName">Teacher name</h4>
+          <span id="bookingTeacherMeta">Subjects · Fee</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="bookingSubject">Subject</label>
+        <input type="text" id="bookingSubject" placeholder="e.g. Maths">
+      </div>
+
+      <div class="form-group">
+        <label for="bookingDate">Date</label>
+        <input type="date" id="bookingDate">
+      </div>
+
+      <div class="form-group">
+        <label>Time slot</label>
+        <div class="slot-grid" id="slotGrid"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="bookingNotes">Notes (optional)</label>
+        <input type="text" id="bookingNotes" placeholder="Anything the teacher should know?">
+      </div>
+
+      <div id="bookingMsgBox" class="msg-box"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="bookingModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="bookingModalConfirm">Confirm booking</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
 <script>
   const session = requireLogin('student');
@@ -72,6 +225,7 @@
     document.getElementById('welcomeText').textContent = session.user.name;
     document.getElementById('avatarInitials').textContent =
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -79,7 +233,15 @@
     window.location.href = 'login.html';
   });
 
-  // ---------- Show a banner prompting profile completion, if needed ----------
+  // ---------- Toast ----------
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  // ---------- Profile completion banner ----------
   async function checkProfileComplete() {
     const banner = document.getElementById('profileBanner');
     try {
@@ -109,35 +271,297 @@
   }
   checkProfileComplete();
 
+  // =====================================================
+  // Location: high-accuracy GPS + map confirmation
+  // =====================================================
   let currentLat = null;
   let currentLng = null;
+  let currentAddress = null; // { area, district, pincode, display }
 
-  document.getElementById('useLocationBtn').addEventListener('click', () => {
+  const DEFAULT_CENTER = [28.9845, 77.7064]; // Meerut, UP — fallback map center
+
+  function renderLocation() {
+    const notSet = document.getElementById('locationNotSet');
+    const set = document.getElementById('locationSet');
+    if (currentLat === null || !currentAddress) {
+      notSet.style.display = 'flex';
+      set.style.display = 'none';
+      document.getElementById('statLocation').textContent = 'Not set';
+      return;
+    }
+    notSet.style.display = 'none';
+    set.style.display = 'flex';
+    document.getElementById('crumbArea').textContent = currentAddress.area || 'Unknown area';
+    document.getElementById('crumbDistrict').textContent = currentAddress.district || '—';
+    document.getElementById('crumbPincode').textContent = currentAddress.pincode || '------';
+    document.getElementById('statLocation').textContent = currentAddress.area || 'Set';
+  }
+
+  // Reverse geocode via OpenStreetMap Nominatim (no key required).
+  // Swap this for Google Geocoding API in production if you need higher
+  // request volume — same shape of return value works either way.
+  async function reverseGeocode(lat, lng) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    if (!res.ok) throw new Error('Could not look up that address.');
+    const data = await res.json();
+    const a = data.address || {};
+    return {
+      area: a.suburb || a.neighbourhood || a.village || a.town || a.city_district || a.road || a.city || 'Unknown area',
+      district: a.state_district || a.county || a.city || a.state || '—',
+      pincode: a.postcode || '------',
+      display: data.display_name || '',
+    };
+  }
+
+  async function applyLocation(lat, lng) {
+    currentLat = lat;
+    currentLng = lng;
+    try {
+      currentAddress = await reverseGeocode(lat, lng);
+    } catch (e) {
+      currentAddress = { area: 'Location set', district: '—', pincode: '------', display: '' };
+    }
+    renderLocation();
+
+    try {
+      await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
+        address: currentAddress.display || `${currentAddress.area}, ${currentAddress.district}`,
+        city: currentAddress.district,
+        area: currentAddress.area,
+        district: currentAddress.district,
+        pincode: currentAddress.pincode,
+        latitude: lat,
+        longitude: lng,
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // ---- GPS fetch: high accuracy, then hand off to the map for visual
+  // confirmation. Raw GPS can be off by tens of metres (worse indoors),
+  // so we never trust it blindly — the map + draggable pin is the final,
+  // "perfect" step where the student locks in the exact spot. ----
+  function useCurrentLocation(btn) {
     const status = document.getElementById('locationStatus');
     if (!navigator.geolocation) {
       status.textContent = 'Geolocation not supported by your browser.';
       return;
     }
-    status.textContent = 'Fetching your location...';
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        currentLat = position.coords.latitude;
-        currentLng = position.coords.longitude;
-        status.textContent = `Location set (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
-        status.classList.add('active');
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    status.textContent = 'Getting a precise GPS fix… this can take a few seconds';
 
-        try {
-          await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
-            address: 'Live location',
-            latitude: currentLat,
-            longitude: currentLng
-          });
-        } catch (e) { /* non-blocking */ }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        const { latitude, longitude, accuracy } = position.coords;
+        status.textContent = 'GPS fix found — confirm it on the map';
+        openMapModal({
+          lat: latitude,
+          lng: longitude,
+          accuracy,
+          title: 'Confirm your exact location',
+          sub: 'We centred the pin on your GPS fix. Drag it to your exact doorstep for the best match accuracy.',
+        });
       },
-      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+      (err) => {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        const messages = {
+          1: 'Location access denied. Please allow location permission for this site in your browser settings, then try again.',
+          2: 'Could not detect your location right now. Please try again, or set it manually on the map.',
+          3: 'Location request timed out. Please try again, ideally outdoors or near a window.',
+        };
+        status.textContent = messages[err.code] || 'Could not get your location. Please set it manually on the map.';
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+  }
+
+  document.getElementById('useLocationBtn').addEventListener('click', (e) => useCurrentLocation(e.currentTarget));
+  document.getElementById('useLocationBtn2').addEventListener('click', (e) => useCurrentLocation(e.currentTarget));
+
+  // ---------------- Map picker modal ----------------
+  let map, marker, accuracyCircle, pendingLat, pendingLng, geocodeTimer;
+
+  const pinIcon = L.divIcon({
+    className: 'custom-pin',
+    html: `<svg width="32" height="42" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 0C7.6 0 0 7.6 0 17c0 12.7 17 27 17 27s17-14.3 17-27C34 7.6 26.4 0 17 0z" fill="#1F6E4A"/>
+      <circle cx="17" cy="17" r="7" fill="#fff"/>
+    </svg>`,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+  });
+
+  function setAccuracyNote(accuracy) {
+    const note = document.getElementById('accuracyNote');
+    if (!accuracy) { note.style.display = 'none'; return; }
+    note.style.display = 'flex';
+    const meters = Math.round(accuracy);
+    if (meters <= 30) {
+      note.className = 'accuracy-note good';
+      note.innerHTML = `✓ GPS accuracy: ~${meters}m — this pin should already be very close.`;
+    } else if (meters <= 100) {
+      note.className = 'accuracy-note fair';
+      note.innerHTML = `⚠ GPS accuracy: ~${meters}m — drag the pin to your exact spot for best results.`;
+    } else {
+      note.className = 'accuracy-note poor';
+      note.innerHTML = `⚠ GPS accuracy: ~${meters}m (weak signal) — please drag the pin precisely onto your location.`;
+    }
+  }
+
+  function openMapModal(opts) {
+    opts = opts || {};
+    document.getElementById('mapModalBackdrop').classList.add('open');
+    document.getElementById('mapModalTitle').textContent = opts.title || 'Set your location';
+    document.getElementById('mapModalSub').textContent = opts.sub || 'Drag the pin, or click anywhere on the map, to place it exactly.';
+
+    const startLat = opts.lat ?? currentLat ?? DEFAULT_CENTER[0];
+    const startLng = opts.lng ?? currentLng ?? DEFAULT_CENTER[1];
+    const zoom = opts.lat ? 17 : 14;
+
+    if (!map) {
+      map = L.map('pickerMap').setView([startLat, startLng], zoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+      marker = L.marker([startLat, startLng], { draggable: true, icon: pinIcon }).addTo(map);
+      marker.on('dragend', () => {
+        const p = marker.getLatLng();
+        clearAccuracyCircle();
+        previewLocation(p.lat, p.lng);
+      });
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        clearAccuracyCircle();
+        previewLocation(e.latlng.lat, e.latlng.lng);
+      });
+    } else {
+      map.setView([startLat, startLng], zoom);
+      marker.setLatLng([startLat, startLng]);
+      setTimeout(() => map.invalidateSize(), 60);
+    }
+
+    clearAccuracyCircle();
+    if (opts.accuracy) {
+      accuracyCircle = L.circle([startLat, startLng], {
+        radius: opts.accuracy,
+        color: '#1F6E4A',
+        fillColor: '#1F6E4A',
+        fillOpacity: 0.12,
+        weight: 1,
+      }).addTo(map);
+      setAccuracyNote(opts.accuracy);
+    } else {
+      setAccuracyNote(null);
+    }
+
+    previewLocation(startLat, startLng);
+  }
+
+  function clearAccuracyCircle() {
+    if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
+    setAccuracyNote(null);
+  }
+
+  function previewLocation(lat, lng) {
+    pendingLat = lat;
+    pendingLng = lng;
+    const box = document.getElementById('mapPickedAddress');
+    box.textContent = 'Looking up address…';
+    clearTimeout(geocodeTimer);
+    geocodeTimer = setTimeout(async () => {
+      try {
+        const addr = await reverseGeocode(lat, lng);
+        box.textContent = `${addr.area}, ${addr.district} — ${addr.pincode}`;
+      } catch (e) {
+        box.textContent = 'Pin placed — address lookup failed, but the location is still usable.';
+      }
+    }, 450);
+  }
+
+  function closeMapModal() {
+    document.getElementById('mapModalBackdrop').classList.remove('open');
+  }
+
+  document.getElementById('openMapBtnEmpty').addEventListener('click', () => openMapModal());
+  document.getElementById('openMapBtnSet').addEventListener('click', () => openMapModal());
+  document.getElementById('mapModalClose').addEventListener('click', closeMapModal);
+  document.getElementById('mapModalCancel').addEventListener('click', closeMapModal);
+
+  document.getElementById('mapModalConfirm').addEventListener('click', async () => {
+    if (pendingLat == null) return;
+    const confirmBtn = document.getElementById('mapModalConfirm');
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+    await applyLocation(pendingLat, pendingLng);
+    confirmBtn.disabled = false;
+    confirmBtn.classList.remove('btn-loading');
+    const status = document.getElementById('locationStatus');
+    status.textContent = 'Location set';
+    status.classList.add('active');
+    closeMapModal();
+    toast('Location updated');
+  });
+
+  document.getElementById('mapSearchBtn').addEventListener('click', doMapSearch);
+  document.getElementById('mapSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doMapSearch(); }
+  });
+
+  document.getElementById('mapLocateBtn').addEventListener('click', function () {
+    const btn = this;
+    if (!navigator.geolocation) { toast('Geolocation not supported by your browser.', true); return; }
+    btn.classList.add('loading');
+    btn.textContent = '…';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        btn.classList.remove('loading');
+        btn.textContent = '📍';
+        const { latitude, longitude, accuracy } = position.coords;
+        map.setView([latitude, longitude], 17);
+        marker.setLatLng([latitude, longitude]);
+        clearAccuracyCircle();
+        accuracyCircle = L.circle([latitude, longitude], {
+          radius: accuracy, color: '#1F6E4A', fillColor: '#1F6E4A', fillOpacity: 0.12, weight: 1,
+        }).addTo(map);
+        setAccuracyNote(accuracy);
+        previewLocation(latitude, longitude);
+      },
+      (err) => {
+        btn.classList.remove('loading');
+        btn.textContent = '📍';
+        toast('Could not fetch your location. Please drag the pin manually.', true);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   });
 
+  async function doMapSearch() {
+    const q = document.getElementById('mapSearchInput').value.trim();
+    if (!q) return;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
+      const results = await res.json();
+      if (results.length === 0) { toast('No matching place found.', true); return; }
+      const { lat, lon } = results[0];
+      map.setView([lat, lon], 16);
+      marker.setLatLng([lat, lon]);
+      clearAccuracyCircle();
+      previewLocation(parseFloat(lat), parseFloat(lon));
+    } catch (e) {
+      toast('Search failed. Please try again.', true);
+    }
+  }
+
+  // =====================================================
+  // Search teachers
+  // =====================================================
   document.getElementById('searchBtn').addEventListener('click', async () => {
     const resultsArea = document.getElementById('resultsArea');
 
@@ -149,7 +573,15 @@
     const subject = document.getElementById('subjectFilter').value.trim();
     const radius = document.getElementById('radiusFilter').value;
 
-    resultsArea.innerHTML = '<div class="empty-state">Searching nearby teachers...</div>';
+    resultsArea.innerHTML = `
+      <div class="teacher-grid">
+        ${Array(3).fill(`
+          <div class="skeleton-card">
+            <div class="skel-avatar"></div>
+            <div class="skel-line w-60"></div>
+            <div class="skel-line w-40"></div>
+          </div>`).join('')}
+      </div>`;
 
     try {
       let url = `/api/teachers/nearby?lat=${currentLat}&lng=${currentLng}&radius=${radius}`;
@@ -162,18 +594,22 @@
         return;
       }
 
-      resultsArea.innerHTML = `<div class="teacher-grid">${data.teachers.map(renderTeacherCard).join('')}</div>`;
+      teacherCache = {};
+      data.teachers.forEach(t => teacherCache[t.id] = t);
+      resultsArea.innerHTML = `<div class="teacher-grid fade-in">${data.teachers.map(renderTeacherCard).join('')}</div>`;
     } catch (err) {
       resultsArea.innerHTML = `<div class="empty-state">${err.message}</div>`;
     }
   });
 
+  let teacherCache = {};
+
   function renderTeacherCard(t) {
     const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const location = t.city ? ` · ${t.city}` : '';
     return `
-      <div class="teacher-card" style="cursor:pointer;" onclick="viewProfile(${t.id})">
-        <div class="teacher-card-top">
+      <div class="teacher-card">
+        <div class="teacher-card-top" style="cursor:pointer;" onclick="viewProfile(${t.id})">
           <div class="avatar">${initials}</div>
           <div>
             <h3>${t.name}</h3>
@@ -185,7 +621,10 @@
           <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0})</span>
         </div>
         <div class="fee">₹${t.fee_per_hour || 0} <span>/ hour</span></div>
-        <button class="btn btn-primary btn-sm btn-block" onclick="event.stopPropagation(); viewProfile(${t.id})">View profile & book demo</button>
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" onclick="viewProfile(${t.id})">View profile</button>
+          <button class="btn btn-primary btn-sm" onclick="openBookingModal(${t.id})">Book demo</button>
+        </div>
       </div>
     `;
   }
@@ -193,6 +632,143 @@
   function viewProfile(teacherId) {
     window.location.href = `teacher-profile-view.html?id=${teacherId}`;
   }
+
+  // =====================================================
+  // Booking modal
+  // =====================================================
+  let selectedSlot = null;
+  let bookingTeacherId = null;
+
+  const TIME_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+
+  function buildSlotGrid() {
+    const grid = document.getElementById('slotGrid');
+    grid.innerHTML = TIME_SLOTS.map(s =>
+      `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`
+    ).join('');
+    grid.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSlot = btn.dataset.slot;
+      });
+    });
+  }
+  buildSlotGrid();
+
+  function openBookingModal(teacherId) {
+    const t = teacherCache[teacherId];
+    if (!t) return;
+    bookingTeacherId = teacherId;
+    selectedSlot = null;
+    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+
+    document.getElementById('bookingAvatar').textContent =
+      t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    document.getElementById('bookingTeacherName').textContent = t.name;
+    document.getElementById('bookingTeacherMeta').textContent =
+      `${t.subjects || 'Subjects not listed'} · ₹${t.fee_per_hour || 0}/hr`;
+    document.getElementById('bookingSubject').value =
+      document.getElementById('subjectFilter').value.trim() || (t.subjects ? t.subjects.split(',')[0].trim() : '');
+
+    const dateInput = document.getElementById('bookingDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.value = today;
+
+    document.getElementById('bookingMsgBox').className = 'msg-box';
+    document.getElementById('bookingMsgBox').textContent = '';
+
+    document.getElementById('bookingModalBackdrop').classList.add('open');
+  }
+
+  function closeBookingModal() {
+    document.getElementById('bookingModalBackdrop').classList.remove('open');
+  }
+
+  document.getElementById('bookingModalClose').addEventListener('click', closeBookingModal);
+  document.getElementById('bookingModalCancel').addEventListener('click', closeBookingModal);
+
+  document.getElementById('bookingModalConfirm').addEventListener('click', async () => {
+    const msgBox = document.getElementById('bookingMsgBox');
+    const date = document.getElementById('bookingDate').value;
+    const subject = document.getElementById('bookingSubject').value.trim();
+    const notes = document.getElementById('bookingNotes').value.trim();
+    const confirmBtn = document.getElementById('bookingModalConfirm');
+    const t = teacherCache[bookingTeacherId] || {};
+
+    if (!date || !selectedSlot || !subject) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please fill in the subject, date, and a time slot.';
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+
+    try {
+      await apiRequest('/api/bookings', 'POST', {
+        teacher_id: bookingTeacherId,
+        type: 'demo',
+        subject: subject,
+        booking_date: date,
+        booking_time: selectedSlot,
+        days_per_week: 1,
+        fee: 0,
+        notes,
+      });
+      closeBookingModal();
+      toast('Booking requested — the teacher will confirm shortly.');
+      loadBookings();
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('btn-loading');
+    }
+  });
+
+  // =====================================================
+  // My bookings
+  // =====================================================
+  async function loadBookings() {
+    const area = document.getElementById('bookingsArea');
+    try {
+      const bookings = await apiRequest('/api/bookings/student/me');
+      const list = Array.isArray(bookings) ? bookings : (bookings.bookings || []);
+
+      document.getElementById('statBookings').textContent = list.length;
+      document.getElementById('statUpcoming').textContent =
+        list.filter(b => ['requested', 'accepted'].includes((b.status || '').toLowerCase())).length;
+
+      if (!list.length) {
+        area.innerHTML = '<div class="empty-state">No bookings yet — search for a tutor above to get started.</div>';
+        return;
+      }
+      area.innerHTML = `<div class="fade-in">${list.map(renderBookingRow).join('')}</div>`;
+    } catch (e) {
+      document.getElementById('statBookings').textContent = '0';
+      document.getElementById('statUpcoming').textContent = '0';
+      area.innerHTML = '<div class="empty-state">No bookings yet — search for a tutor above to get started.</div>';
+    }
+  }
+
+  function renderBookingRow(b) {
+    const status = (b.status || 'requested').toLowerCase();
+    const date = b.booking_date || b.date || '';
+    const time = b.booking_time || b.time || '';
+    return `
+      <div class="request-row">
+        <div class="request-info">
+          <strong>${b.teacher_name || 'Teacher'}</strong> — ${b.subject || 'Subject'}
+          <div class="request-meta">${date} · ${time}</div>
+        </div>
+        <span class="status-tag ${status}">${status}</span>
+      </div>
+    `;
+  }
+  loadBookings();
 </script>
 
 </body>

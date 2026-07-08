@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-role="login">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,11 +22,30 @@
 
 <div class="auth-page">
   <div class="auth-side">
-    <div>
-      <div class="eyebrow" style="color:#8FD1AE;">Welcome back</div>
+    <div class="side-top">
+      <div class="eyebrow">Welcome back</div>
       <h2>Pick up right where your last class left off.</h2>
       <p>Manage your bookings, chat with your tutor, and keep track of every upcoming class from one dashboard.</p>
     </div>
+
+    <div class="radius-visual" aria-hidden="true">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <circle class="ring" cx="150" cy="150" r="50"/>
+        <circle class="ring" cx="150" cy="150" r="90"/>
+        <circle class="ring" cx="150" cy="150" r="130"/>
+        <text class="ring-label" x="156" y="104">1 km</text>
+        <text class="ring-label" x="156" y="64">3 km</text>
+        <text class="ring-label" x="156" y="24">5 km</text>
+        <circle class="tutor-pin" cx="185" cy="120" r="5"/>
+        <circle class="tutor-pin" cx="118" cy="178" r="5"/>
+        <circle class="tutor-pin" cx="197" cy="192" r="5"/>
+        <circle class="tutor-pin out" cx="258" cy="78" r="5"/>
+        <circle class="tutor-pin out" cx="55" cy="252" r="5"/>
+        <circle class="center-pin" cx="150" cy="150" r="7"/>
+      </svg>
+    </div>
+    <div class="radar-caption">Your classes, close by</div>
+
     <div class="quote">"Found a Maths tutor 900 metres from home within a day."</div>
   </div>
 
@@ -35,18 +54,30 @@
       <h2>Log in</h2>
       <p class="subtitle">Enter your details to access your account</p>
 
-      <div id="msgBox" class="msg-box"></div>
+      <div id="msgBox" class="msg-box" role="alert"></div>
 
-      <form id="loginForm">
+      <form id="loginForm" novalidate>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com">
+          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
         </div>
-        <div class="form-group">
+        <div class="form-group password-field">
           <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="Your password">
+          <input type="password" id="password" required placeholder="Your password" autocomplete="current-password">
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">👁️</button>
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Log in</button>
+
+        <div class="form-meta-row">
+          <div class="check-row">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Remember me</label>
+          </div>
+          <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+          <span class="btn-label">Log in</span>
+        </button>
       </form>
 
       <div class="auth-divider">or continue with</div>
@@ -64,6 +95,16 @@
 <script>
   const form = document.getElementById('loginForm');
   const msgBox = document.getElementById('msgBox');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // ---- password show/hide ----
+  const passwordInput = document.getElementById('password');
+  document.getElementById('togglePassword').addEventListener('click', function () {
+    const isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    this.textContent = isHidden ? '🙈' : '👁️';
+    this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+  });
 
   initGoogleSignIn(
     document.getElementById('googleButtonContainer'),
@@ -76,11 +117,20 @@
     msgBox.className = 'msg-box';
     msgBox.textContent = '';
 
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('btn-loading');
 
     try {
-      const data = await apiRequest('/api/auth/login', 'POST', { email, password });
+      const data = await apiRequest('/api/auth/login', 'POST', { email, password, remember: rememberMe });
       saveSession(data.user, data.token);
       msgBox.className = 'msg-box success';
       msgBox.textContent = 'Login successful! Redirecting...';
@@ -91,6 +141,8 @@
     } catch (err) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = err.message;
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('btn-loading');
     }
   });
 </script>

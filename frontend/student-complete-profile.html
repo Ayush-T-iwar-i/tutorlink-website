@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Complete Your Profile — TutorLink</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -14,7 +15,7 @@
       <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
     </a>
     <div class="header-actions">
-      <a href="student-dashboard.html" class="btn btn-outline btn-sm">Back to dashboard</a>
+      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to dashboard</a>
     </div>
   </div>
 </header>
@@ -22,16 +23,21 @@
 <main class="dashboard-body">
   <div class="container form-page">
 
-    <div class="eyebrow">Student profile</div>
-    <h1 class="page-title">Complete your profile</h1>
-    <p class="page-subtitle">Helps us match you with the right nearby teachers.</p>
+    <div class="dash-hero" style="margin-bottom:26px;">
+      <div class="eyebrow">Student profile</div>
+      <h1 style="font-size:24px;">Complete your profile</h1>
+      <p>Helps us match you with the right nearby teachers — takes under a minute.</p>
+      <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
+      <span class="progress-label" id="progressLabel" style="color:rgba(255,255,255,0.7);">0% complete</span>
+    </div>
 
     <div id="msgBox" class="msg-box"></div>
 
-    <form id="profileForm">
+    <form id="profileForm" novalidate>
 
       <div class="form-section">
         <h3>What are you looking for</h3>
+        <p class="section-hint">Tell us the subjects and grade so we only show relevant teachers.</p>
         <div class="form-row">
           <div class="form-group">
             <label for="preferredSubjects">Preferred subjects</label>
@@ -48,33 +54,114 @@
         <h3>Your location</h3>
         <p class="section-hint">We use this to show only teachers within your chosen radius.</p>
 
-        <div class="form-group">
-          <label for="address">Area / locality name</label>
-          <input type="text" id="address" placeholder="e.g. Sector 21, Near Green Park">
-        </div>
-        <div class="form-group">
-          <label for="city">City</label>
-          <input type="text" id="city" placeholder="e.g. Gurugram">
-        </div>
-
-        <div class="location-panel" style="margin-top:6px;">
+        <div id="locationNotSet" class="location-panel">
           <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
+          <button type="button" id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
           <span id="locationStatus" class="status-pill">Not set yet</span>
         </div>
+
+        <div id="locationSet" class="location-set" style="display:none; margin-bottom:16px;">
+          <div class="location-trail">
+            <span class="pin-ic">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            </span>
+            <span class="crumb" id="crumbArea">Area</span>
+            <span class="sep">›</span>
+            <span class="crumb" id="crumbDistrict">District</span>
+            <span class="pincode" id="crumbPincode">000000</span>
+          </div>
+          <div class="location-actions">
+            <button type="button" id="openMapBtnSet" class="btn btn-outline btn-sm">Change on map</button>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top:16px;">
+          <div class="form-group">
+            <label for="address">Area / locality name</label>
+            <input type="text" id="address" placeholder="e.g. Sector 21, Near Green Park">
+          </div>
+          <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" placeholder="e.g. Gurugram">
+          </div>
+        </div>
+        <p class="section-hint" style="margin-top:-6px;">Auto-filled once you set your location above — feel free to edit for accuracy.</p>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block">Save profile</button>
+      <button type="submit" class="btn btn-primary btn-block" id="saveBtn">Save profile</button>
     </form>
 
   </div>
 </main>
 
+<!-- ================= Map picker modal ================= -->
+<div class="modal-backdrop" id="mapModalBackdrop">
+  <div class="modal modal-map">
+    <div class="modal-header">
+      <div>
+        <h3 id="mapModalTitle">Set your location</h3>
+        <p id="mapModalSub">Drag the pin, or click anywhere on the map, to place it exactly.</p>
+      </div>
+      <button class="modal-close" id="mapModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="map-search-row">
+        <input type="text" id="mapSearchInput" placeholder="Search for an area, e.g. Shastri Nagar, Meerut">
+        <button id="mapSearchBtn" class="btn btn-outline btn-sm">Search</button>
+      </div>
+      <div class="map-wrap">
+        <div id="pickerMap"></div>
+        <span class="map-zoom-hint">Scroll or pinch to zoom</span>
+        <button type="button" id="mapLocateBtn" class="map-locate-btn" title="Use my current location">📍</button>
+      </div>
+      <div id="accuracyNote" class="accuracy-note" style="display:none;"></div>
+      <div class="map-hint">📍 <span id="mapLoadingHint">Tip: use the search box or drag the pin to fine-tune your spot.</span></div>
+      <div class="map-picked-address" id="mapPickedAddress">Move the pin to see the address here.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="mapModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="mapModalConfirm">Confirm this location</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
 <script>
   const session = requireLogin('student');
   const msgBox = document.getElementById('msgBox');
   let currentLat = null;
   let currentLng = null;
+  let currentAddress = null; // { area, district, pincode, display }
+
+  const DEFAULT_CENTER = [28.9845, 77.7064]; // Meerut, UP — fallback map center
+
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  // ---------------- Profile completeness bar ----------------
+  function updateProgress() {
+    const fields = [
+      document.getElementById('preferredSubjects').value.trim(),
+      document.getElementById('preferredGrade').value.trim(),
+      currentLat !== null ? 'x' : '',
+      document.getElementById('address').value.trim(),
+      document.getElementById('city').value.trim(),
+    ];
+    const filled = fields.filter(Boolean).length;
+    const pct = Math.round((filled / fields.length) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = pct + '% complete';
+  }
+  ['preferredSubjects', 'preferredGrade', 'address', 'city'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateProgress);
+  });
 
   async function loadExisting() {
     try {
@@ -86,40 +173,296 @@
       if (s.latitude && s.longitude) {
         currentLat = s.latitude;
         currentLng = s.longitude;
-        document.getElementById('locationStatus').textContent = 'Location already set';
-        document.getElementById('locationStatus').classList.add('active');
+        currentAddress = {
+          area: s.address || 'Location set',
+          district: s.city || '—',
+          pincode: s.pincode || '------',
+        };
+        renderLocation();
       }
     } catch (e) { /* new profile, nothing to pre-fill */ }
+    updateProgress();
   }
   loadExisting();
 
-  document.getElementById('useLocationBtn').addEventListener('click', () => {
+  function renderLocation() {
+    const notSet = document.getElementById('locationNotSet');
+    const set = document.getElementById('locationSet');
+    if (currentLat === null || !currentAddress) {
+      notSet.style.display = 'flex';
+      set.style.display = 'none';
+      return;
+    }
+    notSet.style.display = 'none';
+    set.style.display = 'flex';
+    document.getElementById('crumbArea').textContent = currentAddress.area || 'Unknown area';
+    document.getElementById('crumbDistrict').textContent = currentAddress.district || '—';
+    document.getElementById('crumbPincode').textContent = currentAddress.pincode || '------';
+    document.getElementById('locationStatus').textContent = 'Location set';
+    document.getElementById('locationStatus').classList.add('active');
+  }
+
+  async function reverseGeocode(lat, lng) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    if (!res.ok) throw new Error('Could not look up that address.');
+    const data = await res.json();
+    const a = data.address || {};
+    const displayArea = data.display_name ? data.display_name.split(',')[0].trim() : 'Unknown area';
+    return {
+      area: a.suburb || a.neighbourhood || a.residential || a.hamlet || a.quarter ||
+            a.village || a.town || a.city_district || a.municipality || a.road || a.city || displayArea,
+      district: a.state_district || a.county || a.city || a.state || '—',
+      pincode: a.postcode || '------',
+      display: data.display_name || '',
+    };
+  }
+
+  // ---- THE FIX: applyLocation now updates address/city fields and
+  // re-renders the location trail — this was missing before, which is
+  // why confirming a pin didn't visibly do anything. ----
+  async function applyLocation(lat, lng) {
+    currentLat = lat;
+    currentLng = lng;
+    try {
+      currentAddress = await reverseGeocode(lat, lng);
+    } catch (e) {
+      currentAddress = { area: 'Location set', district: '—', pincode: '------', display: '' };
+    }
+    document.getElementById('address').value = currentAddress.area;
+    document.getElementById('city').value = currentAddress.district;
+    renderLocation();
+    updateProgress();
+  }
+
+  // ---- GPS: high accuracy fetch, confirmed visually on the map ----
+  function useCurrentLocation(btn) {
     const status = document.getElementById('locationStatus');
     if (!navigator.geolocation) {
       status.textContent = 'Geolocation not supported by your browser.';
       return;
     }
-    status.textContent = 'Fetching your location...';
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    status.textContent = 'Getting a precise GPS fix…';
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        currentLat = position.coords.latitude;
-        currentLng = position.coords.longitude;
-        status.textContent = `Location captured (${currentLat.toFixed(3)}, ${currentLng.toFixed(3)})`;
-        status.classList.add('active');
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        const { latitude, longitude, accuracy } = position.coords;
+        openMapModal({
+          lat: latitude,
+          lng: longitude,
+          accuracy,
+          title: 'Confirm your exact location',
+          sub: 'We centred the pin on your GPS fix. Drag it to your exact doorstep for the best match accuracy.',
+        });
       },
-      () => { status.textContent = 'Could not get location. Please allow location access.'; }
+      (err) => {
+        btn.disabled = false;
+        btn.classList.remove('btn-loading');
+        const messages = {
+          1: 'Location access denied. Please allow location permission for this site in your browser settings.',
+          2: 'Could not detect your location right now. Please try again, or set it manually on the map.',
+          3: 'Location request timed out. Please try again, ideally outdoors or near a window.',
+        };
+        status.textContent = messages[err.code] || 'Could not get your location. Please set it manually on the map.';
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+  }
+
+  document.getElementById('useLocationBtn').addEventListener('click', (e) => useCurrentLocation(e.currentTarget));
+
+  // ---------------- Map picker modal ----------------
+  let map, marker, accuracyCircle, pendingLat, pendingLng, geocodeTimer;
+
+  const pinIcon = L.divIcon({
+    className: 'custom-pin',
+    html: `<svg width="32" height="42" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 0C7.6 0 0 7.6 0 17c0 12.7 17 27 17 27s17-14.3 17-27C34 7.6 26.4 0 17 0z" fill="#1F6E4A"/>
+      <circle cx="17" cy="17" r="7" fill="#fff"/>
+    </svg>`,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+  });
+
+  function setAccuracyNote(accuracy) {
+    const note = document.getElementById('accuracyNote');
+    if (!accuracy) { note.style.display = 'none'; return; }
+    note.style.display = 'flex';
+    const meters = Math.round(accuracy);
+    if (meters <= 30) {
+      note.className = 'accuracy-note good';
+      note.innerHTML = `✓ GPS accuracy: ~${meters}m — this pin should already be very close.`;
+    } else if (meters <= 100) {
+      note.className = 'accuracy-note fair';
+      note.innerHTML = `⚠ GPS accuracy: ~${meters}m — drag the pin to your exact spot for best results.`;
+    } else {
+      note.className = 'accuracy-note poor';
+      note.innerHTML = `⚠ GPS accuracy: ~${meters}m (weak signal) — please drag the pin precisely onto your location.`;
+    }
+  }
+
+  function openMapModal(opts) {
+    opts = opts || {};
+    document.getElementById('mapModalBackdrop').classList.add('open');
+    document.getElementById('mapModalTitle').textContent = opts.title || 'Set your location';
+    document.getElementById('mapModalSub').textContent = opts.sub || 'Drag the pin, or click anywhere on the map, to place it exactly.';
+
+    const startLat = opts.lat ?? currentLat ?? DEFAULT_CENTER[0];
+    const startLng = opts.lng ?? currentLng ?? DEFAULT_CENTER[1];
+    const zoom = opts.lat ? 17 : 14;
+
+    if (!map) {
+      map = L.map('pickerMap').setView([startLat, startLng], zoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+      marker = L.marker([startLat, startLng], { draggable: true, icon: pinIcon }).addTo(map);
+      marker.on('dragend', () => {
+        const p = marker.getLatLng();
+        clearAccuracyCircle();
+        previewLocation(p.lat, p.lng);
+      });
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        clearAccuracyCircle();
+        previewLocation(e.latlng.lat, e.latlng.lng);
+      });
+    } else {
+      map.setView([startLat, startLng], zoom);
+      marker.setLatLng([startLat, startLng]);
+      setTimeout(() => map.invalidateSize(), 60);
+    }
+
+    clearAccuracyCircle();
+    if (opts.accuracy) {
+      accuracyCircle = L.circle([startLat, startLng], {
+        radius: opts.accuracy,
+        color: '#1F6E4A',
+        fillColor: '#1F6E4A',
+        fillOpacity: 0.12,
+        weight: 1,
+      }).addTo(map);
+      setAccuracyNote(opts.accuracy);
+    } else {
+      setAccuracyNote(null);
+    }
+
+    previewLocation(startLat, startLng);
+  }
+
+  function clearAccuracyCircle() {
+    if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
+    setAccuracyNote(null);
+  }
+
+  function previewLocation(lat, lng) {
+    pendingLat = lat;
+    pendingLng = lng;
+    const box = document.getElementById('mapPickedAddress');
+    box.textContent = 'Looking up address…';
+    clearTimeout(geocodeTimer);
+    geocodeTimer = setTimeout(async () => {
+      try {
+        const addr = await reverseGeocode(lat, lng);
+        box.textContent = `${addr.area}, ${addr.district} — ${addr.pincode}`;
+      } catch (e) {
+        box.textContent = 'Pin placed — address lookup failed, but the location is still usable.';
+      }
+    }, 450);
+  }
+
+  function closeMapModal() {
+    document.getElementById('mapModalBackdrop').classList.remove('open');
+  }
+
+  document.getElementById('openMapBtnEmpty').addEventListener('click', () => openMapModal());
+  document.getElementById('openMapBtnSet').addEventListener('click', () => openMapModal());
+  document.getElementById('mapModalClose').addEventListener('click', closeMapModal);
+  document.getElementById('mapModalCancel').addEventListener('click', closeMapModal);
+
+  document.getElementById('mapModalConfirm').addEventListener('click', async () => {
+    if (pendingLat == null) return;
+    const confirmBtn = document.getElementById('mapModalConfirm');
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+    await applyLocation(pendingLat, pendingLng);
+    confirmBtn.disabled = false;
+    confirmBtn.classList.remove('btn-loading');
+    closeMapModal();
+    toast('Location updated');
+  });
+
+  document.getElementById('mapSearchBtn').addEventListener('click', doMapSearch);
+  document.getElementById('mapSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doMapSearch(); }
+  });
+
+  async function doMapSearch() {
+    const q = document.getElementById('mapSearchInput').value.trim();
+    if (!q) return;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
+      const results = await res.json();
+      if (results.length === 0) { toast('No matching place found.', true); return; }
+      const { lat, lon } = results[0];
+      map.setView([lat, lon], 16);
+      marker.setLatLng([lat, lon]);
+      clearAccuracyCircle();
+      previewLocation(parseFloat(lat), parseFloat(lon));
+    } catch (e) {
+      toast('Search failed. Please try again.', true);
+    }
+  }
+
+  document.getElementById('mapLocateBtn').addEventListener('click', function () {
+    const btn = this;
+    if (!navigator.geolocation) { toast('Geolocation not supported by your browser.', true); return; }
+    btn.classList.add('loading');
+    btn.textContent = '…';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        btn.classList.remove('loading');
+        btn.textContent = '📍';
+        const { latitude, longitude, accuracy } = position.coords;
+        map.setView([latitude, longitude], 17);
+        marker.setLatLng([latitude, longitude]);
+        clearAccuracyCircle();
+        accuracyCircle = L.circle([latitude, longitude], {
+          radius: accuracy, color: '#1F6E4A', fillColor: '#1F6E4A', fillOpacity: 0.12, weight: 1,
+        }).addTo(map);
+        setAccuracyNote(accuracy);
+        previewLocation(latitude, longitude);
+      },
+      () => {
+        btn.classList.remove('loading');
+        btn.textContent = '📍';
+        toast('Could not fetch your location. Please drag the pin manually.', true);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   });
 
+  // =====================================================
+  // Save profile
+  // =====================================================
   document.getElementById('profileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     msgBox.className = 'msg-box';
+    const saveBtn = document.getElementById('saveBtn');
 
     if (currentLat === null) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = 'Please set your live location so we can find nearby teachers.';
       return;
     }
+
+    saveBtn.disabled = true;
+    saveBtn.classList.add('btn-loading');
 
     try {
       await apiRequest(`/api/students/${session.user.id}/preferences`, 'PUT', {
@@ -130,6 +473,9 @@
       await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
         address: document.getElementById('address').value.trim(),
         city: document.getElementById('city').value.trim(),
+        area: currentAddress ? currentAddress.area : document.getElementById('address').value.trim(),
+        district: document.getElementById('city').value.trim(),
+        pincode: currentAddress ? currentAddress.pincode : '',
         latitude: currentLat,
         longitude: currentLng
       });
@@ -140,6 +486,8 @@
     } catch (err) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = err.message;
+      saveBtn.disabled = false;
+      saveBtn.classList.remove('btn-loading');
     }
   });
 </script>
