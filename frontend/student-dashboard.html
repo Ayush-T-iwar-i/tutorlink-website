@@ -15,6 +15,18 @@
       <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
     </a>
     <div class="header-actions">
+      <div class="notif-wrap">
+        <button class="notif-bell" id="notifBell" aria-label="Notifications">
+          🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown-header">
+            <span>Notifications</span>
+            <button id="markAllReadBtn">Mark all read</button>
+          </div>
+          <div id="notifList"><div class="notif-empty">Loading...</div></div>
+        </div>
+      </div>
       <a href="student-complete-profile.html" class="user-chip" style="text-decoration:none; cursor:pointer;" title="Edit your profile">
         <span class="avatar-sm" id="avatarInitials"></span>
         <span id="welcomeText"></span>
@@ -112,6 +124,20 @@
 
     <div id="resultsArea">
       <div class="empty-state">Set your location above, then search to see nearby teachers.</div>
+    </div>
+
+    <!-- ---------------- Saved teachers ---------------- -->
+    <div class="panel" style="margin-top:34px;">
+      <div class="panel-icon-title">
+        <span class="ic">❤️</span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">Saved teachers</div>
+          <p class="panel-hint" style="margin-bottom:0;">Teachers you've bookmarked for later.</p>
+        </div>
+      </div>
+      <div id="savedTeachersArea" style="margin-top:14px;">
+        <div class="empty-state">No saved teachers yet — tap the 🤍 on any teacher card to save them here.</div>
+      </div>
     </div>
 
     <!-- ---------------- My bookings ---------------- -->
@@ -215,6 +241,34 @@
   </div>
 </div>
 
+<!-- ================= Review modal ================= -->
+<div class="modal-backdrop" id="reviewModalBackdrop">
+  <div class="modal modal-booking">
+    <div class="modal-header">
+      <div>
+        <h3>Rate your class</h3>
+        <p id="reviewTeacherLabel">How was your session?</p>
+      </div>
+      <button class="modal-close" id="reviewModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Rating</label>
+        <div class="slot-grid" id="starGrid" style="grid-template-columns:repeat(5,1fr);"></div>
+      </div>
+      <div class="form-group">
+        <label for="reviewComment">Comment (optional)</label>
+        <input type="text" id="reviewComment" placeholder="Tell others about your experience">
+      </div>
+      <div id="reviewMsgBox" class="msg-box"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="reviewModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="reviewModalConfirm">Submit review</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -232,6 +286,8 @@
     clearSession();
     window.location.href = 'login.html';
   });
+
+  initNotificationBell();
 
   // ---------- Toast ----------
   function toast(message, isError) {
@@ -602,18 +658,89 @@
     }
   });
 
+  // =====================================================
+  // Favorites / saved teachers
+  // =====================================================
+  let favoriteIds = new Set();
+
+  async function loadFavoriteIds() {
+    try {
+      const favs = await apiRequest('/api/favorites/me');
+      favoriteIds = new Set(favs.map(f => f.id));
+    } catch (e) { /* non-blocking */ }
+  }
+
+  async function toggleFavorite(teacherId, btn) {
+    const isSaved = favoriteIds.has(teacherId);
+    btn.disabled = true;
+    try {
+      if (isSaved) {
+        await apiRequest(`/api/favorites/${teacherId}`, 'DELETE');
+        favoriteIds.delete(teacherId);
+        btn.textContent = '🤍';
+        toast('Removed from saved teachers');
+      } else {
+        await apiRequest('/api/favorites', 'POST', { teacher_id: teacherId });
+        favoriteIds.add(teacherId);
+        btn.textContent = '❤️';
+        toast('Teacher saved');
+      }
+      loadSavedTeachers();
+    } catch (err) {
+      toast(err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function loadSavedTeachers() {
+    const area = document.getElementById('savedTeachersArea');
+    try {
+      const teachers = await apiRequest('/api/favorites/me');
+      if (teachers.length === 0) {
+        area.innerHTML = '<div class="empty-state">No saved teachers yet — tap the 🤍 on any teacher card to save them here.</div>';
+        return;
+      }
+      area.innerHTML = `<div class="teacher-grid fade-in">${teachers.map(t => `
+        <div class="teacher-card">
+          <div class="teacher-card-top" style="cursor:pointer;" onclick="viewProfile(${t.id})">
+            <div class="avatar">${t.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+            <div>
+              <h3>${escapeHtml(t.name)}</h3>
+              <div class="meta">${escapeHtml(t.subjects) || 'Subjects not listed'}</div>
+            </div>
+          </div>
+          <div class="badge-row">
+            <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0})</span>
+          </div>
+          <div class="fee">₹${t.fee_per_hour || 0} <span>/ hour</span></div>
+          <div class="card-actions">
+            <button class="btn btn-outline btn-sm" onclick="viewProfile(${t.id})">View profile</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleFavorite(${t.id}, this)">💔 Remove</button>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    } catch (err) {
+      area.innerHTML = '<div class="empty-state">Could not load saved teachers.</div>';
+    }
+  }
+
+  loadFavoriteIds().then(loadSavedTeachers);
+
   let teacherCache = {};
 
   function renderTeacherCard(t) {
     const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const location = t.city ? ` · ${t.city}` : '';
     return `
-      <div class="teacher-card">
+      <div class="teacher-card" style="position:relative;">
+        <button class="btn btn-outline btn-sm" id="fav-${t.id}" onclick="toggleFavorite(${t.id}, this)"
+                style="position:absolute; top:14px; right:14px; padding:6px 9px; border-radius:50%;" title="Save teacher">${favoriteIds.has(t.id) ? '❤️' : '🤍'}</button>
         <div class="teacher-card-top" style="cursor:pointer;" onclick="viewProfile(${t.id})">
           <div class="avatar">${initials}</div>
           <div>
-            <h3>${t.name}</h3>
-            <div class="meta">${t.subjects || 'Subjects not listed'}${t.grades ? ' · ' + t.grades : ''}</div>
+            <h3>${escapeHtml(t.name)}</h3>
+            <div class="meta">${escapeHtml(t.subjects) || 'Subjects not listed'}${t.grades ? ' · ' + escapeHtml(t.grades) : ''}</div>
           </div>
         </div>
         <div class="badge-row">
@@ -761,14 +888,84 @@
     return `
       <div class="request-row">
         <div class="request-info">
-          <strong>${b.teacher_name || 'Teacher'}</strong> — ${b.subject || 'Subject'}
+          <strong>${escapeHtml(b.teacher_name) || 'Teacher'}</strong> — ${escapeHtml(b.subject) || 'Subject'}
           <div class="request-meta">${date} · ${time}</div>
         </div>
-        <span class="status-tag ${status}">${status}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="status-tag ${status}">${status}</span>
+          ${['accepted','completed'].includes(status) ? `
+            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.teacher_name)}')">💬 Chat</button>` : ''}
+          ${status === 'completed' && !b.reviewed ? `
+            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}')">⭐ Leave a review</button>` : ''}
+        </div>
       </div>
     `;
   }
   loadBookings();
+
+  // =====================================================
+  // Review modal
+  // =====================================================
+  let reviewBookingId = null;
+  let selectedStars = 0;
+
+  function buildStarGrid() {
+    const grid = document.getElementById('starGrid');
+    grid.innerHTML = [1,2,3,4,5].map(n => `<button type="button" class="slot-btn" data-star="${n}">${'★'.repeat(n)}</button>`).join('');
+    grid.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedStars = parseInt(btn.dataset.star, 10);
+        grid.querySelectorAll('.slot-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.star,10) <= selectedStars));
+      });
+    });
+  }
+
+  function openReviewModal(bookingId, teacherName) {
+    reviewBookingId = bookingId;
+    selectedStars = 0;
+    document.getElementById('reviewTeacherLabel').textContent = `How was your session with ${teacherName}?`;
+    document.getElementById('reviewComment').value = '';
+    document.getElementById('reviewMsgBox').className = 'msg-box';
+    document.getElementById('reviewMsgBox').textContent = '';
+    buildStarGrid();
+    document.getElementById('reviewModalBackdrop').classList.add('open');
+  }
+
+  function closeReviewModal() {
+    document.getElementById('reviewModalBackdrop').classList.remove('open');
+  }
+  document.getElementById('reviewModalClose').addEventListener('click', closeReviewModal);
+  document.getElementById('reviewModalCancel').addEventListener('click', closeReviewModal);
+
+  document.getElementById('reviewModalConfirm').addEventListener('click', async () => {
+    const msgBox = document.getElementById('reviewMsgBox');
+    const confirmBtn = document.getElementById('reviewModalConfirm');
+
+    if (!selectedStars) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please pick a star rating.';
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+    try {
+      await apiRequest('/api/reviews', 'POST', {
+        booking_id: reviewBookingId,
+        rating: selectedStars,
+        comment: document.getElementById('reviewComment').value.trim(),
+      });
+      closeReviewModal();
+      toast('Thanks for the review!');
+      loadBookings();
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('btn-loading');
+    }
+  });
 </script>
 
 </body>

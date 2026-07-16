@@ -14,10 +14,23 @@
       <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
     </a>
     <div class="header-actions">
-      <div class="user-chip">
+      <div class="notif-wrap">
+        <button class="notif-bell" id="notifBell" aria-label="Notifications">
+          🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown-header">
+            <span>Notifications</span>
+            <button id="markAllReadBtn">Mark all read</button>
+          </div>
+          <div id="notifList"><div class="notif-empty">Loading...</div></div>
+        </div>
+      </div>
+      <a href="teacher-complete-profile.html" class="user-chip" style="text-decoration:none; cursor:pointer;" title="Edit your profile">
         <span class="avatar-sm" id="avatarInitials"></span>
         <span id="welcomeText"></span>
-      </div>
+      </a>
+      <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">👤 My profile</a>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
@@ -26,24 +39,97 @@
 <main class="dashboard-body">
   <div class="container">
 
-    <div class="eyebrow">Teacher dashboard</div>
-    <h1 class="page-title">Welcome back</h1>
-    <p class="page-subtitle">Here's what's happening with your teaching profile.</p>
+    <div class="dash-hero">
+      <div class="dash-hero-top">
+        <div>
+          <div class="eyebrow">Teacher dashboard</div>
+          <h1 id="heroGreeting">Welcome back</h1>
+          <p>Here's what's happening with your teaching profile.</p>
+        </div>
+      </div>
+      <div class="dash-stat-row">
+        <div class="dash-stat">
+          <span class="num" id="statTotal">—</span>
+          <span class="lbl">Total requests</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statPending">—</span>
+          <span class="lbl">Awaiting reply</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statRating">—</span>
+          <span class="lbl">Rating</span>
+        </div>
+      </div>
+    </div>
 
     <div id="profileBanner"></div>
 
-    <div class="panel" id="profileSummary">
-      <div class="empty-state">Loading your profile...</div>
+    <div class="panel" id="profileSummaryPanel">
+      <div class="panel-icon-title">
+        <span class="ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </span>
+        <div class="panel-title" style="margin-bottom:0;">Your profile</div>
+      </div>
+      <div id="profileSummary" style="margin-top:14px;">
+        <div class="skeleton-card">
+          <div class="skel-line w-40"></div>
+          <div class="skel-line w-60"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="earningsPanel">
+      <div class="panel-icon-title">
+        <span class="ic">₹</span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">Earnings</div>
+          <p class="panel-hint" style="margin-bottom:0;">Based on completed classes marked as paid.</p>
+        </div>
+      </div>
+      <div id="earningsArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
+      </div>
     </div>
 
     <div class="panel">
-      <div class="panel-title">Incoming booking requests</div>
-      <p class="panel-hint">Accept or decline demo and recurring class requests.</p>
-      <div id="bookingsArea"><div class="empty-state">Loading requests...</div></div>
+      <div class="panel-icon-title">
+        <span class="ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">This week's schedule</div>
+          <p class="panel-hint" style="margin-bottom:0;">Your accepted classes, grouped by day.</p>
+        </div>
+      </div>
+      <div id="scheduleArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-icon-title">
+        <span class="ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">Incoming booking requests</div>
+          <p class="panel-hint" style="margin-bottom:0;">Accept or decline demo and recurring class requests.</p>
+        </div>
+      </div>
+      <div id="bookingsArea" style="margin-top:14px;">
+        <div class="skeleton-card">
+          <div class="skel-line w-40"></div>
+          <div class="skel-line w-60"></div>
+        </div>
+      </div>
     </div>
 
   </div>
 </main>
+
+<div class="toast" id="toast"></div>
 
 <script src="js/api.js"></script>
 <script>
@@ -52,12 +138,22 @@
     document.getElementById('welcomeText').textContent = session.user.name;
     document.getElementById('avatarInitials').textContent =
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     clearSession();
     window.location.href = 'login.html';
   });
+
+  initNotificationBell();
+
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
 
   // ---------- Profile summary + completeness banner ----------
   async function loadProfileSummary() {
@@ -68,24 +164,33 @@
       const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
       const isComplete = t.subjects && t.qualification && t.address && t.latitude;
 
+      document.getElementById('statRating').textContent = t.rating_avg ? `★ ${t.rating_avg}` : 'New';
+
       if (isComplete) {
+        const statusCopy = {
+          approved: { cls: 'done', text: `Students within ${t.travel_radius_km || 5} km of ${t.city || 'your area'} can find you.` },
+          pending: { cls: '', text: 'Your profile is complete and waiting for admin verification before it goes live.' },
+          under_review: { cls: '', text: 'Your documents are under review by our team.' },
+          rejected: { cls: '', text: 'Your verification was not approved. Please update your details or contact support.' },
+        };
+        const s = statusCopy[t.verification_status] || statusCopy.pending;
+
         banner.innerHTML = `
-          <div class="banner done">
+          <div class="banner ${s.cls}">
             <div class="banner-text">
-              <strong>Your profile is live</strong>
-              <span>Students within ${t.travel_radius_km || 5} km of ${t.city || 'your area'} can find you.</span>
+              <strong>${t.verification_status === 'approved' ? 'Your profile is live' : 'Verification pending'}</strong>
+              <span>${s.text}</span>
             </div>
             <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">Edit profile</a>
           </div>`;
 
         const location = [t.address, t.city].filter(Boolean).join(', ');
         summary.innerHTML = `
-          <div class="panel-title">Your profile</div>
-          <div class="info-grid" style="margin-top:14px;">
+          <div class="info-grid fade-in" style="margin-bottom:0;">
             <div class="info-tile"><div class="label">Qualification</div><div class="value">${t.qualification}</div></div>
             <div class="info-tile"><div class="label">Subjects</div><div class="value">${t.subjects}</div></div>
             <div class="info-tile"><div class="label">Fee / hour</div><div class="value">₹${t.fee_per_hour || 0}</div></div>
-            <div class="info-tile"><div class="label">Location</div><div class="value">${location}</div></div>
+            <div class="info-tile"><div class="label">Location</div><div class="value">${location || 'Not set'}</div></div>
             <div class="info-tile"><div class="label">Travel radius</div><div class="value">${t.travel_radius_km || 5} km</div></div>
             <div class="info-tile"><div class="label">Rating</div><div class="value">★ ${t.rating_avg || 'New'}</div></div>
           </div>`;
@@ -114,41 +219,142 @@
   }
   loadProfileSummary();
 
+  async function loadEarnings() {
+    const area = document.getElementById('earningsArea');
+    try {
+      const e = await apiRequest('/api/bookings/teacher/earnings');
+      area.innerHTML = `
+        <div class="info-grid fade-in" style="margin-bottom:16px;">
+          <div class="info-tile"><div class="label">Total earned</div><div class="value">₹${Number(e.total_earned).toLocaleString('en-IN')}</div></div>
+          <div class="info-tile"><div class="label">This month</div><div class="value">₹${Number(e.this_month).toLocaleString('en-IN')}</div></div>
+          <div class="info-tile"><div class="label">Pending payment</div><div class="value">₹${Number(e.pending_amount).toLocaleString('en-IN')}</div></div>
+        </div>
+        ${e.recent.length === 0 ? '<div class="empty-state">No completed classes yet.</div>' : e.recent.map(r => `
+          <div class="request-row">
+            <div class="request-info">
+              <strong>${escapeHtml(r.student_name)}</strong> — ${escapeHtml(r.subject) || 'Class'}
+              <div class="request-meta">${r.booking_date || ''}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span>₹${r.fee || 0}</span>
+              <span class="status-tag ${r.payment_status === 'paid' ? 'accepted' : 'requested'}">${r.payment_status}</span>
+              ${r.payment_status === 'unpaid' ? `<button class="btn btn-outline btn-sm" onclick="markPaid(${r.id}, this)">Mark paid</button>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      `;
+    } catch (err) {
+      area.innerHTML = '<div class="empty-state">Could not load earnings.</div>';
+    }
+  }
+  loadEarnings();
+
+  async function markPaid(bookingId, btn) {
+    btn.disabled = true;
+    try {
+      await apiRequest(`/api/bookings/${bookingId}/payment`, 'PUT', { payment_status: 'paid' });
+      toast('Marked as paid');
+      loadEarnings();
+    } catch (err) {
+      toast(err.message, true);
+      btn.disabled = false;
+    }
+  }
+
   // ---------- Incoming bookings ----------
   async function loadBookings() {
     const area = document.getElementById('bookingsArea');
     try {
       const bookings = await apiRequest('/api/bookings/teacher/me');
 
+      document.getElementById('statTotal').textContent = bookings.length;
+      document.getElementById('statPending').textContent =
+        bookings.filter(b => b.status === 'requested').length;
+
+      renderSchedule(bookings);
+
       if (bookings.length === 0) {
         area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
         return;
       }
 
-      area.innerHTML = bookings.map(b => `
+      area.innerHTML = `<div class="fade-in">${bookings.map(b => `
         <div class="request-row">
           <div class="request-info">
-            <strong>${b.student_name}</strong> requested a ${b.type} class ${b.subject ? 'for ' + b.subject : ''}
-            <br><span class="status-tag ${b.status}">${b.status}</span>
+            <strong>${escapeHtml(b.student_name)}</strong> requested a ${b.type} class${b.subject ? ' for ' + escapeHtml(b.subject) : ''}
+            <div class="request-meta">${b.booking_date || ''} · ${b.booking_time || ''}</div>
           </div>
-          ${b.status === 'requested' ? `
-            <div>
-              <button class="btn btn-primary btn-sm" onclick="respondToBooking(${b.id}, 'accepted')">Accept</button>
-              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'declined')">Decline</button>
-            </div>` : ''}
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="status-tag ${b.status}">${b.status}</span>
+            ${['accepted','completed'].includes(b.status) ? `
+              <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>` : ''}
+            ${b.status === 'requested' ? `
+              <button class="btn btn-primary btn-sm" onclick="respondToBooking(${b.id}, 'accepted', this)">Accept</button>
+              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'declined', this)">Decline</button>` : ''}
+            ${b.status === 'accepted' ? `
+              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'completed', this)">Mark completed</button>` : ''}
+          </div>
         </div>
-      `).join('');
+      `).join('')}</div>`;
     } catch (err) {
+      document.getElementById('statTotal').textContent = '0';
+      document.getElementById('statPending').textContent = '0';
+      renderSchedule([]);
       area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
     }
   }
 
-  async function respondToBooking(bookingId, status) {
+  function renderSchedule(bookings) {
+    const scheduleArea = document.getElementById('scheduleArea');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const weekAhead = new Date(today); weekAhead.setDate(weekAhead.getDate() + 7);
+
+    const upcoming = bookings
+      .filter(b => b.status === 'accepted' && b.booking_date)
+      .filter(b => {
+        const d = new Date(b.booking_date);
+        return d >= today && d <= weekAhead;
+      })
+      .sort((a, b) => new Date(a.booking_date) - new Date(b.booking_date));
+
+    if (upcoming.length === 0) {
+      scheduleArea.innerHTML = '<div class="empty-state">No accepted classes scheduled in the next 7 days.</div>';
+      return;
+    }
+
+    const byDate = {};
+    upcoming.forEach(b => {
+      const key = b.booking_date;
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(b);
+    });
+
+    scheduleArea.innerHTML = Object.keys(byDate).map(date => `
+      <div style="margin-bottom:16px;">
+        <div class="field-section-label">${new Date(date).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}</div>
+        ${byDate[date].map(b => `
+          <div class="request-row">
+            <div class="request-info">
+              <strong>${escapeHtml(b.student_name)}</strong> — ${escapeHtml(b.subject) || b.type}
+              <div class="request-meta">${b.booking_time || 'Time TBD'}</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  async function respondToBooking(bookingId, status, btn) {
+    const row = btn.closest('.request-row');
+    row.style.opacity = '0.5';
     try {
       await apiRequest(`/api/bookings/${bookingId}/status`, 'PUT', { status });
+      toast(status === 'accepted' ? 'Booking accepted' : 'Booking declined');
       loadBookings();
     } catch (err) {
-      alert('Could not update booking: ' + err.message);
+      row.style.opacity = '1';
+      toast('Could not update booking: ' + err.message, true);
     }
   }
 

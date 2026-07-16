@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em> <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-500);">ADMIN</span></div>
+    </a>
+    <div class="header-actions">
+      <div class="user-chip">
+        <span class="avatar-sm" id="avatarInitials"></span>
+        <span id="welcomeText"></span>
+      </div>
+      <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container">
+
+    <div class="dash-hero">
+      <div class="dash-hero-top">
+        <div>
+          <div class="eyebrow">Admin</div>
+          <h1>Teacher verification queue</h1>
+          <p>Review new teacher signups before they appear in student search results.</p>
+        </div>
+      </div>
+      <div class="dash-stat-row">
+        <div class="dash-stat">
+          <span class="num" id="statPending">—</span>
+          <span class="lbl">Awaiting review</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statStudents">—</span>
+          <span class="lbl">Students</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statTeachers">—</span>
+          <span class="lbl">Approved teachers</span>
+        </div>
+        <div class="dash-stat">
+          <span class="num" id="statBookings">—</span>
+          <span class="lbl">Total bookings</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Platform overview</div>
+      <div id="statsArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-60"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Pending teachers</div>
+      <p class="panel-hint">Approve teachers whose details look genuine — this makes them visible to students immediately.</p>
+      <div id="pendingArea">
+        <div class="skeleton-card">
+          <div class="skel-line w-40"></div>
+          <div class="skel-line w-60"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin('admin');
+  if (session) {
+    document.getElementById('welcomeText').textContent = session.user.name;
+    document.getElementById('avatarInitials').textContent =
+      session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearSession();
+    window.location.href = 'login.html';
+  });
+
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  async function loadPending() {
+    const area = document.getElementById('pendingArea');
+    try {
+      const teachers = await apiRequest('/api/admin/teachers/pending');
+      document.getElementById('statPending').textContent = teachers.length;
+
+      if (teachers.length === 0) {
+        area.innerHTML = '<div class="empty-state">Nothing to review right now. New teacher signups will show up here.</div>';
+        return;
+      }
+
+      area.innerHTML = `<div class="fade-in">${teachers.map(t => `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${escapeHtml(t.name)}</strong> — ${escapeHtml(t.subjects) || 'No subjects listed'}
+            <div class="request-meta">
+              ${escapeHtml(t.email)} · ${escapeHtml(t.phone) || 'no phone'} ·
+              ${escapeHtml(t.qualification) || 'no qualification listed'} ·
+              ${[escapeHtml(t.address), escapeHtml(t.city)].filter(Boolean).join(', ') || 'no location set'}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="status-tag ${t.verification_status}">${t.verification_status}</span>
+            <button class="btn btn-primary btn-sm" onclick="setStatus(${t.id}, 'approved', this)">Approve</button>
+            <button class="btn btn-outline btn-sm" onclick="setStatus(${t.id}, 'rejected', this)">Reject</button>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  async function setStatus(teacherId, status, btn) {
+    const row = btn.closest('.request-row');
+    row.style.opacity = '0.5';
+    try {
+      await apiRequest(`/api/admin/teachers/${teacherId}/verification`, 'PUT', { status });
+      toast(`Teacher ${status}.`);
+      loadPending();
+    } catch (err) {
+      row.style.opacity = '1';
+      toast('Could not update: ' + err.message, true);
+    }
+  }
+
+  loadPending();
+
+  async function loadStats() {
+    const area = document.getElementById('statsArea');
+    try {
+      const s = await apiRequest('/api/admin/stats');
+      document.getElementById('statStudents').textContent = s.total_students;
+      document.getElementById('statTeachers').textContent = s.approved_teachers;
+      document.getElementById('statBookings').textContent = s.total_bookings;
+
+      area.innerHTML = `
+        <div class="info-grid fade-in" style="margin-bottom:0;">
+          <div class="info-tile"><div class="label">Total students</div><div class="value">${s.total_students}</div></div>
+          <div class="info-tile"><div class="label">Total teachers</div><div class="value">${s.total_teachers}</div></div>
+          <div class="info-tile"><div class="label">Approved teachers</div><div class="value">${s.approved_teachers}</div></div>
+          <div class="info-tile"><div class="label">Pending verification</div><div class="value">${s.pending_teachers}</div></div>
+          <div class="info-tile"><div class="label">Total bookings</div><div class="value">${s.total_bookings}</div></div>
+          <div class="info-tile"><div class="label">Completed classes</div><div class="value">${s.completed_bookings}</div></div>
+          <div class="info-tile"><div class="label">New signups (7 days)</div><div class="value">${s.signups_last_7_days}</div></div>
+        </div>`;
+    } catch (err) {
+      area.innerHTML = '<div class="empty-state">Could not load stats.</div>';
+    }
+  }
+  loadStats();
+</script>
+
+</body>
+</html>

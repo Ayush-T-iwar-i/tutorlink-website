@@ -2,6 +2,50 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
+const upload = require('../middleware/upload.middleware');
+
+// ---------- UPLOAD VERIFICATION DOCUMENTS (protected: own account, teacher only) ----------
+// POST /api/teachers/:userId/documents
+// multipart/form-data fields: id_proof, address_proof, certificate (each optional, one file)
+// Submitting any document resets verification_status to "pending" so an
+// admin re-reviews the updated file.
+router.post(
+  '/:userId/documents',
+  verifyToken, requireOwnUser, requireRole('teacher'),
+  upload.fields([
+    { name: 'id_proof', maxCount: 1 },
+    { name: 'address_proof', maxCount: 1 },
+    { name: 'certificate', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const files = req.files || {};
+
+      const updates = [];
+      const params = [];
+
+      if (files.id_proof) { updates.push('id_proof_path = ?'); params.push(files.id_proof[0].filename); }
+      if (files.address_proof) { updates.push('address_proof_path = ?'); params.push(files.address_proof[0].filename); }
+      if (files.certificate) { updates.push('certificate_path = ?'); params.push(files.certificate[0].filename); }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'No files were uploaded.' });
+      }
+
+      updates.push('verification_status = ?');
+      params.push('pending');
+      params.push(userId);
+
+      await db.query(`UPDATE teachers SET ${updates.join(', ')} WHERE user_id = ?`, params);
+
+      res.json({ message: 'Documents uploaded. Your profile will be reviewed shortly.' });
+    } catch (err) {
+      console.error('Upload documents error:', err);
+      res.status(500).json({ error: err.message || 'Could not upload documents.' });
+    }
+  }
+);
 
 // ---------- UPDATE TEACHER PROFILE (protected: must be logged-in teacher, own account) ----------
 // PUT /api/teachers/:userId/profile
@@ -137,6 +181,40 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error('Get teacher error:', err);
     res.status(500).json({ error: 'Could not fetch teacher profile.' });
+  }
+});
+
+// ---------- VIEW AN UPLOADED DOCUMENT (protected: the teacher themself, or an admin) ----------
+// GET /api/teachers/:userId/documents/:type   where type = id_proof | address_proof | certificate
+// These are identity documents — never served as plain static files.
+router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
+  try {
+    const { userId, type } = req.params;
+    const columnMap = {
+      id_proof: 'id_proof_path',
+      address_proof: 'address_proof_path',
+      certificate: 'certificate_path',
+    };
+    const column = columnMap[type];
+    if (!column) {
+      return res.status(400).json({ error: 'Unknown document type.' });
+    }
+
+    const isOwner = req.user.id === parseInt(userId, 10);
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'You are not allowed to view this document.' });
+    }
+
+    const [rows] = await db.query(`SELECT ${column} AS filename FROM teachers WHERE user_id = ?`, [userId]);
+    if (rows.length === 0 || !rows[0].filename) {
+      return res.status(404).json({ error: 'No document of this type has been uploaded.' });
+    }
+
+    res.sendFile(rows[0].filename, { root: require('path').join(__dirname, '..', 'uploads') });
+  } catch (err) {
+    console.error('View document error:', err);
+    res.status(500).json({ error: 'Could not load document.' });
   }
 });
 

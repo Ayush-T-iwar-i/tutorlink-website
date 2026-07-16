@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   google_id VARCHAR(255) UNIQUE,           -- Google account identifier, if signed up/in via Google
   role ENUM('student', 'teacher', 'admin') NOT NULL,
   profile_photo VARCHAR(255),
+  reset_token VARCHAR(255) NULL,
+  reset_token_expires TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -52,6 +54,9 @@ CREATE TABLE IF NOT EXISTS students (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   address VARCHAR(255),
+  area VARCHAR(150),
+  district VARCHAR(150),
+  pincode VARCHAR(10),
   city VARCHAR(100),
   latitude DECIMAL(10,7),
   longitude DECIMAL(10,7),

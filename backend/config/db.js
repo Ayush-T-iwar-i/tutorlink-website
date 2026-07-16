@@ -16,6 +16,7 @@ const pool = mysql.createPool({
 pool.getConnection((err, connection) => {
   if (err) {
     console.error('❌ Database connection failed:', err.message);
+    console.error('   Full error:', err);
     console.error('   Check your .env file (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)');
   } else {
     console.log('✅ Connected to MySQL database:', process.env.DB_NAME);

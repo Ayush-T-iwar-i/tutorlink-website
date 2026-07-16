@@ -136,7 +136,10 @@
       msgBox.textContent = 'Login successful! Redirecting...';
 
       setTimeout(() => {
-        window.location.href = data.user.role === 'teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+        window.location.href =
+          data.user.role === 'teacher' ? 'teacher-dashboard.html' :
+          data.user.role === 'admin' ? 'admin-dashboard.html' :
+          'student-dashboard.html';
       }, 600);
     } catch (err) {
       msgBox.className = 'msg-box error';

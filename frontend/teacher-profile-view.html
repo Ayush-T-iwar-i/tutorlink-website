@@ -27,6 +27,56 @@
   </div>
 </main>
 
+<!-- ================= Booking modal ================= -->
+<div class="modal-backdrop" id="bookingModalBackdrop">
+  <div class="modal modal-booking">
+    <div class="modal-header">
+      <div>
+        <h3>Book a demo class</h3>
+        <p>Pick a date and a time that works for you.</p>
+      </div>
+      <button class="modal-close" id="bookingModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="role-toggle" style="margin-bottom:18px;">
+        <label>
+          <input type="radio" name="bookingType" value="demo" checked>
+          <span>Free demo</span>
+        </label>
+        <label>
+          <input type="radio" name="bookingType" value="recurring">
+          <span>Recurring classes</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="bookingSubject">Subject</label>
+        <input type="text" id="bookingSubject" placeholder="e.g. Maths">
+      </div>
+      <div class="form-group">
+        <label for="bookingDate">Date</label>
+        <input type="date" id="bookingDate">
+      </div>
+      <div class="form-group">
+        <label>Time slot</label>
+        <div class="slot-grid" id="slotGrid"></div>
+      </div>
+      <div class="role-fields" id="recurringFields">
+        <div class="role-fields-inner">
+          <div class="field-section-label" style="margin-top:16px;">Which days each week?</div>
+          <div class="slot-grid" id="daysGrid" style="grid-template-columns:repeat(4,1fr);"></div>
+        </div>
+      </div>
+      <div id="bookingMsgBox" class="msg-box"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="bookingModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="bookingModalConfirm">Confirm booking</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script src="js/api.js"></script>
 <script>
   const session = requireLogin('student');
@@ -49,27 +99,27 @@
         <div class="profile-hero">
           <div class="avatar-lg">${initials}</div>
           <div>
-            <h1>${t.name}</h1>
-            <div class="qualification">${t.qualification || 'Qualification not specified'}</div>
-            <div class="location-line">📍 ${location}</div>
+            <h1>${escapeHtml(t.name)}</h1>
+            <div class="qualification">${escapeHtml(t.qualification) || 'Qualification not specified'}</div>
+            <div class="location-line">📍 ${escapeHtml(location)}</div>
             <div class="badge-row">
               <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0} reviews)</span>
             </div>
           </div>
           <div class="book-col">
             <div class="fee-big">₹${t.fee_per_hour || 0} <span style="font-size:13px; color:var(--ink-500); font-weight:500;">/ hour</span></div>
-            <button class="btn btn-primary btn-block" onclick="bookDemo()">Book free demo class</button>
+            <button class="btn btn-primary btn-block" onclick="openBookingModal()">Book free demo class</button>
           </div>
         </div>
 
         <div class="info-grid">
           <div class="info-tile">
             <div class="label">Subjects</div>
-            <div class="value">${t.subjects || 'Not listed'}</div>
+            <div class="value">${escapeHtml(t.subjects) || 'Not listed'}</div>
           </div>
           <div class="info-tile">
             <div class="label">Classes / grades</div>
-            <div class="value">${t.grades || 'Not listed'}</div>
+            <div class="value">${escapeHtml(t.grades) || 'Not listed'}</div>
           </div>
           <div class="info-tile">
             <div class="label">Experience</div>
@@ -77,33 +127,160 @@
           </div>
           <div class="info-tile">
             <div class="label">Languages</div>
-            <div class="value">${t.languages || 'Not listed'}</div>
+            <div class="value">${escapeHtml(t.languages) || 'Not listed'}</div>
           </div>
         </div>
 
         <div class="panel">
           <div class="panel-title">About</div>
-          <p style="font-size:14.5px; color:var(--ink-700);">${t.bio || 'This teacher has not added a bio yet.'}</p>
+          <p style="font-size:14.5px; color:var(--ink-700);">${escapeHtml(t.bio) || 'This teacher has not added a bio yet.'}</p>
+        </div>
+
+        <div class="panel" id="reviewsPanel">
+          <div class="panel-title">Reviews</div>
+          <div class="skeleton-card"><div class="skel-line w-60"></div><div class="skel-line w-40"></div></div>
         </div>
       `;
+      teacherSubjectsList = t.subjects || '';
+      loadReviews();
     } catch (err) {
       content.innerHTML = `<div class="empty-state">${err.message}</div>`;
     }
   }
 
-  async function bookDemo() {
+  async function loadReviews() {
+    const panel = document.getElementById('reviewsPanel');
+    try {
+      const reviews = await apiRequest(`/api/reviews/teacher/${teacherId}`);
+      if (reviews.length === 0) {
+        panel.innerHTML = '<div class="panel-title">Reviews</div><div class="empty-state">No reviews yet — be the first to book and review!</div>';
+        return;
+      }
+      panel.innerHTML = `
+        <div class="panel-title">Reviews (${reviews.length})</div>
+        <div class="fade-in">
+          ${reviews.map(r => `
+            <div class="request-row">
+              <div class="request-info">
+                <strong>${escapeHtml(r.student_name)}</strong>
+                <span class="badge badge-rating" style="margin-left:8px;">★ ${r.rating}</span>
+                ${r.comment ? `<div class="request-meta" style="color:var(--ink-700); font-family:var(--font-body); font-size:13.5px; margin-top:6px;">${escapeHtml(r.comment)}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+    } catch (err) {
+      panel.innerHTML = '<div class="panel-title">Reviews</div><div class="empty-state">Could not load reviews right now.</div>';
+    }
+  }
+
+  let teacherSubjectsList = '';
+  let selectedSlot = null;
+  let selectedDays = [];
+  const TIME_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+  const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  document.querySelectorAll('input[name="bookingType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      document.getElementById('recurringFields').classList.toggle('open', e.target.value === 'recurring');
+    });
+  });
+
+  function buildDaysGrid() {
+    const grid = document.getElementById('daysGrid');
+    grid.innerHTML = WEEK_DAYS.map(d => `<button type="button" class="slot-btn" data-day="${d}">${d}</button>`).join('');
+    grid.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        const day = btn.dataset.day;
+        if (selectedDays.includes(day)) selectedDays = selectedDays.filter(d => d !== day);
+        else selectedDays.push(day);
+      });
+    });
+  }
+
+  function openBookingModal() {
+    selectedSlot = null;
+    selectedDays = [];
+    document.querySelector('input[name="bookingType"][value="demo"]').checked = true;
+    document.getElementById('recurringFields').classList.remove('open');
+    document.getElementById('bookingSubject').value = teacherSubjectsList.split(',')[0]?.trim() || '';
+    const dateInput = document.getElementById('bookingDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    dateInput.value = today;
+
+    const grid = document.getElementById('slotGrid');
+    grid.innerHTML = TIME_SLOTS.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
+    grid.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSlot = btn.dataset.slot;
+      });
+    });
+    buildDaysGrid();
+
+    document.getElementById('bookingMsgBox').className = 'msg-box';
+    document.getElementById('bookingMsgBox').textContent = '';
+    document.getElementById('bookingModalBackdrop').classList.add('open');
+  }
+
+  function closeBookingModal() {
+    document.getElementById('bookingModalBackdrop').classList.remove('open');
+  }
+  document.getElementById('bookingModalClose').addEventListener('click', closeBookingModal);
+  document.getElementById('bookingModalCancel').addEventListener('click', closeBookingModal);
+
+  document.getElementById('bookingModalConfirm').addEventListener('click', async () => {
+    const msgBox = document.getElementById('bookingMsgBox');
+    const date = document.getElementById('bookingDate').value;
+    const subject = document.getElementById('bookingSubject').value.trim();
+    const type = document.querySelector('input[name="bookingType"]:checked').value;
+    const confirmBtn = document.getElementById('bookingModalConfirm');
+
+    if (!date || !selectedSlot || !subject) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please fill in the subject, date, and a time slot.';
+      return;
+    }
+    if (type === 'recurring' && selectedDays.length === 0) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please pick at least one day for recurring classes.';
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+
     try {
       await apiRequest('/api/bookings', 'POST', {
         teacher_id: teacherId,
-        type: 'demo',
-        fee: 0
+        type,
+        subject,
+        booking_date: date,
+        booking_time: selectedSlot,
+        days_per_week: type === 'recurring' ? selectedDays.join(',') : null,
+        fee: 0,
       });
-      alert('Demo class requested! The teacher will confirm shortly.');
-      window.location.href = 'student-dashboard.html';
+      closeBookingModal();
+      toast(type === 'recurring' ? 'Recurring class request sent!' : 'Demo class requested! The teacher will confirm shortly.');
+      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1200);
     } catch (err) {
-      alert('Could not book demo: ' + err.message);
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('btn-loading');
     }
-  }
+  });
 
   loadProfile();
 </script>

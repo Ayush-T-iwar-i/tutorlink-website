@@ -10,6 +10,11 @@ const teacherRoutes = require('./routes/teacher.routes');
 const studentRoutes = require('./routes/student.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const configRoutes = require('./routes/config.routes');
+const adminRoutes = require('./routes/admin.routes');
+const reviewRoutes = require('./routes/review.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const messageRoutes = require('./routes/message.routes');
+const favoriteRoutes = require('./routes/favorite.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +59,11 @@ app.use('/api/teachers', teacherRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 // ---------- Health check (used by hosting platforms to confirm the app is alive) ----------
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

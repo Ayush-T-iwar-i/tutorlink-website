@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { sendMail } = require('../config/email');
+const { createNotification } = require('./notification.routes');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
 // ---------- CREATE A BOOKING (protected: must be a logged-in student) ----------
@@ -31,6 +33,39 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
     );
 
     res.status(201).json({ message: 'Booking request sent.', booking_id: result.insertId });
+
+    // Notify the teacher — sent after responding so a slow/failed email
+    // never delays or breaks the booking itself.
+    try {
+      const [teacherRows] = await db.query(
+        `SELECT u.email, u.name FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
+        [teacher_id]
+      );
+      const [studentRows] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+      if (teacherRows.length > 0) {
+        await sendMail({
+          to: teacherRows[0].email,
+          subject: 'New booking request on TutorLink',
+          html: `
+            <p>Hi ${teacherRows[0].name},</p>
+            <p>${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}
+               on ${booking_date || 'a date to be confirmed'} at ${booking_time || 'a time to be confirmed'}.</p>
+            <p>Log in to your TutorLink dashboard to accept or decline.</p>
+          `,
+        });
+      }
+
+      const [teacherUserId] = await db.query('SELECT user_id FROM teachers WHERE id = ?', [teacher_id]);
+      if (teacherUserId.length > 0) {
+        await createNotification(
+          teacherUserId[0].user_id,
+          `${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}.`,
+          'teacher-dashboard.html'
+        );
+      }
+    } catch (emailErr) {
+      console.error('Booking notification email failed:', emailErr);
+    }
   } catch (err) {
     console.error('Create booking error:', err);
     res.status(500).json({ error: 'Could not create booking.' });
@@ -65,6 +100,36 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 
     await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
     res.json({ message: `Booking marked as ${status}.` });
+
+    try {
+      const [studentRows] = await db.query(
+        `SELECT u.email, u.name FROM bookings b
+         JOIN students s ON s.id = b.student_id
+         JOIN users u ON u.id = s.user_id
+         WHERE b.id = ?`,
+        [id]
+      );
+      if (studentRows.length > 0 && ['accepted', 'declined'].includes(status)) {
+        await sendMail({
+          to: studentRows[0].email,
+          subject: `Your TutorLink booking was ${status}`,
+          html: `<p>Hi ${studentRows[0].name},</p><p>Your class request has been <strong>${status}</strong> by the teacher.</p>`,
+        });
+        const [studentUserId] = await db.query(
+          `SELECT s.user_id FROM bookings b JOIN students s ON s.id = b.student_id WHERE b.id = ?`,
+          [id]
+        );
+        if (studentUserId.length > 0) {
+          await createNotification(
+            studentUserId[0].user_id,
+            `Your booking request was ${status}.`,
+            'student-dashboard.html'
+          );
+        }
+      }
+    } catch (emailErr) {
+      console.error('Booking status email failed:', emailErr);
+    }
   } catch (err) {
     console.error('Update booking status error:', err);
     res.status(500).json({ error: 'Could not update booking status.' });
@@ -76,7 +141,8 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 router.get('/student/me', verifyToken, requireRole('student'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT b.*, u.name AS teacher_name
+      `SELECT b.*, u.name AS teacher_name,
+              EXISTS(SELECT 1 FROM reviews r WHERE r.booking_id = b.id) AS reviewed
        FROM bookings b
        JOIN teachers t ON t.id = b.teacher_id
        JOIN users u ON u.id = t.user_id
@@ -110,6 +176,71 @@ router.get('/teacher/me', verifyToken, requireRole('teacher'), async (req, res) 
   } catch (err) {
     console.error('Get teacher bookings error:', err);
     res.status(500).json({ error: 'Could not fetch bookings.' });
+  }
+});
+
+// ---------- TEACHER: MARK A BOOKING AS PAID/UNPAID/REFUNDED ----------
+// PUT /api/bookings/:id/payment
+// body: { payment_status: "unpaid" | "paid" | "refunded" }
+router.put('/:id/payment', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_status } = req.body;
+    const allowed = ['unpaid', 'paid', 'refunded'];
+
+    if (!allowed.includes(payment_status)) {
+      return res.status(400).json({ error: `payment_status must be one of: ${allowed.join(', ')}` });
+    }
+
+    const [rows] = await db.query(
+      `SELECT b.id FROM bookings b
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE b.id = ? AND t.user_id = ?`,
+      [id, req.user.id]
+    );
+    if (rows.length === 0) {
+      return res.status(403).json({ error: 'You can only update your own booking requests.' });
+    }
+
+    await db.query('UPDATE bookings SET payment_status = ? WHERE id = ?', [payment_status, id]);
+    res.json({ message: `Payment marked as ${payment_status}.` });
+  } catch (err) {
+    console.error('Update payment status error:', err);
+    res.status(500).json({ error: 'Could not update payment status.' });
+  }
+});
+
+// ---------- TEACHER: EARNINGS SUMMARY ----------
+// GET /api/bookings/teacher/earnings
+router.get('/teacher/earnings', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const [[totals]] = await db.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN b.payment_status = 'paid' THEN b.fee ELSE 0 END), 0) AS total_earned,
+         COALESCE(SUM(CASE WHEN b.payment_status = 'paid' AND MONTH(b.booking_date) = MONTH(CURDATE()) AND YEAR(b.booking_date) = YEAR(CURDATE()) THEN b.fee ELSE 0 END), 0) AS this_month,
+         COALESCE(SUM(CASE WHEN b.status = 'completed' AND b.payment_status = 'unpaid' THEN b.fee ELSE 0 END), 0) AS pending_amount,
+         COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS completed_count
+       FROM bookings b
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE t.user_id = ?`,
+      [req.user.id]
+    );
+
+    const [recent] = await db.query(
+      `SELECT b.id, b.subject, b.fee, b.payment_status, b.booking_date, u.name AS student_name
+       FROM bookings b
+       JOIN students s ON s.id = b.student_id
+       JOIN users u ON u.id = s.user_id
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE t.user_id = ? AND b.status = 'completed'
+       ORDER BY b.booking_date DESC LIMIT 10`,
+      [req.user.id]
+    );
+
+    res.json({ ...totals, recent });
+  } catch (err) {
+    console.error('Get earnings error:', err);
+    res.status(500).json({ error: 'Could not fetch earnings.' });
   }
 });
 
