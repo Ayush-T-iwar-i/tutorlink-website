@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { sendMail } = require('../config/email');
+const { sendSms } = require('../config/sms');
 const { createNotification } = require('./notification.routes');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
@@ -38,7 +39,7 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
     // never delays or breaks the booking itself.
     try {
       const [teacherRows] = await db.query(
-        `SELECT u.email, u.name FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
+        `SELECT u.email, u.name, u.phone FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
         [teacher_id]
       );
       const [studentRows] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
@@ -63,6 +64,13 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
           'teacher-dashboard.html'
         );
       }
+
+      if (teacherRows.length > 0 && teacherRows[0].phone) {
+        await sendSms(
+          teacherRows[0].phone,
+          `TutorLink: ${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class. Log in to accept/decline.`
+        );
+      }
     } catch (emailErr) {
       console.error('Booking notification email failed:', emailErr);
     }
@@ -79,11 +87,14 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
 router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, fee } = req.body;
 
     const allowed = ['accepted', 'declined', 'completed', 'cancelled'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+    }
+    if (status === 'accepted' && (fee === undefined || fee === null || Number(fee) < 0)) {
+      return res.status(400).json({ error: 'Please set a fee (0 is fine for a free demo) when accepting.' });
     }
 
     // Confirm this booking actually belongs to the logged-in teacher before updating
@@ -98,12 +109,16 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
       return res.status(403).json({ error: 'You can only update your own booking requests.' });
     }
 
-    await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+    if (status === 'accepted') {
+      await db.query('UPDATE bookings SET status = ?, fee = ? WHERE id = ?', [status, fee, id]);
+    } else {
+      await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+    }
     res.json({ message: `Booking marked as ${status}.` });
 
     try {
       const [studentRows] = await db.query(
-        `SELECT u.email, u.name FROM bookings b
+        `SELECT u.email, u.name, u.phone FROM bookings b
          JOIN students s ON s.id = b.student_id
          JOIN users u ON u.id = s.user_id
          WHERE b.id = ?`,
@@ -115,6 +130,9 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
           subject: `Your TutorLink booking was ${status}`,
           html: `<p>Hi ${studentRows[0].name},</p><p>Your class request has been <strong>${status}</strong> by the teacher.</p>`,
         });
+        if (studentRows[0].phone) {
+          await sendSms(studentRows[0].phone, `TutorLink: Your class request was ${status} by the teacher.`);
+        }
         const [studentUserId] = await db.query(
           `SELECT s.user_id FROM bookings b JOIN students s ON s.id = b.student_id WHERE b.id = ?`,
           [id]
@@ -141,7 +159,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 router.get('/student/me', verifyToken, requireRole('student'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT b.*, u.name AS teacher_name,
+      `SELECT b.*, u.name AS teacher_name, u.id AS teacher_user_id,
               EXISTS(SELECT 1 FROM reviews r WHERE r.booking_id = b.id) AS reviewed
        FROM bookings b
        JOIN teachers t ON t.id = b.teacher_id
@@ -163,7 +181,7 @@ router.get('/student/me', verifyToken, requireRole('student'), async (req, res) 
 router.get('/teacher/me', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT b.*, u.name AS student_name
+      `SELECT b.*, u.name AS student_name, u.id AS student_user_id
        FROM bookings b
        JOIN students s ON s.id = b.student_id
        JOIN users u ON u.id = s.user_id

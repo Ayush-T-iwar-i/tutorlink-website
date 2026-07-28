@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — TutorLink</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -57,6 +58,32 @@
     <div class="panel">
       <div class="panel-title">Platform overview</div>
       <div id="statsArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-60"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" style="margin-bottom:0;">Signups — last 14 days</div>
+      </div>
+      <div style="height:220px; margin-top:14px;">
+        <canvas id="signupsChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Export data</div>
+      <p class="panel-hint">Download a CSV snapshot for spreadsheets or record-keeping.</p>
+      <div style="display:flex; gap:10px;">
+        <a class="btn btn-outline btn-sm" href="#" id="exportStudentsBtn">⬇ Export students (CSV)</a>
+        <a class="btn btn-outline btn-sm" href="#" id="exportTeachersBtn">⬇ Export teachers (CSV)</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Open reports</div>
+      <p class="panel-hint">Complaints filed by students/teachers about a booking or person.</p>
+      <div id="reportsArea">
         <div class="skeleton-card"><div class="skel-line w-60"></div></div>
       </div>
     </div>
@@ -169,6 +196,102 @@
     }
   }
   loadStats();
+
+  async function loadReports() {
+    const area = document.getElementById('reportsArea');
+    try {
+      const reports = await apiRequest('/api/admin/reports?status=open');
+      if (reports.length === 0) {
+        area.innerHTML = '<div class="empty-state">No open reports right now.</div>';
+        return;
+      }
+      area.innerHTML = `<div class="fade-in">${reports.map(r => `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${escapeHtml(r.reporter_name)}</strong> reported <strong>${escapeHtml(r.reported_name)}</strong>
+            <div class="request-meta">${r.reason.replace(/_/g,' ')}${r.booking_id ? ' · booking #' + r.booking_id : ''}</div>
+            ${r.details ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">${escapeHtml(r.details)}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="updateReport(${r.id}, 'reviewed', this)">Mark reviewed</button>
+            <button class="btn btn-primary btn-sm" onclick="updateReport(${r.id}, 'resolved', this)">Resolve</button>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  async function updateReport(reportId, status, btn) {
+    const row = btn.closest('.request-row');
+    row.style.opacity = '0.5';
+    try {
+      await apiRequest(`/api/admin/reports/${reportId}`, 'PUT', { status });
+      toast(`Report marked ${status}.`);
+      loadReports();
+    } catch (err) {
+      row.style.opacity = '1';
+      toast(err.message, true);
+    }
+  }
+  loadReports();
+
+  async function loadSignupChart() {
+    try {
+      const data = await apiRequest('/api/admin/stats/signups-by-day');
+      new Chart(document.getElementById('signupsChart'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => new Date(d.day).toLocaleDateString([], { month: 'short', day: 'numeric' })),
+          datasets: [{
+            label: 'New signups',
+            data: data.map(d => d.count),
+            borderColor: '#1F6E4A',
+            backgroundColor: 'rgba(31,110,74,0.12)',
+            fill: true,
+            tension: 0.3,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+      });
+    } catch (err) {
+      console.error('Could not load signup chart', err);
+    }
+  }
+  loadSignupChart();
+
+  // Downloads need the auth header, so a plain <a href> won't work —
+  // fetch the CSV as a blob and trigger the download manually.
+  async function downloadCsv(path, filename) {
+    try {
+      const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (!res.ok) throw new Error('Export failed.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  document.getElementById('exportStudentsBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    downloadCsv('/api/admin/export/students', 'students.csv');
+  });
+  document.getElementById('exportTeachersBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    downloadCsv('/api/admin/export/teachers', 'teachers.csv');
+  });
 </script>
 
 </body>

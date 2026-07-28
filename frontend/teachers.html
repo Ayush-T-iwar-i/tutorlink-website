@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Teachers — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="nav-links">
+      <a href="login.html">Log in</a>
+      <a href="signup.html" class="btn btn-primary btn-sm">Sign up</a>
+    </div>
+  </div>
+</nav>
+
+<main class="dashboard-body">
+  <div class="container">
+
+    <div class="eyebrow">Browse teachers</div>
+    <h1 class="page-title">Find the right teacher for you</h1>
+    <p class="page-subtitle">Explore verified teachers on TutorLink. Sign up to book a demo class or message a teacher directly.</p>
+
+    <div class="filter-bar">
+      <div class="form-group">
+        <label for="subjectFilter">Subject</label>
+        <input type="text" id="subjectFilter" placeholder="e.g. Maths">
+      </div>
+      <div class="form-group">
+        <label for="cityFilter">City</label>
+        <input type="text" id="cityFilter" placeholder="e.g. Meerut">
+      </div>
+      <div class="form-group">
+        <label for="sortSelect">Sort by</label>
+        <select id="sortSelect">
+          <option value="rating">Highest rated</option>
+          <option value="fee_low">Fee: Low to high</option>
+          <option value="fee_high">Fee: High to low</option>
+          <option value="experience">Most experienced</option>
+        </select>
+      </div>
+      <button id="searchBtn" class="btn btn-accent">Search</button>
+    </div>
+
+    <div id="resultsArea">
+      <div class="teacher-grid"></div>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:10px; margin-top:26px;" id="paginationArea"></div>
+
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script>
+  let currentPage = 1;
+
+  function skeletons(n) {
+    return `<div class="teacher-grid">${Array(n).fill(`
+      <div class="skeleton-card">
+        <div class="skel-avatar"></div>
+        <div class="skel-line w-60"></div>
+        <div class="skel-line w-40"></div>
+      </div>`).join('')}</div>`;
+  }
+
+  async function loadTeachers(page = 1) {
+    currentPage = page;
+    const resultsArea = document.getElementById('resultsArea');
+    resultsArea.innerHTML = skeletons(6);
+
+    const subject = document.getElementById('subjectFilter').value.trim();
+    const city = document.getElementById('cityFilter').value.trim();
+    const sort = document.getElementById('sortSelect').value;
+
+    try {
+      let url = `/api/teachers/browse?sort=${sort}&page=${page}&limit=12`;
+      if (subject) url += `&subject=${encodeURIComponent(subject)}`;
+      if (city) url += `&city=${encodeURIComponent(city)}`;
+
+      const data = await apiRequest(url);
+
+      if (data.teachers.length === 0) {
+        resultsArea.innerHTML = '<div class="empty-state">No teachers found. Try a different subject or city.</div>';
+        document.getElementById('paginationArea').innerHTML = '';
+        return;
+      }
+
+      resultsArea.innerHTML = `<div class="teacher-grid fade-in">${data.teachers.map(renderCard).join('')}</div>`;
+      renderPagination(data.page, data.total_pages);
+    } catch (err) {
+      resultsArea.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  function renderCard(t) {
+    const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `
+      <div class="teacher-card" style="cursor:pointer;" onclick="viewProfile(${t.id})">
+        <div class="teacher-card-top">
+          <div class="avatar">${initials}</div>
+          <div>
+            <h3>${escapeHtml(t.name)}</h3>
+            <div class="meta">${escapeHtml(t.subjects) || 'Subjects not listed'}${t.city ? ' · ' + escapeHtml(t.city) : ''}</div>
+          </div>
+        </div>
+        <div class="badge-row">
+          <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0})</span>
+          ${t.experience_years ? `<span class="badge badge-distance">${t.experience_years} yrs exp.</span>` : ''}
+        </div>
+        <div class="fee">₹${t.fee_per_hour || 0} <span>/ hour</span></div>
+        <button class="btn btn-primary btn-sm btn-block">View profile</button>
+      </div>
+    `;
+  }
+
+  function viewProfile(teacherId) {
+    // Booking/profile pages require an account — signed-out visitors are
+    // sent to sign up first, then land back here after logging in.
+    if (!getSession()) {
+      window.location.href = `signup.html?role=student`;
+      return;
+    }
+    window.location.href = `teacher-profile-view.html?id=${teacherId}`;
+  }
+
+  function renderPagination(page, totalPages) {
+    const area = document.getElementById('paginationArea');
+    if (totalPages <= 1) { area.innerHTML = ''; return; }
+    let html = '';
+    if (page > 1) html += `<button class="btn btn-outline btn-sm" onclick="loadTeachers(${page - 1})">← Prev</button>`;
+    html += `<span class="status-pill" style="align-self:center;">Page ${page} of ${totalPages}</span>`;
+    if (page < totalPages) html += `<button class="btn btn-outline btn-sm" onclick="loadTeachers(${page + 1})">Next →</button>`;
+    area.innerHTML = html;
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', () => loadTeachers(1));
+  ['subjectFilter', 'cityFilter'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') loadTeachers(1); });
+  });
+  document.getElementById('sortSelect').addEventListener('change', () => loadTeachers(1));
+
+  loadTeachers(1);
+</script>
+
+</body>
+</html>

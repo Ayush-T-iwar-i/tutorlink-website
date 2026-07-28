@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account Settings — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="dashboard-header">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="header-actions">
+      <a href="#" id="backLink" class="btn btn-outline btn-sm">← Back to dashboard</a>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-body">
+  <div class="container form-page">
+
+    <div class="dash-hero" style="margin-bottom:26px;">
+      <div class="eyebrow">Account settings</div>
+      <h1 style="font-size:24px;">Manage your account</h1>
+      <p>Update your password and view your account details.</p>
+    </div>
+
+    <div class="form-section">
+      <h3>Account details</h3>
+      <div class="info-grid" style="margin-bottom:0;">
+        <div class="info-tile"><div class="label">Name</div><div class="value" id="accName">—</div></div>
+        <div class="info-tile"><div class="label">Email</div><div class="value" id="accEmail">—</div></div>
+        <div class="info-tile"><div class="label">Role</div><div class="value" id="accRole">—</div></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Change password</h3>
+      <p class="section-hint">Choose a new password you haven't used before.</p>
+
+      <div id="msgBox" class="msg-box"></div>
+
+      <form id="passwordForm" novalidate>
+        <div class="form-group password-field">
+          <label for="currentPassword">Current password</label>
+          <input type="password" id="currentPassword" required autocomplete="current-password">
+          <button type="button" class="password-toggle" data-target="currentPassword" aria-label="Show password">👁️</button>
+        </div>
+        <div class="form-group password-field">
+          <label for="newPassword">New password</label>
+          <input type="password" id="newPassword" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+          <button type="button" class="password-toggle" data-target="newPassword" aria-label="Show password">👁️</button>
+        </div>
+        <div class="strength-meter" id="strengthMeter" style="display:none;">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <span class="strength-label" id="strengthLabel"></span>
+        <div class="form-group">
+          <label for="confirmNewPassword">Confirm new password</label>
+          <input type="password" id="confirmNewPassword" required minlength="6" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+          <span class="btn-label">Update password</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="form-section">
+      <h3>Log out</h3>
+      <p class="section-hint">Sign out of TutorLink on this device.</p>
+      <button class="btn btn-outline btn-block" id="logoutBtn">Log out</button>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script>
+  const session = requireLogin();
+  const backLink = document.getElementById('backLink');
+  const dashboardByRole = {
+    student: 'student-dashboard.html',
+    teacher: 'teacher-dashboard.html',
+    admin: 'admin-dashboard.html',
+  };
+  backLink.href = dashboardByRole[session.user.role] || 'index.html';
+
+  document.getElementById('accName').textContent = session.user.name;
+  document.getElementById('accEmail').textContent = session.user.email || '—';
+  document.getElementById('accRole').textContent = session.user.role.charAt(0).toUpperCase() + session.user.role.slice(1);
+
+  function toast(message, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+
+  document.querySelectorAll('.password-toggle').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const input = document.getElementById(this.dataset.target);
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      this.textContent = isHidden ? '🙈' : '👁️';
+    });
+  });
+
+  const newPasswordInput = document.getElementById('newPassword');
+  const strengthMeter = document.getElementById('strengthMeter');
+  const strengthLabel = document.getElementById('strengthLabel');
+  newPasswordInput.addEventListener('input', () => {
+    const val = newPasswordInput.value;
+    if (!val) { strengthMeter.style.display = 'none'; strengthLabel.textContent = ''; return; }
+    strengthMeter.style.display = 'flex';
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+    if (val.length >= 10 && /[^A-Za-z0-9]/.test(val)) score++;
+    strengthMeter.className = 'strength-meter';
+    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Weak'; }
+    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good'; }
+    else { strengthMeter.classList.add('strong'); strengthLabel.textContent = 'Strong'; }
+  });
+
+  document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msgBox = document.getElementById('msgBox');
+    msgBox.className = 'msg-box';
+
+    const current = document.getElementById('currentPassword').value;
+    const next = newPasswordInput.value;
+    const confirm = document.getElementById('confirmNewPassword').value;
+
+    if (next !== confirm) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = "New passwords don't match.";
+      return;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.classList.add('btn-loading');
+
+    try {
+      await apiRequest('/api/auth/change-password', 'PUT', {
+        current_password: current,
+        new_password: next,
+      });
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = 'Password updated successfully.';
+      document.getElementById('passwordForm').reset();
+      strengthMeter.style.display = 'none';
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('btn-loading');
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearSession();
+    window.location.href = 'login.html';
+  });
+</script>
+
+</body>
+</html>

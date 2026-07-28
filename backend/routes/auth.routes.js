@@ -114,9 +114,36 @@ router.post('/login', [
     }
 
     const user = rows[0];
+
+    // Locked out? Tell them how much longer, without revealing anything else.
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const minutesLeft = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
+      return res.status(423).json({ error: `Too many failed attempts. Please try again in ${minutesLeft} minute(s).` });
+    }
+
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'This account signed up with Google. Please use the "Continue with Google" button, or set a password via "Forgot password".' });
+    }
+
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
+      const attempts = (user.failed_login_attempts || 0) + 1;
+      const MAX_ATTEMPTS = 5;
+      const LOCK_MINUTES = 15;
+
+      if (attempts >= MAX_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
+        await db.query('UPDATE users SET failed_login_attempts = ?, locked_until = ? WHERE id = ?', [attempts, lockedUntil, user.id]);
+        return res.status(423).json({ error: `Too many failed attempts. Your account is locked for ${LOCK_MINUTES} minutes.` });
+      }
+
+      await db.query('UPDATE users SET failed_login_attempts = ? WHERE id = ?', [attempts, user.id]);
       return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // Successful login — reset the counter
+    if (user.failed_login_attempts > 0 || user.locked_until) {
+      await db.query('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?', [user.id]);
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -206,6 +233,46 @@ router.post('/reset-password', async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// ---------- CHANGE PASSWORD (logged in, protected) ----------
+// PUT /api/auth/change-password
+// body: { current_password, new_password }
+router.put('/change-password', verifyToken, [
+  body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ error: errors.array()[0].msg });
+  }
+
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password) {
+      return res.status(400).json({ error: 'Please enter your current password.' });
+    }
+
+    const [rows] = await db.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Account not found.' });
+
+    // Google-only accounts have no password_hash yet — guide them instead of a confusing failure
+    if (!rows[0].password_hash) {
+      return res.status(400).json({ error: 'This account signed up with Google and has no password set yet. Use "Forgot password" to set one.' });
+    }
+
+    const matches = await bcrypt.compare(current_password, rows[0].password_hash);
+    if (!matches) {
+      return res.status(401).json({ error: 'Your current password is incorrect.' });
+    }
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    await db.query('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id]);
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Could not change password.' });
   }
 });
 

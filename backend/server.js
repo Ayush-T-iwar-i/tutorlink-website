@@ -15,6 +15,8 @@ const reviewRoutes = require('./routes/review.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const messageRoutes = require('./routes/message.routes');
 const favoriteRoutes = require('./routes/favorite.routes');
+const paymentRoutes = require('./routes/payment.routes');
+const reportRoutes = require('./routes/report.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,6 +66,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/reports', reportRoutes);
 
 // ---------- Health check (used by hosting platforms to confirm the app is alive) ----------
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

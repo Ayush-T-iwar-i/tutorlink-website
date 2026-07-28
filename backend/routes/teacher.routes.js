@@ -54,14 +54,14 @@ router.post(
 router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city } = req.body;
+    const { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, available_slots } = req.body;
 
     await db.query(
       `UPDATE teachers SET
         qualification = ?, subjects = ?, grades = ?, experience_years = ?,
-        fee_per_hour = ?, languages = ?, bio = ?, address = ?, city = ?
+        fee_per_hour = ?, languages = ?, bio = ?, address = ?, city = ?, available_slots = ?
        WHERE user_id = ?`,
-      [qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, userId]
+      [qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, available_slots || null, userId]
     );
 
     res.json({ message: 'Profile updated successfully.' });
@@ -94,6 +94,57 @@ router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('teache
 
 // ---------- SEARCH NEARBY TEACHERS (public — no login needed to browse) ----------
 // GET /api/teachers/nearby?lat=...&lng=...&radius=5&subject=Maths
+// ---------- PUBLIC TEACHER DIRECTORY (no login, no location required) ----------
+// GET /api/teachers/browse?subject=&city=&sort=rating|fee_low|fee_high|experience&page=1&limit=12
+router.get('/browse', async (req, res) => {
+  try {
+    const { subject, city, sort = 'rating', page = 1, limit = 12 } = req.query;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 12));
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions = [`t.verification_status = 'approved'`];
+    const params = [];
+    if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject}%`); }
+    if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city}%`); }
+    const whereClause = conditions.join(' AND ');
+
+    const sortMap = {
+      rating: 't.rating_avg DESC',
+      fee_low: 't.fee_per_hour ASC',
+      fee_high: 't.fee_per_hour DESC',
+      experience: 't.experience_years DESC',
+    };
+    const orderBy = sortMap[sort] || sortMap.rating;
+
+    const [rows] = await db.query(
+      `SELECT t.id, u.name, t.subjects, t.grades, t.qualification, t.experience_years,
+              t.fee_per_hour, t.rating_avg, t.total_reviews, t.city
+       FROM teachers t JOIN users u ON u.id = t.user_id
+       WHERE ${whereClause}
+       ORDER BY ${orderBy}
+       LIMIT ? OFFSET ?`,
+      [...params, limitNum, offset]
+    );
+
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) AS total FROM teachers t WHERE ${whereClause}`,
+      params
+    );
+
+    res.json({
+      teachers: rows,
+      page: pageNum,
+      limit: limitNum,
+      total,
+      total_pages: Math.ceil(total / limitNum),
+    });
+  } catch (err) {
+    console.error('Browse teachers error:', err);
+    res.status(500).json({ error: 'Could not fetch teachers.' });
+  }
+});
+
 router.get('/nearby', async (req, res) => {
   try {
     const { lat, lng, radius, subject } = req.query;
@@ -166,7 +217,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const [rows] = await db.query(
       `SELECT t.id, t.qualification, t.subjects, t.grades, t.experience_years,
-              t.fee_per_hour, t.languages, t.bio, t.address, t.city,
+              t.fee_per_hour, t.languages, t.bio, t.address, t.city, t.available_slots,
               t.rating_avg, t.total_reviews, u.name, u.profile_photo
        FROM teachers t JOIN users u ON u.id = t.user_id
        WHERE t.id = ? AND t.verification_status = 'approved'`,

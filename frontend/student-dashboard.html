@@ -32,6 +32,7 @@
         <span id="welcomeText"></span>
       </a>
       <a href="student-complete-profile.html" class="btn btn-outline btn-sm">👤 My profile</a>
+      <a href="account-settings.html" class="btn btn-outline btn-sm">⚙️ Settings</a>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
@@ -271,6 +272,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
 <script>
@@ -893,8 +895,11 @@
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="status-tag ${status}">${status}</span>
+          ${status === 'accepted' && b.payment_status === 'unpaid' && Number(b.fee) > 0 ? `
+            <button class="btn btn-accent btn-sm" onclick="payNow(${b.id}, ${b.fee})">💳 Pay ₹${b.fee}</button>` : ''}
           ${['accepted','completed'].includes(status) ? `
-            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.teacher_name)}')">💬 Chat</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.teacher_name)}')">💬 Chat</button>
+            <button class="btn btn-outline btn-sm" onclick="openReportModal(${b.teacher_user_id}, '${escapeHtml(b.teacher_name)}', ${b.id})" title="Report an issue">🚩</button>` : ''}
           ${status === 'completed' && !b.reviewed ? `
             <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}')">⭐ Leave a review</button>` : ''}
         </div>
@@ -902,6 +907,41 @@
     `;
   }
   loadBookings();
+
+  async function payNow(bookingId, fee) {
+    try {
+      const order = await apiRequest('/api/payments/create-order', 'POST', { booking_id: bookingId });
+
+      const rzp = new Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.order_id,
+        name: 'TutorLink',
+        description: 'Class payment',
+        handler: async function (response) {
+          try {
+            await apiRequest('/api/payments/verify', 'POST', {
+              booking_id: bookingId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast('Payment successful!');
+            loadBookings();
+          } catch (err) {
+            toast(err.message, true);
+          }
+        },
+        prefill: { name: session.user.name, email: session.user.email || '' },
+        theme: { color: '#1F6E4A' },
+      });
+      rzp.on('payment.failed', () => toast('Payment failed or was cancelled.', true));
+      rzp.open();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
 
   // =====================================================
   // Review modal

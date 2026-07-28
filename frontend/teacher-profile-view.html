@@ -142,6 +142,8 @@
         </div>
       `;
       teacherSubjectsList = t.subjects || '';
+      teacherSlots = (t.available_slots || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (teacherSlots.length === 0) teacherSlots = DEFAULT_SLOTS;
       loadReviews();
     } catch (err) {
       content.innerHTML = `<div class="empty-state">${err.message}</div>`;
@@ -177,7 +179,8 @@
   let teacherSubjectsList = '';
   let selectedSlot = null;
   let selectedDays = [];
-  const TIME_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+  const DEFAULT_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+  let teacherSlots = DEFAULT_SLOTS;
   const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
   function toast(message, isError) {
@@ -218,7 +221,7 @@
     dateInput.value = today;
 
     const grid = document.getElementById('slotGrid');
-    grid.innerHTML = TIME_SLOTS.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
+    grid.innerHTML = teacherSlots.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
     grid.querySelectorAll('.slot-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));

@@ -31,6 +31,7 @@
         <span id="welcomeText"></span>
       </a>
       <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">👤 My profile</a>
+      <a href="account-settings.html" class="btn btn-outline btn-sm">⚙️ Settings</a>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
@@ -128,6 +129,30 @@
 
   </div>
 </main>
+
+<!-- ================= Accept-with-fee modal ================= -->
+<div class="modal-backdrop" id="acceptFeeModalBackdrop">
+  <div class="modal modal-booking">
+    <div class="modal-header">
+      <div>
+        <h3>Set your fee</h3>
+        <p>This is what the student will be asked to pay for this class.</p>
+      </div>
+      <button class="modal-close" id="acceptFeeModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="acceptFeeInput">Fee (₹) — enter 0 for a free demo</label>
+        <input type="number" id="acceptFeeInput" min="0" placeholder="e.g. 400">
+      </div>
+      <div id="acceptFeeMsgBox" class="msg-box"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="acceptFeeModalCancel">Cancel</button>
+      <button class="btn btn-primary" id="acceptFeeModalConfirm">Accept booking</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -287,9 +312,10 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="status-tag ${b.status}">${b.status}</span>
             ${['accepted','completed'].includes(b.status) ? `
-              <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>` : ''}
+              <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>
+              <button class="btn btn-outline btn-sm" onclick="openReportModal(${b.student_user_id}, '${escapeHtml(b.student_name)}', ${b.id})" title="Report an issue">🚩</button>` : ''}
             ${b.status === 'requested' ? `
-              <button class="btn btn-primary btn-sm" onclick="respondToBooking(${b.id}, 'accepted', this)">Accept</button>
+              <button class="btn btn-primary btn-sm" onclick="openAcceptFeeModal(${b.id}, this)">Accept</button>
               <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'declined', this)">Decline</button>` : ''}
             ${b.status === 'accepted' ? `
               <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'completed', this)">Mark completed</button>` : ''}
@@ -344,6 +370,49 @@
       </div>
     `).join('');
   }
+
+  let acceptBookingId = null;
+  let acceptBtnRef = null;
+
+  function openAcceptFeeModal(bookingId, btn) {
+    acceptBookingId = bookingId;
+    acceptBtnRef = btn;
+    document.getElementById('acceptFeeInput').value = '';
+    document.getElementById('acceptFeeMsgBox').className = 'msg-box';
+    document.getElementById('acceptFeeMsgBox').textContent = '';
+    document.getElementById('acceptFeeModalBackdrop').classList.add('open');
+  }
+
+  function closeAcceptFeeModal() {
+    document.getElementById('acceptFeeModalBackdrop').classList.remove('open');
+  }
+  document.getElementById('acceptFeeModalClose').addEventListener('click', closeAcceptFeeModal);
+  document.getElementById('acceptFeeModalCancel').addEventListener('click', closeAcceptFeeModal);
+
+  document.getElementById('acceptFeeModalConfirm').addEventListener('click', async () => {
+    const msgBox = document.getElementById('acceptFeeMsgBox');
+    const fee = document.getElementById('acceptFeeInput').value;
+    if (fee === '' || Number(fee) < 0) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please enter a fee of 0 or more.';
+      return;
+    }
+    const confirmBtn = document.getElementById('acceptFeeModalConfirm');
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('btn-loading');
+    try {
+      await apiRequest(`/api/bookings/${acceptBookingId}/status`, 'PUT', { status: 'accepted', fee: Number(fee) });
+      closeAcceptFeeModal();
+      toast('Booking accepted');
+      loadBookings();
+    } catch (err) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message;
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('btn-loading');
+    }
+  });
 
   async function respondToBooking(bookingId, status, btn) {
     const row = btn.closest('.request-row');

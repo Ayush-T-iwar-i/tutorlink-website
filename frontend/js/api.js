@@ -245,6 +245,95 @@ async function sendChatMessage() {
   }
 }
  
+/* ---------- Report modal (shared) ----------
+   Call openReportModal(reportedUserId, reportedName, bookingId) */
+let _reportUserId = null;
+let _reportBookingId = null;
+
+function ensureReportModalExists() {
+  if (document.getElementById('reportModalBackdrop')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal-backdrop" id="reportModalBackdrop">
+      <div class="modal modal-booking">
+        <div class="modal-header">
+          <div>
+            <h3 id="reportModalTitle">Report an issue</h3>
+            <p>Our team reviews every report. This won't notify the other person.</p>
+          </div>
+          <button class="modal-close" id="reportModalClose" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="reportReason">What's the issue?</label>
+            <select id="reportReason">
+              <option value="no_show">They didn't show up</option>
+              <option value="inappropriate_behaviour">Inappropriate behaviour</option>
+              <option value="payment_issue">Payment issue</option>
+              <option value="fake_profile">Fake or misleading profile</option>
+              <option value="other">Something else</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportDetails">Details</label>
+            <textarea id="reportDetails" rows="4" placeholder="Please describe what happened"></textarea>
+          </div>
+          <div id="reportMsgBox" class="msg-box"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline btn-sm" id="reportModalCancel">Cancel</button>
+          <button class="btn btn-primary" id="reportModalConfirm">Submit report</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(div.firstElementChild);
+
+  document.getElementById('reportModalClose').addEventListener('click', closeReportModal);
+  document.getElementById('reportModalCancel').addEventListener('click', closeReportModal);
+  document.getElementById('reportModalConfirm').addEventListener('click', submitReport);
+}
+
+function openReportModal(reportedUserId, reportedName, bookingId) {
+  ensureReportModalExists();
+  _reportUserId = reportedUserId;
+  _reportBookingId = bookingId || null;
+  document.getElementById('reportModalTitle').textContent = `Report ${reportedName}`;
+  document.getElementById('reportDetails').value = '';
+  document.getElementById('reportMsgBox').className = 'msg-box';
+  document.getElementById('reportModalBackdrop').classList.add('open');
+}
+
+function closeReportModal() {
+  const backdrop = document.getElementById('reportModalBackdrop');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+async function submitReport() {
+  const msgBox = document.getElementById('reportMsgBox');
+  const confirmBtn = document.getElementById('reportModalConfirm');
+  const reason = document.getElementById('reportReason').value;
+  const details = document.getElementById('reportDetails').value.trim();
+
+  confirmBtn.disabled = true;
+  confirmBtn.classList.add('btn-loading');
+  try {
+    await apiRequest('/api/reports', 'POST', {
+      reported_user_id: _reportUserId,
+      booking_id: _reportBookingId,
+      reason,
+      details,
+    });
+    closeReportModal();
+    if (typeof toast === 'function') toast('Report submitted — thank you.');
+  } catch (err) {
+    msgBox.className = 'msg-box error';
+    msgBox.textContent = err.message;
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.classList.remove('btn-loading');
+  }
+}
+ 
  
  
  

@@ -75,6 +75,12 @@
           <label for="bio">About you</label>
           <textarea id="bio" rows="4" placeholder="Tell students about your teaching style and experience"></textarea>
         </div>
+
+        <div class="form-group">
+          <label>Time slots you're available for classes</label>
+          <p class="section-hint" style="margin-bottom:10px;">Students will only be able to pick from these when booking you.</p>
+          <div class="slot-grid" id="slotsGrid" style="grid-template-columns:repeat(3,1fr);"></div>
+        </div>
       </div>
 
       <div class="form-section">
@@ -219,6 +225,23 @@
     document.getElementById(id).addEventListener('input', updateProgress);
   });
 
+  const ALL_SLOTS = ['9:00 AM','10:00 AM','11:00 AM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM'];
+  let selectedSlots = new Set();
+
+  function buildSlotsGrid() {
+    const grid = document.getElementById('slotsGrid');
+    grid.innerHTML = ALL_SLOTS.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
+    grid.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.classList.toggle('selected', selectedSlots.has(btn.dataset.slot));
+      btn.addEventListener('click', () => {
+        const s = btn.dataset.slot;
+        if (selectedSlots.has(s)) selectedSlots.delete(s); else selectedSlots.add(s);
+        btn.classList.toggle('selected');
+        updateProgress();
+      });
+    });
+  }
+
   async function loadExisting() {
     try {
       const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
@@ -229,6 +252,8 @@
       document.getElementById('fee').value = t.fee_per_hour || '';
       document.getElementById('languages').value = t.languages || '';
       document.getElementById('bio').value = t.bio || '';
+      selectedSlots = new Set((t.available_slots || '').split(',').map(s => s.trim()).filter(Boolean));
+      buildSlotsGrid();
       document.getElementById('address').value = t.address || '';
       document.getElementById('city').value = t.city || '';
       document.getElementById('radius').value = t.travel_radius_km || 5;
@@ -239,7 +264,7 @@
         currentAddress = { area: t.address || 'Location set', district: t.city || '—', pincode: '------' };
         renderLocation();
       }
-    } catch (e) { /* new profile, nothing to pre-fill */ }
+    } catch (e) { /* new profile, nothing to pre-fill */ buildSlotsGrid(); }
     updateProgress();
   }
   loadExisting();
@@ -567,6 +592,7 @@
         fee_per_hour: document.getElementById('fee').value || 0,
         languages: document.getElementById('languages').value.trim(),
         bio: document.getElementById('bio').value.trim(),
+        available_slots: Array.from(selectedSlots).join(','),
         address: document.getElementById('address').value.trim(),
         city: document.getElementById('city').value.trim()
       });
