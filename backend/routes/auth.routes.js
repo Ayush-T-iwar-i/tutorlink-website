@@ -7,6 +7,7 @@ const { OAuth2Client } = require('google-auth-library');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/db');
 const { sendMail } = require('../config/email');
+const emailTemplates = require('../config/email-templates');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -185,16 +186,8 @@ router.post('/forgot-password', async (req, res) => {
 
       const resetLink = `${process.env.FRONTEND_URL || ''}/reset-password.html?token=${resetToken}`;
 
-      await sendMail({
-        to: email,
-        subject: 'Reset your TutorLink password',
-        html: `
-          <p>Hi,</p>
-          <p>We got a request to reset your TutorLink password. This link expires in 1 hour:</p>
-          <p><a href="${resetLink}">${resetLink}</a></p>
-          <p>If you didn't request this, you can safely ignore this email.</p>
-        `,
-      });
+      const { subject, html } = emailTemplates.passwordReset(resetLink);
+      await sendMail({ to: email, subject, html });
     }
 
     res.json({ message: "If an account exists for that email, we've sent a reset link." });

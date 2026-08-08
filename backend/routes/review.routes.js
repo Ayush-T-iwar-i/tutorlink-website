@@ -76,7 +76,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
     const [rows] = await db.query(
-      `SELECT r.id, r.rating, r.comment, r.created_at,
+      `SELECT r.id, r.rating, r.comment, r.created_at, r.teacher_reply, r.teacher_reply_at, r.edited_at,
               u.name AS student_name
        FROM reviews r
        JOIN bookings b ON b.id = r.booking_id
@@ -99,6 +99,113 @@ router.get('/teacher/:teacherId', async (req, res) => {
   } catch (err) {
     console.error('Get teacher reviews error:', err);
     res.status(500).json({ error: 'Could not fetch reviews.' });
+  }
+});
+
+// ---------- STUDENT: EDIT THEIR OWN REVIEW (within 24 hours of posting) ----------
+// PUT /api/reviews/:id
+// body: { rating, comment }
+router.put('/:id', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    if (rating && (rating < 1 || rating > 5)) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    }
+
+    const [rows] = await db.query(
+      `SELECT r.id, r.created_at, b.teacher_id
+       FROM reviews r
+       JOIN bookings b ON b.id = r.booking_id
+       JOIN students s ON s.id = b.student_id
+       WHERE r.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(403).json({ error: 'This is not your review.' });
+
+    const hoursSincePosted = (Date.now() - new Date(rows[0].created_at)) / (1000 * 60 * 60);
+    if (hoursSincePosted > 24) {
+      return res.status(400).json({ error: 'Reviews can only be edited within 24 hours of posting.' });
+    }
+
+    await db.query(
+      'UPDATE reviews SET rating = COALESCE(?, rating), comment = ?, edited_at = NOW() WHERE id = ?',
+      [rating || null, comment ?? null, req.params.id]
+    );
+
+    if (rating) {
+      await db.query(
+        `UPDATE teachers t SET rating_avg = (
+           SELECT AVG(r.rating) FROM reviews r JOIN bookings b ON b.id = r.booking_id WHERE b.teacher_id = t.id
+         ) WHERE t.id = ?`,
+        [rows[0].teacher_id]
+      );
+    }
+
+    res.json({ message: 'Review updated.' });
+  } catch (err) {
+    console.error('Edit review error:', err);
+    res.status(500).json({ error: 'Could not update review.' });
+  }
+});
+
+// ---------- STUDENT: DELETE THEIR OWN REVIEW (within 24 hours) ----------
+// DELETE /api/reviews/:id
+router.delete('/:id', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT r.id, r.created_at, b.teacher_id
+       FROM reviews r
+       JOIN bookings b ON b.id = r.booking_id
+       JOIN students s ON s.id = b.student_id
+       WHERE r.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(403).json({ error: 'This is not your review.' });
+
+    const hoursSincePosted = (Date.now() - new Date(rows[0].created_at)) / (1000 * 60 * 60);
+    if (hoursSincePosted > 24) {
+      return res.status(400).json({ error: 'Reviews can only be deleted within 24 hours of posting.' });
+    }
+
+    const teacherId = rows[0].teacher_id;
+    await db.query('DELETE FROM reviews WHERE id = ?', [req.params.id]);
+    await db.query(
+      `UPDATE teachers t SET
+         rating_avg = (SELECT AVG(r.rating) FROM reviews r JOIN bookings b ON b.id = r.booking_id WHERE b.teacher_id = t.id),
+         total_reviews = (SELECT COUNT(*) FROM reviews r JOIN bookings b ON b.id = r.booking_id WHERE b.teacher_id = t.id)
+       WHERE t.id = ?`,
+      [teacherId]
+    );
+
+    res.json({ message: 'Review deleted.' });
+  } catch (err) {
+    console.error('Delete review error:', err);
+    res.status(500).json({ error: 'Could not delete review.' });
+  }
+});
+
+// ---------- TEACHER: REPLY TO A REVIEW ON THEIR OWN PROFILE ----------
+// PUT /api/reviews/:id/reply
+// body: { reply }
+router.put('/:id/reply', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const { reply } = req.body;
+    if (!reply || !reply.trim()) return res.status(400).json({ error: 'Reply cannot be empty.' });
+
+    const [rows] = await db.query(
+      `SELECT r.id FROM reviews r
+       JOIN bookings b ON b.id = r.booking_id
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE r.id = ? AND t.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (rows.length === 0) return res.status(403).json({ error: 'This review is not on your profile.' });
+
+    await db.query('UPDATE reviews SET teacher_reply = ?, teacher_reply_at = NOW() WHERE id = ?', [reply.trim(), req.params.id]);
+    res.json({ message: 'Reply posted.' });
+  } catch (err) {
+    console.error('Reply to review error:', err);
+    res.status(500).json({ error: 'Could not post reply.' });
   }
 });
 

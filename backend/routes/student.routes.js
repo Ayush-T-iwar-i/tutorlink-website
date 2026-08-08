@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
+const upload = require('../middleware/upload.middleware');
 
 // ---------- UPDATE STUDENT LOCATION (protected: own account only) ----------
 // PUT /api/students/:userId/location
@@ -83,6 +84,19 @@ router.get('/by-user/:userId', verifyToken, requireOwnUser, async (req, res) => 
   } catch (err) {
     console.error('Get student by user error:', err);
     res.status(500).json({ error: 'Could not fetch student record.' });
+  }
+});
+
+// ---------- UPLOAD PROFILE PHOTO ----------
+// POST /api/students/:userId/photo   multipart/form-data field: "photo"
+router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
+    await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
+    res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
+  } catch (err) {
+    console.error('Upload student photo error:', err);
+    res.status(500).json({ error: err.message || 'Could not upload photo.' });
   }
 });
 

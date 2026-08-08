@@ -887,21 +887,37 @@
     const status = (b.status || 'requested').toLowerCase();
     const date = b.booking_date || b.date || '';
     const time = b.booking_time || b.time || '';
+    const hasReview = !!b.review_id;
+    const hoursSinceReview = hasReview ? (Date.now() - new Date(b.review_created_at)) / 36e5 : null;
+    const canEditReview = hasReview && hoursSinceReview <= 24;
+
     return `
       <div class="request-row">
         <div class="request-info">
           <strong>${escapeHtml(b.teacher_name) || 'Teacher'}</strong> — ${escapeHtml(b.subject) || 'Subject'}
           <div class="request-meta">${date} · ${time}</div>
+          ${hasReview ? `
+            <div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">
+              ${'★'.repeat(b.review_rating)}${'☆'.repeat(5 - b.review_rating)} ${b.review_comment ? '— ' + escapeHtml(b.review_comment) : ''}
+            </div>
+            ${b.teacher_reply ? `
+              <div class="request-meta" style="font-family:var(--font-body); color:var(--green-700); margin-top:4px; padding-left:10px; border-left:2px solid var(--green-700);">
+                <strong>Teacher's reply:</strong> ${escapeHtml(b.teacher_reply)}
+              </div>` : ''}
+          ` : ''}
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span class="status-tag ${status}">${status}</span>
           ${status === 'accepted' && b.payment_status === 'unpaid' && Number(b.fee) > 0 ? `
             <button class="btn btn-accent btn-sm" onclick="payNow(${b.id}, ${b.fee})">💳 Pay ₹${b.fee}</button>` : ''}
           ${['accepted','completed'].includes(status) ? `
             <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.teacher_name)}')">💬 Chat</button>
             <button class="btn btn-outline btn-sm" onclick="openReportModal(${b.teacher_user_id}, '${escapeHtml(b.teacher_name)}', ${b.id})" title="Report an issue">🚩</button>` : ''}
-          ${status === 'completed' && !b.reviewed ? `
+          ${status === 'completed' && !hasReview ? `
             <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}')">⭐ Leave a review</button>` : ''}
+          ${canEditReview ? `
+            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}', ${b.review_id}, ${b.review_rating}, '${escapeHtml(b.review_comment || '')}')">✏️ Edit review</button>
+            <button class="btn btn-outline btn-sm" onclick="deleteReview(${b.review_id})">🗑️</button>` : ''}
         </div>
       </div>
     `;
@@ -947,6 +963,7 @@
   // Review modal
   // =====================================================
   let reviewBookingId = null;
+  let editingReviewId = null;
   let selectedStars = 0;
 
   function buildStarGrid() {
@@ -958,13 +975,18 @@
         grid.querySelectorAll('.slot-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.star,10) <= selectedStars));
       });
     });
+    grid.querySelectorAll('.slot-btn').forEach(b => b.classList.toggle('selected', parseInt(b.dataset.star,10) <= selectedStars));
   }
 
-  function openReviewModal(bookingId, teacherName) {
+  function openReviewModal(bookingId, teacherName, reviewId, existingRating, existingComment) {
     reviewBookingId = bookingId;
-    selectedStars = 0;
-    document.getElementById('reviewTeacherLabel').textContent = `How was your session with ${teacherName}?`;
-    document.getElementById('reviewComment').value = '';
+    editingReviewId = reviewId || null;
+    selectedStars = existingRating || 0;
+    document.getElementById('reviewTeacherLabel').textContent = editingReviewId
+      ? `Editing your review of ${teacherName}`
+      : `How was your session with ${teacherName}?`;
+    document.getElementById('reviewComment').value = existingComment || '';
+    document.getElementById('reviewModalConfirm').textContent = editingReviewId ? 'Save changes' : 'Submit review';
     document.getElementById('reviewMsgBox').className = 'msg-box';
     document.getElementById('reviewMsgBox').textContent = '';
     buildStarGrid();
@@ -990,13 +1012,20 @@
     confirmBtn.disabled = true;
     confirmBtn.classList.add('btn-loading');
     try {
-      await apiRequest('/api/reviews', 'POST', {
-        booking_id: reviewBookingId,
-        rating: selectedStars,
-        comment: document.getElementById('reviewComment').value.trim(),
-      });
+      if (editingReviewId) {
+        await apiRequest(`/api/reviews/${editingReviewId}`, 'PUT', {
+          rating: selectedStars,
+          comment: document.getElementById('reviewComment').value.trim(),
+        });
+      } else {
+        await apiRequest('/api/reviews', 'POST', {
+          booking_id: reviewBookingId,
+          rating: selectedStars,
+          comment: document.getElementById('reviewComment').value.trim(),
+        });
+      }
       closeReviewModal();
-      toast('Thanks for the review!');
+      toast(editingReviewId ? 'Review updated!' : 'Thanks for the review!');
       loadBookings();
     } catch (err) {
       msgBox.className = 'msg-box error';
@@ -1006,6 +1035,17 @@
       confirmBtn.classList.remove('btn-loading');
     }
   });
+
+  async function deleteReview(reviewId) {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    try {
+      await apiRequest(`/api/reviews/${reviewId}`, 'DELETE');
+      toast('Review deleted.');
+      loadBookings();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
 </script>
 
 </body>

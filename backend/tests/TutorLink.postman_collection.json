@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "TutorLink API",
+    "description": "Import into Postman, then set the `base_url` and `token` collection variables (token comes from the login/signup response).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "admin_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup (student)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Priya Sharma\",\n  \"email\": \"priya@example.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"password123\",\n  \"role\": \"student\",\n  \"preferred_grade\": \"Class 8\",\n  \"preferred_subjects\": \"Maths, Science\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Signup (teacher)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Amit Kumar\",\n  \"email\": \"amit@example.com\",\n  \"phone\": \"9876543211\",\n  \"password\": \"password123\",\n  \"role\": \"teacher\",\n  \"subjects\": \"Maths, Physics\",\n  \"qualification\": \"M.Sc Maths\",\n  \"experience_years\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"priya@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/forgot-password",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"priya@example.com\"\n}" }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/auth/change-password",
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpassword456\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "Get my student record",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/students/by-user/1"
+          }
+        },
+        {
+          "name": "Update location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/students/1/location",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 28.9845,\n  \"longitude\": 77.7064,\n  \"area\": \"Shastri Nagar\",\n  \"district\": \"Meerut\",\n  \"pincode\": \"250004\",\n  \"city\": \"Meerut\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Teachers",
+      "item": [
+        {
+          "name": "Browse (public directory)",
+          "request": { "method": "GET", "url": "{{base_url}}/api/teachers/browse?sort=rating&page=1&limit=12" }
+        },
+        {
+          "name": "Search nearby",
+          "request": { "method": "GET", "url": "{{base_url}}/api/teachers/nearby?lat=28.9845&lng=77.7064&radius=5&subject=Maths" }
+        },
+        {
+          "name": "Public teacher profile",
+          "request": { "method": "GET", "url": "{{base_url}}/api/teachers/1" }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/teachers/2/profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qualification\": \"M.Sc Maths\",\n  \"subjects\": \"Maths, Physics\",\n  \"grades\": \"Class 6-10\",\n  \"experience_years\": 5,\n  \"fee_per_hour\": 400,\n  \"languages\": \"English, Hindi\",\n  \"bio\": \"Experienced maths tutor\",\n  \"address\": \"Sector 14\",\n  \"city\": \"Meerut\",\n  \"available_slots\": \"9:00 AM,5:00 PM,7:00 PM\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update location + radius",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/teachers/2/location",
+            "body": { "mode": "raw", "raw": "{\n  \"latitude\": 28.99,\n  \"longitude\": 77.70,\n  \"travel_radius_km\": 5\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking (student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacher_id\": 1,\n  \"type\": \"demo\",\n  \"subject\": \"Maths\",\n  \"booking_date\": \"2026-08-10\",\n  \"booking_time\": \"5:00 PM\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Accept booking (teacher, sets fee)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/bookings/1/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"accepted\",\n  \"fee\": 400\n}" }
+          }
+        },
+        {
+          "name": "My bookings (student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/bookings/student/me"
+          }
+        },
+        {
+          "name": "My bookings (teacher)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/bookings/teacher/me"
+          }
+        },
+        {
+          "name": "Teacher schedule (next 7 days)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/bookings/teacher/schedule"
+          }
+        },
+        {
+          "name": "Teacher earnings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/bookings/teacher/earnings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Razorpay order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/payments/create-order",
+            "body": { "mode": "raw", "raw": "{\n  \"booking_id\": 1\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Leave a review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/reviews",
+            "body": { "mode": "raw", "raw": "{\n  \"booking_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Great teacher!\"\n}" }
+          }
+        },
+        {
+          "name": "Get reviews for a teacher",
+          "request": { "method": "GET", "url": "{{base_url}}/api/reviews/teacher/1" }
+        },
+        {
+          "name": "Teacher replies to review",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/reviews/1/reply",
+            "body": { "mode": "raw", "raw": "{\n  \"reply\": \"Thank you for the kind words!\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat & Favorites & Reports",
+      "item": [
+        {
+          "name": "Get chat for a booking",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/messages/1"
+          }
+        },
+        {
+          "name": "Send chat message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/messages/1",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hi! Looking forward to the class.\"\n}" }
+          }
+        },
+        {
+          "name": "Save favorite teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/favorites",
+            "body": { "mode": "raw", "raw": "{\n  \"teacher_id\": 1\n}" }
+          }
+        },
+        {
+          "name": "File a report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/api/reports",
+            "body": { "mode": "raw", "raw": "{\n  \"reported_user_id\": 2,\n  \"booking_id\": 1,\n  \"reason\": \"no_show\",\n  \"details\": \"Teacher did not join the call.\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Pending teachers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/api/admin/teachers/pending"
+          }
+        },
+        {
+          "name": "Approve a teacher",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/teachers/1/verification",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"approved\"\n}" }
+          }
+        },
+        {
+          "name": "Platform stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/api/admin/stats"
+          }
+        },
+        {
+          "name": "Signups by day (chart data)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/api/admin/stats/signups-by-day"
+          }
+        },
+        {
+          "name": "Open reports",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/api/admin/reports?status=open"
+          }
+        },
+        {
+          "name": "Export students CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/api/admin/export/students"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Config",
+      "item": [
+        { "name": "Health check", "request": { "method": "GET", "url": "{{base_url}}/health" } },
+        { "name": "Public config", "request": { "method": "GET", "url": "{{base_url}}/api/config" } }
+      ]
+    }
+  ]
+}

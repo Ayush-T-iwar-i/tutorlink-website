@@ -36,4 +36,36 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
 });
 
+// ---------- Profile photos ----------
+// Separate from the ID/verification documents above: these are meant to
+// be publicly visible on a teacher's profile, so they live in their own
+// folder that's served as public static files (see server.js), while the
+// documents folder above never is.
+const PHOTO_DIR = path.join(__dirname, '..', 'uploads', 'photos');
+if (!fs.existsSync(PHOTO_DIR)) {
+  fs.mkdirSync(PHOTO_DIR, { recursive: true });
+}
+
+const photoStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, PHOTO_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${req.params.userId}_photo_${Date.now()}${ext}`);
+  },
+});
+
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const uploadPhoto = multer({
+  storage: photoStorage,
+  fileFilter: (req, file, cb) => {
+    if (!IMAGE_TYPES.includes(file.mimetype)) {
+      return cb(new Error('Only JPG, PNG, or WEBP images are allowed.'));
+    }
+    cb(null, true);
+  },
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB — profile photos should be small
+});
+
 module.exports = upload;
+module.exports.photo = uploadPhoto;

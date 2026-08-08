@@ -3,6 +3,8 @@ const router = express.Router();
 const crypto = require('crypto');
 const db = require('../config/db');
 const { razorpay, isConfigured } = require('../config/razorpay');
+const { sendMail } = require('../config/email');
+const emailTemplates = require('../config/email-templates');
 const { createNotification } = require('./notification.routes');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
@@ -93,17 +95,27 @@ router.post('/verify', verifyToken, requireRole('student'), async (req, res) => 
       ['paid', razorpay_payment_id, booking_id]
     );
 
-    const [teacherUser] = await db.query(
-      `SELECT t.user_id FROM bookings b JOIN teachers t ON t.id = b.teacher_id WHERE b.id = ?`,
-      [booking_id]
-    );
-    if (teacherUser.length > 0) {
-      await createNotification(teacherUser[0].user_id, 'A student paid for their class.', 'teacher-dashboard.html');
-    }
-
     res.json({ message: 'Payment verified successfully.' });
+
+    try {
+      const [teacherUser] = await db.query(
+        `SELECT t.user_id, u.name, u.email FROM bookings b
+         JOIN teachers t ON t.id = b.teacher_id
+         JOIN users u ON u.id = t.user_id
+         WHERE b.id = ?`,
+        [booking_id]
+      );
+      if (teacherUser.length > 0) {
+        await createNotification(teacherUser[0].user_id, 'A student paid for their class.', 'teacher-dashboard.html');
+        const { subject, html } = emailTemplates.paymentReceived({ teacherName: teacherUser[0].name });
+        await sendMail({ to: teacherUser[0].email, subject, html });
+      }
+    } catch (notifyErr) {
+      console.error('Payment confirmation notification failed:', notifyErr);
+    }
   } catch (err) {
     console.error('Verify payment error:', err);
+    if (res.headersSent) return; // payment was already verified and the success response already sent
     res.status(500).json({ error: 'Could not verify payment.' });
   }
 });

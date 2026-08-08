@@ -147,11 +147,15 @@ router.get('/browse', async (req, res) => {
 
 router.get('/nearby', async (req, res) => {
   try {
-    const { lat, lng, radius, subject } = req.query;
+    const { lat, lng, radius, subject, page = 1, limit = 20 } = req.query;
 
     if (!lat || !lng) {
       return res.status(400).json({ error: 'lat and lng query params are required.' });
     }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+    const offset = (pageNum - 1) * limitNum;
 
     const searchRadius = radius || process.env.DEFAULT_RADIUS_KM || 5;
 
@@ -180,12 +184,24 @@ router.get('/nearby', async (req, res) => {
       params.push(`%${subject}%`);
     }
 
-    sql += ' HAVING distance_km <= ? ORDER BY distance_km ASC';
-    params.push(searchRadius);
+    // Count total matches first (same filters, no LIMIT) so the frontend
+    // can show "page X of Y" if it wants to.
+    const countSql = `SELECT COUNT(*) AS total FROM (${sql} HAVING distance_km <= ?) AS matched`;
+    const [[{ total }]] = await db.query(countSql, [...params, searchRadius]);
+
+    sql += ' HAVING distance_km <= ? ORDER BY distance_km ASC LIMIT ? OFFSET ?';
+    params.push(searchRadius, limitNum, offset);
 
     const [rows] = await db.query(sql, params);
 
-    res.json({ count: rows.length, radius_km: searchRadius, teachers: rows });
+    res.json({
+      count: rows.length,
+      total,
+      page: pageNum,
+      total_pages: Math.ceil(total / limitNum),
+      radius_km: searchRadius,
+      teachers: rows,
+    });
   } catch (err) {
     console.error('Nearby search error:', err);
     res.status(500).json({ error: 'Could not search nearby teachers.' });
@@ -266,6 +282,19 @@ router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('View document error:', err);
     res.status(500).json({ error: 'Could not load document.' });
+  }
+});
+
+// ---------- UPLOAD PROFILE PHOTO ----------
+// POST /api/teachers/:userId/photo   multipart/form-data field: "photo"
+router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
+    await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
+    res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
+  } catch (err) {
+    console.error('Upload teacher photo error:', err);
+    res.status(500).json({ error: err.message || 'Could not upload photo.' });
   }
 });
 

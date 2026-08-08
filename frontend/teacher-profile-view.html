@@ -97,7 +97,7 @@
 
       content.innerHTML = `
         <div class="profile-hero">
-          <div class="avatar-lg">${initials}</div>
+          <div class="avatar-lg">${t.profile_photo ? `<img class="avatar-photo" src="/uploads/${t.profile_photo}" alt="${escapeHtml(t.name)}">` : initials}</div>
           <div>
             <h1>${escapeHtml(t.name)}</h1>
             <div class="qualification">${escapeHtml(t.qualification) || 'Qualification not specified'}</div>

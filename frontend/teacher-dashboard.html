@@ -81,6 +81,16 @@
       </div>
     </div>
 
+    <div class="panel" id="reviewsPanel">
+      <div class="panel-icon-title">
+        <span class="ic">★</span>
+        <div class="panel-title" style="margin-bottom:0;">My reviews</div>
+      </div>
+      <div id="reviewsArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
+      </div>
+    </div>
+
     <div class="panel" id="earningsPanel">
       <div class="panel-icon-title">
         <span class="ic">₹</span>
@@ -181,12 +191,15 @@
   }
 
   // ---------- Profile summary + completeness banner ----------
+  let myTeacherId = null;
+
   async function loadProfileSummary() {
     const banner = document.getElementById('profileBanner');
     const summary = document.getElementById('profileSummary');
 
     try {
       const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
+      myTeacherId = t.id;
       const isComplete = t.subjects && t.qualification && t.address && t.latitude;
 
       document.getElementById('statRating').textContent = t.rating_avg ? `★ ${t.rating_avg}` : 'New';
@@ -241,8 +254,57 @@
         </div>`;
       summary.innerHTML = '<div class="empty-state">Complete your profile to start appearing in student search results.</div>';
     }
+    loadMyReviews();
   }
   loadProfileSummary();
+
+  // =====================================================
+  // My reviews (with reply)
+  // =====================================================
+  async function loadMyReviews() {
+    const area = document.getElementById('reviewsArea');
+    if (!myTeacherId) {
+      area.innerHTML = '<div class="empty-state">Complete your profile to start receiving reviews.</div>';
+      return;
+    }
+    try {
+      const reviews = await apiRequest(`/api/reviews/teacher/${myTeacherId}`);
+      if (reviews.length === 0) {
+        area.innerHTML = '<div class="empty-state">No reviews yet.</div>';
+        return;
+      }
+      area.innerHTML = `<div class="fade-in">${reviews.map(r => `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${escapeHtml(r.student_name)}</strong>
+            <span class="badge badge-rating" style="margin-left:8px;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+            ${r.comment ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">${escapeHtml(r.comment)}</div>` : ''}
+            ${r.teacher_reply
+              ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--green-700); margin-top:6px; padding-left:10px; border-left:2px solid var(--green-700);"><strong>Your reply:</strong> ${escapeHtml(r.teacher_reply)}</div>`
+              : `<div style="margin-top:8px;">
+                   <input type="text" id="replyInput-${r.id}" placeholder="Write a public reply…" style="width:60%; padding:8px 10px; border:1.4px solid var(--line-strong); border-radius:var(--radius-sm); font-size:13px;">
+                   <button class="btn btn-outline btn-sm" onclick="replyToReview(${r.id})">Reply</button>
+                 </div>`}
+          </div>
+        </div>
+      `).join('')}</div>`;
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
+    }
+  }
+
+  async function replyToReview(reviewId) {
+    const input = document.getElementById(`replyInput-${reviewId}`);
+    const reply = input.value.trim();
+    if (!reply) { toast('Please write a reply first.', true); return; }
+    try {
+      await apiRequest(`/api/reviews/${reviewId}/reply`, 'PUT', { reply });
+      toast('Reply posted.');
+      loadMyReviews();
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
 
   async function loadEarnings() {
     const area = document.getElementById('earningsArea');
@@ -296,7 +358,7 @@
       document.getElementById('statPending').textContent =
         bookings.filter(b => b.status === 'requested').length;
 
-      renderSchedule(bookings);
+      loadSchedule();
 
       if (bookings.length === 0) {
         area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
@@ -325,46 +387,50 @@
     } catch (err) {
       document.getElementById('statTotal').textContent = '0';
       document.getElementById('statPending').textContent = '0';
-      renderSchedule([]);
+      loadSchedule();
       area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
     }
   }
 
-  function renderSchedule(bookings) {
+  // Pulls from class_sessions (via /teacher/schedule) rather than filtering
+  // bookings client-side — this correctly expands recurring bookings into
+  // their real dated occurrences instead of only ever showing the
+  // booking's original start date.
+  async function loadSchedule() {
     const scheduleArea = document.getElementById('scheduleArea');
-    const today = new Date(); today.setHours(0,0,0,0);
-    const weekAhead = new Date(today); weekAhead.setDate(weekAhead.getDate() + 7);
+    try {
+      const sessions = await apiRequest('/api/bookings/teacher/schedule');
+      renderSchedule(sessions);
+    } catch (err) {
+      scheduleArea.innerHTML = '<div class="empty-state">Could not load your schedule.</div>';
+    }
+  }
 
-    const upcoming = bookings
-      .filter(b => b.status === 'accepted' && b.booking_date)
-      .filter(b => {
-        const d = new Date(b.booking_date);
-        return d >= today && d <= weekAhead;
-      })
-      .sort((a, b) => new Date(a.booking_date) - new Date(b.booking_date));
+  function renderSchedule(sessions) {
+    const scheduleArea = document.getElementById('scheduleArea');
 
-    if (upcoming.length === 0) {
-      scheduleArea.innerHTML = '<div class="empty-state">No accepted classes scheduled in the next 7 days.</div>';
+    if (sessions.length === 0) {
+      scheduleArea.innerHTML = '<div class="empty-state">No classes scheduled in the next 7 days.</div>';
       return;
     }
 
     const byDate = {};
-    upcoming.forEach(b => {
-      const key = b.booking_date;
+    sessions.forEach(s => {
+      const key = s.session_date;
       if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(b);
+      byDate[key].push(s);
     });
 
     scheduleArea.innerHTML = Object.keys(byDate).map(date => `
       <div style="margin-bottom:16px;">
         <div class="field-section-label">${new Date(date).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-        ${byDate[date].map(b => `
+        ${byDate[date].map(s => `
           <div class="request-row">
             <div class="request-info">
-              <strong>${escapeHtml(b.student_name)}</strong> — ${escapeHtml(b.subject) || b.type}
-              <div class="request-meta">${b.booking_time || 'Time TBD'}</div>
+              <strong>${escapeHtml(s.student_name)}</strong> — ${escapeHtml(s.subject) || s.type}
+              <div class="request-meta">${s.session_time || 'Time TBD'}</div>
             </div>
-            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>
+            <button class="btn btn-outline btn-sm" onclick="openChatModal(${s.booking_id}, '${escapeHtml(s.student_name)}')">💬 Chat</button>
           </div>
         `).join('')}
       </div>

@@ -1409,3 +1409,26 @@ input[type="range"] {
 @media (max-width: 900px) {
   .auth-side .radius-visual { max-width: 200px; }
 }
+
+/* ---- Day 28: profile photo upload ---- */
+.photo-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.photo-preview {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ink-900);
+  border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.avatar-photo { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }

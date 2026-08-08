@@ -1,6 +1,20 @@
+// The Client ID lives in one place — the server's .env (GOOGLE_CLIENT_ID) —
+// and is served here via /api/config. This used to be hardcoded in this
+// file too, which meant changing it in .env silently did nothing on the
+// frontend. Cached after the first fetch so we don't re-request it for
+// every button render.
+let _cachedGoogleClientId = null;
 
-
-const GOOGLE_CLIENT_ID = "1091020076619-hq562icl6hn976plma463rdmssi6nbfq.apps.googleusercontent.com";
+async function getGoogleClientId() {
+  if (_cachedGoogleClientId !== null) return _cachedGoogleClientId;
+  try {
+    const config = await apiRequest('/api/config');
+    _cachedGoogleClientId = config.googleClientId || '';
+  } catch (err) {
+    _cachedGoogleClientId = '';
+  }
+  return _cachedGoogleClientId;
+}
 
 /**
  * Renders the "Continue with Google" button into `container`.
@@ -13,7 +27,15 @@ const GOOGLE_CLIENT_ID = "1091020076619-hq562icl6hn976plma463rdmssi6nbfq.apps.go
  *                                  return whichever role the account has.
  * @param {Function} onError        Called with a friendly message on failure.
  */
-function initGoogleSignIn(container, getRole, onError) {
+async function initGoogleSignIn(container, getRole, onError) {
+  const clientId = await getGoogleClientId();
+  if (!clientId) {
+    // Google Sign-In isn't configured on this server — hide the button
+    // entirely rather than rendering something broken.
+    container.style.display = 'none';
+    return;
+  }
+
   if (!window.google || !window.google.accounts) {
     // gsi client script hasn't loaded yet — retry shortly rather than
     // silently failing to render a button.
@@ -22,7 +44,7 @@ function initGoogleSignIn(container, getRole, onError) {
   }
 
   google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
+    client_id: clientId,
     callback: (response) => handleGoogleCredential(response, getRole, onError),
   });
 

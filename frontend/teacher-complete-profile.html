@@ -36,6 +36,19 @@
     <form id="profileForm" novalidate>
 
       <div class="form-section">
+        <h3>Profile photo</h3>
+        <p class="section-hint">Students see this on your public profile — a clear headshot builds trust.</p>
+        <div class="photo-upload-row">
+          <div class="photo-preview" id="photoPreview">—</div>
+          <div>
+            <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;">
+            <button type="button" class="btn btn-outline btn-sm" id="uploadPhotoBtn">Upload photo</button>
+          </div>
+        </div>
+        <div id="photoMsgBox" class="msg-box"></div>
+      </div>
+
+      <div class="form-section">
         <h3>Qualifications & subjects</h3>
         <p class="section-hint">Your academic background and what you teach.</p>
 
@@ -268,6 +281,41 @@
     updateProgress();
   }
   loadExisting();
+
+  // ---------------- Profile photo ----------------
+  const photoPreview = document.getElementById('photoPreview');
+  photoPreview.textContent = session.user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
+    const file = document.getElementById('photoInput').files[0];
+    const photoMsgBox = document.getElementById('photoMsgBox');
+    if (!file) {
+      photoMsgBox.className = 'msg-box error';
+      photoMsgBox.textContent = 'Please choose a photo first.';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const res = await fetch(`/api/teachers/${session.user.id}/photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed.');
+
+      photoPreview.innerHTML = `<img src="/uploads/${data.path}" alt="Profile photo">`;
+      photoMsgBox.className = 'msg-box success';
+      photoMsgBox.textContent = 'Photo updated.';
+      toast('Profile photo updated');
+    } catch (err) {
+      photoMsgBox.className = 'msg-box error';
+      photoMsgBox.textContent = err.message;
+    }
+  });
 
   function renderLocation() {
     const notSet = document.getElementById('locationNotSet');

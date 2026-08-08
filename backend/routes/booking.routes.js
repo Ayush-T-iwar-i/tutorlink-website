@@ -2,9 +2,54 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { sendMail } = require('../config/email');
+const emailTemplates = require('../config/email-templates');
 const { sendSms } = require('../config/sms');
 const { createNotification } = require('./notification.routes');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
+
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const RECURRING_WEEKS = 8; // how many weeks ahead to generate sessions for
+
+// Demo booking -> exactly one session on its booking_date.
+// Recurring booking -> one session per matching weekday for the next
+// RECURRING_WEEKS weeks, starting from booking_date.
+async function generateClassSessions(bookingId, booking) {
+  try {
+    // Don't double-generate if this booking somehow gets accepted twice
+    const [existing] = await db.query('SELECT id FROM class_sessions WHERE booking_id = ?', [bookingId]);
+    if (existing.length > 0) return;
+
+    const sessions = [];
+
+    if (booking.type === 'recurring' && booking.days_per_week) {
+      const wantedDays = booking.days_per_week.split(',').map(d => d.trim());
+      const startDate = booking.booking_date ? new Date(booking.booking_date) : new Date();
+      const totalDays = RECURRING_WEEKS * 7;
+
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        const dayName = WEEKDAY_NAMES[d.getDay()];
+        if (wantedDays.includes(dayName)) {
+          sessions.push([bookingId, d.toISOString().split('T')[0], booking.booking_time]);
+        }
+      }
+    } else {
+      // Demo (or a recurring booking with no days set, as a safe fallback)
+      sessions.push([bookingId, booking.booking_date, booking.booking_time]);
+    }
+
+    if (sessions.length === 0) return;
+
+    await db.query(
+      `INSERT INTO class_sessions (booking_id, session_date, session_time) VALUES ?`,
+      [sessions]
+    );
+  } catch (err) {
+    // Never let session generation break the accept action itself
+    console.error('Generate class sessions error:', err);
+  }
+}
 
 // ---------- CREATE A BOOKING (protected: must be a logged-in student) ----------
 // POST /api/bookings
@@ -44,16 +89,15 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
       );
       const [studentRows] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
       if (teacherRows.length > 0) {
-        await sendMail({
-          to: teacherRows[0].email,
-          subject: 'New booking request on TutorLink',
-          html: `
-            <p>Hi ${teacherRows[0].name},</p>
-            <p>${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}
-               on ${booking_date || 'a date to be confirmed'} at ${booking_time || 'a time to be confirmed'}.</p>
-            <p>Log in to your TutorLink dashboard to accept or decline.</p>
-          `,
+        const { subject: emailSubject, html } = emailTemplates.newBookingRequest({
+          teacherName: teacherRows[0].name,
+          studentName: studentRows[0]?.name || 'A student',
+          type,
+          subject,
+          date: booking_date,
+          time: booking_time,
         });
+        await sendMail({ to: teacherRows[0].email, subject: emailSubject, html });
       }
 
       const [teacherUserId] = await db.query('SELECT user_id FROM teachers WHERE id = ?', [teacher_id]);
@@ -76,6 +120,7 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
     }
   } catch (err) {
     console.error('Create booking error:', err);
+    if (res.headersSent) return; // response for the booking itself already went out — don't crash trying to send a second one
     res.status(500).json({ error: 'Could not create booking.' });
   }
 });
@@ -99,7 +144,8 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 
     // Confirm this booking actually belongs to the logged-in teacher before updating
     const [rows] = await db.query(
-      `SELECT b.id FROM bookings b
+      `SELECT b.id, b.type, b.booking_date, b.booking_time, b.days_per_week
+       FROM bookings b
        JOIN teachers t ON t.id = b.teacher_id
        WHERE b.id = ? AND t.user_id = ?`,
       [id, req.user.id]
@@ -111,6 +157,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 
     if (status === 'accepted') {
       await db.query('UPDATE bookings SET status = ?, fee = ? WHERE id = ?', [status, fee, id]);
+      await generateClassSessions(id, rows[0]);
     } else {
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
     }
@@ -125,11 +172,11 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
         [id]
       );
       if (studentRows.length > 0 && ['accepted', 'declined'].includes(status)) {
-        await sendMail({
-          to: studentRows[0].email,
-          subject: `Your TutorLink booking was ${status}`,
-          html: `<p>Hi ${studentRows[0].name},</p><p>Your class request has been <strong>${status}</strong> by the teacher.</p>`,
+        const { subject: emailSubject, html } = emailTemplates.bookingStatusChanged({
+          studentName: studentRows[0].name,
+          status,
         });
+        await sendMail({ to: studentRows[0].email, subject: emailSubject, html });
         if (studentRows[0].phone) {
           await sendSms(studentRows[0].phone, `TutorLink: Your class request was ${status} by the teacher.`);
         }
@@ -150,6 +197,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
     }
   } catch (err) {
     console.error('Update booking status error:', err);
+    if (res.headersSent) return;
     res.status(500).json({ error: 'Could not update booking status.' });
   }
 });
@@ -160,11 +208,13 @@ router.get('/student/me', verifyToken, requireRole('student'), async (req, res) 
   try {
     const [rows] = await db.query(
       `SELECT b.*, u.name AS teacher_name, u.id AS teacher_user_id,
-              EXISTS(SELECT 1 FROM reviews r WHERE r.booking_id = b.id) AS reviewed
+              r.id AS review_id, r.rating AS review_rating, r.comment AS review_comment,
+              r.created_at AS review_created_at, r.teacher_reply, r.teacher_reply_at
        FROM bookings b
        JOIN teachers t ON t.id = b.teacher_id
        JOIN users u ON u.id = t.user_id
        JOIN students s ON s.id = b.student_id
+       LEFT JOIN reviews r ON r.booking_id = b.id
        WHERE s.user_id = ?
        ORDER BY b.created_at DESC`,
       [req.user.id]
@@ -259,6 +309,59 @@ router.get('/teacher/earnings', verifyToken, requireRole('teacher'), async (req,
   } catch (err) {
     console.error('Get earnings error:', err);
     res.status(500).json({ error: 'Could not fetch earnings.' });
+  }
+});
+
+// ---------- LIST A BOOKING'S CLASS SESSIONS (participant only) ----------
+// GET /api/bookings/:id/sessions
+router.get('/:id/sessions', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT s.user_id AS student_user_id, t.user_id AS teacher_user_id
+       FROM bookings b
+       JOIN students s ON s.id = b.student_id
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE b.id = ?`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found.' });
+
+    const isParticipant = req.user.id === rows[0].student_user_id || req.user.id === rows[0].teacher_user_id;
+    if (!isParticipant) return res.status(403).json({ error: 'You are not part of this booking.' });
+
+    const [sessions] = await db.query(
+      'SELECT * FROM class_sessions WHERE booking_id = ? ORDER BY session_date ASC',
+      [req.params.id]
+    );
+    res.json(sessions);
+  } catch (err) {
+    console.error('Get class sessions error:', err);
+    res.status(500).json({ error: 'Could not fetch sessions.' });
+  }
+});
+
+// ---------- TEACHER: NEXT 7 DAYS OF SCHEDULED CLASS SESSIONS ----------
+// GET /api/bookings/teacher/schedule
+router.get('/teacher/schedule', verifyToken, requireRole('teacher'), async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT cs.id AS session_id, cs.session_date, cs.session_time, cs.booking_id,
+              b.subject, b.type, u.name AS student_name
+       FROM class_sessions cs
+       JOIN bookings b ON b.id = cs.booking_id
+       JOIN students s ON s.id = b.student_id
+       JOIN users u ON u.id = s.user_id
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE t.user_id = ?
+         AND cs.status = 'scheduled'
+         AND cs.session_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       ORDER BY cs.session_date ASC, cs.session_time ASC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Get teacher schedule error:', err);
+    res.status(500).json({ error: 'Could not fetch schedule.' });
   }
 });
 

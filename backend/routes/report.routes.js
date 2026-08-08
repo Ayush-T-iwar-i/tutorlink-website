@@ -49,4 +49,22 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
+// ---------- MY OWN FILED REPORTS ----------
+// GET /api/reports/mine
+router.get('/mine', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT r.id, r.reason, r.details, r.status, r.created_at, u.name AS reported_name
+       FROM reports r JOIN users u ON u.id = r.reported_user_id
+       WHERE r.reporter_user_id = ?
+       ORDER BY r.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Get my reports error:', err);
+    res.status(500).json({ error: 'Could not fetch your reports.' });
+  }
+});
+
 module.exports = router;
