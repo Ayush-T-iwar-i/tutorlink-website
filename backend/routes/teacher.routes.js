@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
@@ -7,8 +8,7 @@ const upload = require('../middleware/upload.middleware');
 // ---------- UPLOAD VERIFICATION DOCUMENTS (protected: own account, teacher only) ----------
 // POST /api/teachers/:userId/documents
 // multipart/form-data fields: id_proof, address_proof, certificate (each optional, one file)
-// Submitting any document resets verification_status to "pending" so an
-// admin re-reviews the updated file.
+// Submitting any document resets verification_status to "pending" so an admin re-reviews.
 router.post(
   '/:userId/documents',
   verifyToken, requireOwnUser, requireRole('teacher'),
@@ -49,19 +49,36 @@ router.post(
 
 // ---------- UPDATE TEACHER PROFILE (protected: must be logged-in teacher, own account) ----------
 // PUT /api/teachers/:userId/profile
-// header: Authorization: Bearer <token>
-// body: { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city }
+// body: { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, available_slots }
 router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, available_slots } = req.body;
+    const {
+      qualification, subjects, grades, experience_years,
+      fee_per_hour, languages, bio, address, city, available_slots,
+    } = req.body;
+
+    const exp = Math.max(0, parseInt(experience_years, 10) || 0);
+    const fee = Math.max(0, parseFloat(fee_per_hour) || 0);
 
     await db.query(
       `UPDATE teachers SET
         qualification = ?, subjects = ?, grades = ?, experience_years = ?,
         fee_per_hour = ?, languages = ?, bio = ?, address = ?, city = ?, available_slots = ?
        WHERE user_id = ?`,
-      [qualification, subjects, grades, experience_years, fee_per_hour, languages, bio, address, city, available_slots || null, userId]
+      [
+        qualification || null,
+        subjects || '',
+        grades || null,
+        exp,
+        fee,
+        languages || null,
+        bio || null,
+        address || null,
+        city || null,
+        available_slots || null,
+        userId,
+      ]
     );
 
     res.json({ message: 'Profile updated successfully.' });
@@ -73,16 +90,23 @@ router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher
 
 // ---------- UPDATE TEACHER LOCATION + RADIUS (protected) ----------
 // PUT /api/teachers/:userId/location
-// header: Authorization: Bearer <token>
 // body: { latitude, longitude, travel_radius_km }
 router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('teacher'), async (req, res) => {
   try {
     const { userId } = req.params;
     const { latitude, longitude, travel_radius_km } = req.body;
 
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    const radius = Math.min(50, Math.max(1, parseFloat(travel_radius_km) || 5));
+
+    if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude values.' });
+    }
+
     await db.query(
       'UPDATE teachers SET latitude = ?, longitude = ?, travel_radius_km = ? WHERE user_id = ?',
-      [latitude, longitude, travel_radius_km, userId]
+      [lat, lng, radius, userId]
     );
 
     res.json({ message: 'Location updated successfully.' });
@@ -92,8 +116,6 @@ router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('teache
   }
 });
 
-// ---------- SEARCH NEARBY TEACHERS (public — no login needed to browse) ----------
-// GET /api/teachers/nearby?lat=...&lng=...&radius=5&subject=Maths
 // ---------- PUBLIC TEACHER DIRECTORY (no login, no location required) ----------
 // GET /api/teachers/browse?subject=&city=&sort=rating|fee_low|fee_high|experience&page=1&limit=12
 router.get('/browse', async (req, res) => {
@@ -105,12 +127,12 @@ router.get('/browse', async (req, res) => {
 
     const conditions = [`t.verification_status = 'approved'`];
     const params = [];
-    if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject}%`); }
-    if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city}%`); }
+    if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject.trim()}%`); }
+    if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city.trim()}%`); }
     const whereClause = conditions.join(' AND ');
 
     const sortMap = {
-      rating: 't.rating_avg DESC',
+      rating: 't.rating_avg DESC, t.total_reviews DESC',
       fee_low: 't.fee_per_hour ASC',
       fee_high: 't.fee_per_hour DESC',
       experience: 't.experience_years DESC',
@@ -118,7 +140,7 @@ router.get('/browse', async (req, res) => {
     const orderBy = sortMap[sort] || sortMap.rating;
 
     const [rows] = await db.query(
-      `SELECT t.id, u.name, t.subjects, t.grades, t.qualification, t.experience_years,
+      `SELECT t.id, u.name, u.profile_photo, t.subjects, t.grades, t.qualification, t.experience_years,
               t.fee_per_hour, t.rating_avg, t.total_reviews, t.city
        FROM teachers t JOIN users u ON u.id = t.user_id
        WHERE ${whereClause}
@@ -137,7 +159,7 @@ router.get('/browse', async (req, res) => {
       page: pageNum,
       limit: limitNum,
       total,
-      total_pages: Math.ceil(total / limitNum),
+      total_pages: Math.ceil(total / limitNum) || 1,
     });
   } catch (err) {
     console.error('Browse teachers error:', err);
@@ -145,20 +167,25 @@ router.get('/browse', async (req, res) => {
   }
 });
 
+// ---------- SEARCH NEARBY TEACHERS (public — distance matched) ----------
+// GET /api/teachers/nearby?lat=...&lng=...&radius=5&subject=Maths
 router.get('/nearby', async (req, res) => {
   try {
     const { lat, lng, radius, subject, page = 1, limit = 20 } = req.query;
 
-    if (!lat || !lng) {
-      return res.status(400).json({ error: 'lat and lng query params are required.' });
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+
+    if (isNaN(latitude) || latitude < -90 || latitude > 90 || isNaN(longitude) || longitude < -180 || longitude > 180) {
+      return res.status(400).json({ error: 'Valid lat and lng query params are required.' });
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
     const offset = (pageNum - 1) * limitNum;
+    const searchRadius = Math.min(100, Math.max(0.5, parseFloat(radius) || parseFloat(process.env.DEFAULT_RADIUS_KM) || 5));
 
-    const searchRadius = radius || process.env.DEFAULT_RADIUS_KM || 5;
-
+    // Clamped Haversine formula prevents NaN/NULL in MySQL when lat/lng are identical
     let sql = `
       SELECT
         t.id, u.name, u.profile_photo, t.qualification, t.subjects, t.grades,
@@ -166,9 +193,11 @@ router.get('/nearby', async (req, res) => {
         t.rating_avg, t.total_reviews,
         t.latitude, t.longitude,
         (6371 * ACOS(
-          COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
-          COS(RADIANS(t.longitude) - RADIANS(?)) +
-          SIN(RADIANS(?)) * SIN(RADIANS(t.latitude))
+          LEAST(1.0, GREATEST(-1.0,
+            COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
+            COS(RADIANS(t.longitude) - RADIANS(?)) +
+            SIN(RADIANS(?)) * SIN(RADIANS(t.latitude))
+          ))
         )) AS distance_km
       FROM teachers t
       JOIN users u ON u.id = t.user_id
@@ -177,15 +206,13 @@ router.get('/nearby', async (req, res) => {
         AND t.longitude IS NOT NULL
     `;
 
-    const params = [lat, lng, lat];
+    const params = [latitude, longitude, latitude];
 
     if (subject) {
       sql += ' AND t.subjects LIKE ?';
-      params.push(`%${subject}%`);
+      params.push(`%${subject.trim()}%`);
     }
 
-    // Count total matches first (same filters, no LIMIT) so the frontend
-    // can show "page X of Y" if it wants to.
     const countSql = `SELECT COUNT(*) AS total FROM (${sql} HAVING distance_km <= ?) AS matched`;
     const [[{ total }]] = await db.query(countSql, [...params, searchRadius]);
 
@@ -198,7 +225,7 @@ router.get('/nearby', async (req, res) => {
       count: rows.length,
       total,
       page: pageNum,
-      total_pages: Math.ceil(total / limitNum),
+      total_pages: Math.ceil(total / limitNum) || 1,
       radius_km: searchRadius,
       teachers: rows,
     });
@@ -226,7 +253,7 @@ router.get('/by-user/:userId', verifyToken, requireOwnUser, async (req, res) => 
   }
 });
 
-// ---------- GET SINGLE TEACHER PROFILE (public — students need to view profiles) ----------
+// ---------- GET SINGLE TEACHER PROFILE (public) ----------
 // GET /api/teachers/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -253,7 +280,6 @@ router.get('/:id', async (req, res) => {
 
 // ---------- VIEW AN UPLOADED DOCUMENT (protected: the teacher themself, or an admin) ----------
 // GET /api/teachers/:userId/documents/:type   where type = id_proof | address_proof | certificate
-// These are identity documents — never served as plain static files.
 router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
   try {
     const { userId, type } = req.params;
@@ -278,7 +304,7 @@ router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'No document of this type has been uploaded.' });
     }
 
-    res.sendFile(rows[0].filename, { root: require('path').join(__dirname, '..', 'uploads') });
+    res.sendFile(rows[0].filename, { root: path.join(__dirname, '..', 'uploads') });
   } catch (err) {
     console.error('View document error:', err);
     res.status(500).json({ error: 'Could not load document.' });

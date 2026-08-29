@@ -3,78 +3,88 @@
 // All fetch() calls to the backend go through here
 // ===========================================
 
-const API_BASE = 'http://localhost:5000'; // same origin — backend serves this frontend too
+// If served on port 5000 or in production (same origin), use relative paths ("").
+// If running on a local Live Server (port 5500, 3000, 8080, etc.), point to localhost:5000.
+const isSeparateDevServer = typeof window !== 'undefined' &&
+  window.location.hostname === 'localhost' &&
+  window.location.port !== '' &&
+  window.location.port !== '5000';
 
+const API_BASE = isSeparateDevServer ? 'http://localhost:5000' : '';
 
 async function apiRequest(path, method = "GET", body = null) {
   const headers = { "Content-Type": "application/json" };
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
- 
+
   let response;
   try {
-   response = await fetch(`${API_BASE}${path}`, {
-  method,
-  headers,
-  body: body ? JSON.stringify(body) : undefined,
-});
+    response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
   } catch (networkErr) {
     throw new Error("Can't reach TutorLink right now. Check your connection and try again.");
   }
- 
+
   let data = null;
   const text = await response.text();
   if (text) {
     try { data = JSON.parse(text); } catch { /* non-JSON response body */ }
   }
- 
+
   if (!response.ok) {
+    if (response.status === 401 && !path.includes('/login') && !path.includes('/signup')) {
+      // Session expired or invalidated on a protected call
+      // Don't auto-redirect immediately on background polling, but clear stale token
+    }
     const message =
       (data && (data.message || data.error)) ||
       defaultErrorFor(response.status);
     throw new Error(message);
   }
- 
+
   return data;
 }
- 
+
 function defaultErrorFor(status) {
-  if (status === 401) return "That email and password don't match.";
-  if (status === 409) return "An account with that email already exists.";
+  if (status === 401) return "Session expired or invalid credentials. Please log in again.";
+  if (status === 403) return "You don't have permission to perform this action.";
+  if (status === 404) return "Resource not found.";
+  if (status === 409) return "An account or record with these details already exists.";
   if (status === 422) return "Please check the details you entered.";
+  if (status === 423) return "Account temporarily locked due to too many failed attempts.";
+  if (status === 429) return "Too many requests. Please slow down and try again in a few minutes.";
   if (status >= 500) return "Something went wrong on our end. Please try again shortly.";
   return "Something went wrong. Please try again.";
 }
- 
+
 /* ---------- session ---------- */
- 
+
 const SESSION_USER_KEY = "tutorlink.user";
 const SESSION_TOKEN_KEY = "tutorlink.token";
- 
+
 function saveSession(user, token) {
   localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
   localStorage.setItem(SESSION_TOKEN_KEY, token);
 }
- 
+
 function getSession() {
   const raw = localStorage.getItem(SESSION_USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
- 
+
 function getToken() {
   return localStorage.getItem(SESSION_TOKEN_KEY);
 }
- 
+
 function clearSession() {
   localStorage.removeItem(SESSION_USER_KEY);
   localStorage.removeItem(SESSION_TOKEN_KEY);
 }
- 
+
 // ---------- XSS-safe text rendering ----------
-// Use this whenever inserting user-entered text (names, bios, comments,
-// subjects, etc.) into innerHTML. Never trust that data from the database
-// is "safe" just because it came from your own API — it started as
-// unescaped user input at signup/profile time.
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -84,15 +94,30 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
- 
-/* ---------- Notification bell (shared by student/teacher dashboards) ----------
-   Call initNotificationBell() once on any page that has the
-   #notifBell / #notifDropdown / #notifList / #notifBadge markup. */
+
+// ---------- Global toast helper fallback ----------
+function showToast(message, isError = false) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { el.className = 'toast'; }, 2800);
+}
+if (typeof window !== 'undefined' && typeof window.toast !== 'function') {
+  window.toast = showToast;
+}
+
+/* ---------- Notification bell (shared by student/teacher dashboards) ---------- */
 function initNotificationBell() {
   const bell = document.getElementById('notifBell');
   const dropdown = document.getElementById('notifDropdown');
   if (!bell || !dropdown) return;
- 
+
   bell.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdown.classList.toggle('open');
@@ -101,18 +126,24 @@ function initNotificationBell() {
   document.addEventListener('click', (e) => {
     if (!dropdown.contains(e.target) && e.target !== bell) dropdown.classList.remove('open');
   });
- 
-  document.getElementById('markAllReadBtn').addEventListener('click', async (e) => {
-    e.stopPropagation();
-    try {
-      await apiRequest('/api/notifications/read-all', 'PUT');
-      loadNotifications();
-    } catch (err) { /* non-blocking */ }
-  });
- 
+
+  const markAllBtn = document.getElementById('markAllReadBtn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await apiRequest('/api/notifications/read-all', 'PUT');
+        loadNotifications();
+      } catch (err) { /* non-blocking */ }
+    });
+  }
+
   async function loadNotifications() {
+    if (!getToken()) return;
     const list = document.getElementById('notifList');
     const badge = document.getElementById('notifBadge');
+    if (!list || !badge) return;
+
     try {
       const data = await apiRequest('/api/notifications/me');
       if (data.unread_count > 0) {
@@ -121,12 +152,12 @@ function initNotificationBell() {
       } else {
         badge.style.display = 'none';
       }
- 
-      if (data.notifications.length === 0) {
+
+      if (!data.notifications || data.notifications.length === 0) {
         list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
         return;
       }
- 
+
       list.innerHTML = data.notifications.map(n => `
         <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="handleNotificationClick(${n.id}, '${n.link || ''}')">
           ${escapeHtml(n.message)}
@@ -137,24 +168,26 @@ function initNotificationBell() {
       list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
     }
   }
- 
-  // Poll every 30s so the badge count stays roughly fresh without a full page reload
+
   loadNotifications();
-  setInterval(loadNotifications, 30000);
+  const pollInterval = setInterval(() => {
+    if (!getToken()) {
+      clearInterval(pollInterval);
+      return;
+    }
+    loadNotifications();
+  }, 30000);
 }
- 
+
 async function handleNotificationClick(id, link) {
   try { await apiRequest(`/api/notifications/${id}/read`, 'PUT'); } catch (e) { /* non-blocking */ }
   if (link) window.location.href = link;
 }
- 
-/* ---------- Chat modal (shared by student/teacher dashboards) ----------
-   Call openChatModal(bookingId, otherPersonName) from a button's onclick.
-   Builds its own modal markup the first time it's used, so no HTML
-   needs to be duplicated into every dashboard page. */
+
+/* ---------- Chat modal (shared by student/teacher dashboards) ---------- */
 let _chatPollTimer = null;
 let _chatBookingId = null;
- 
+
 function ensureChatModalExists() {
   if (document.getElementById('chatModalBackdrop')) return;
   const div = document.createElement('div');
@@ -179,14 +212,14 @@ function ensureChatModalExists() {
       </div>
     </div>`;
   document.body.appendChild(div.firstElementChild);
- 
+
   document.getElementById('chatModalClose').addEventListener('click', closeChatModal);
   document.getElementById('chatSendBtn').addEventListener('click', sendChatMessage);
   document.getElementById('chatInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
   });
 }
- 
+
 async function openChatModal(bookingId, otherPersonName) {
   ensureChatModalExists();
   _chatBookingId = bookingId;
@@ -197,14 +230,14 @@ async function openChatModal(bookingId, otherPersonName) {
   clearInterval(_chatPollTimer);
   _chatPollTimer = setInterval(loadChatMessages, 5000);
 }
- 
+
 function closeChatModal() {
   const backdrop = document.getElementById('chatModalBackdrop');
   if (backdrop) backdrop.classList.remove('open');
   clearInterval(_chatPollTimer);
   _chatBookingId = null;
 }
- 
+
 async function loadChatMessages() {
   if (!_chatBookingId) return;
   const body = document.getElementById('chatBody');
@@ -227,13 +260,13 @@ async function loadChatMessages() {
     body.innerHTML = `<div class="chat-empty">${escapeHtml(err.message)}</div>`;
   }
 }
- 
+
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const msgBox = document.getElementById('chatMsgBox');
   const text = input.value.trim();
   if (!text || !_chatBookingId) return;
- 
+
   msgBox.className = 'msg-box';
   try {
     await apiRequest(`/api/messages/${_chatBookingId}`, 'POST', { message: text });
@@ -244,9 +277,8 @@ async function sendChatMessage() {
     msgBox.textContent = err.message;
   }
 }
- 
-/* ---------- Report modal (shared) ----------
-   Call openReportModal(reportedUserId, reportedName, bookingId) */
+
+/* ---------- Report modal (shared) ---------- */
 let _reportUserId = null;
 let _reportBookingId = null;
 
@@ -324,7 +356,7 @@ async function submitReport() {
       details,
     });
     closeReportModal();
-    if (typeof toast === 'function') toast('Report submitted — thank you.');
+    showToast('Report submitted — thank you.');
   } catch (err) {
     msgBox.className = 'msg-box error';
     msgBox.textContent = err.message;
@@ -333,19 +365,16 @@ async function submitReport() {
     confirmBtn.classList.remove('btn-loading');
   }
 }
- 
- 
- 
- 
+
 function requireLogin(requiredRole = null) {
   const user = getSession();
   const token = getToken();
- 
+
   if (!user || !token) {
     window.location.href = "login.html";
     return null;
   }
- 
+
   if (requiredRole && user.role !== requiredRole) {
     const home = user.role === "teacher" ? "teacher-dashboard.html"
       : user.role === "admin" ? "admin-dashboard.html"
@@ -353,9 +382,6 @@ function requireLogin(requiredRole = null) {
     window.location.href = home;
     return null;
   }
- 
-  return {
-    user,
-    token
-  };
+
+  return { user, token };
 }

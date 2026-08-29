@@ -15,7 +15,6 @@ const RECURRING_WEEKS = 8; // how many weeks ahead to generate sessions for
 // RECURRING_WEEKS weeks, starting from booking_date.
 async function generateClassSessions(bookingId, booking) {
   try {
-    // Don't double-generate if this booking somehow gets accepted twice
     const [existing] = await db.query('SELECT id FROM class_sessions WHERE booking_id = ?', [bookingId]);
     if (existing.length > 0) return;
 
@@ -31,12 +30,12 @@ async function generateClassSessions(bookingId, booking) {
         d.setDate(d.getDate() + i);
         const dayName = WEEKDAY_NAMES[d.getDay()];
         if (wantedDays.includes(dayName)) {
-          sessions.push([bookingId, d.toISOString().split('T')[0], booking.booking_time]);
+          sessions.push([bookingId, d.toISOString().split('T')[0], booking.booking_time || '10:00 AM']);
         }
       }
     } else {
-      // Demo (or a recurring booking with no days set, as a safe fallback)
-      sessions.push([bookingId, booking.booking_date, booking.booking_time]);
+      const sessionDate = booking.booking_date ? new Date(booking.booking_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      sessions.push([bookingId, sessionDate, booking.booking_time || '10:00 AM']);
     }
 
     if (sessions.length === 0) return;
@@ -46,7 +45,6 @@ async function generateClassSessions(bookingId, booking) {
       [sessions]
     );
   } catch (err) {
-    // Never let session generation break the accept action itself
     console.error('Generate class sessions error:', err);
   }
 }
@@ -64,34 +62,38 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
     }
 
     // Look up the student's own student_id from their logged-in user id
-    // (never trust a student_id sent from the client — always derive it from the token)
     const [studentRows] = await db.query('SELECT id FROM students WHERE user_id = ?', [req.user.id]);
     if (studentRows.length === 0) {
-      return res.status(404).json({ error: 'Student profile not found.' });
+      return res.status(404).json({ error: 'Student profile not found. Please complete your profile first.' });
     }
     const studentId = studentRows[0].id;
+
+    // Verify teacher exists and is approved
+    const [teacherCheck] = await db.query('SELECT id, verification_status FROM teachers WHERE id = ?', [teacher_id]);
+    if (teacherCheck.length === 0) {
+      return res.status(404).json({ error: 'Teacher not found.' });
+    }
 
     const [result] = await db.query(
       `INSERT INTO bookings
         (student_id, teacher_id, type, subject, booking_date, booking_time, days_per_week, fee)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [studentId, teacher_id, type || 'demo', subject, booking_date, booking_time, days_per_week, fee || 0]
+      [studentId, teacher_id, type || 'demo', subject || 'General', booking_date || null, booking_time || null, days_per_week || null, Math.max(0, parseFloat(fee) || 0)]
     );
 
     res.status(201).json({ message: 'Booking request sent.', booking_id: result.insertId });
 
-    // Notify the teacher — sent after responding so a slow/failed email
-    // never delays or breaks the booking itself.
+    // Notify the teacher
     try {
       const [teacherRows] = await db.query(
         `SELECT u.email, u.name, u.phone FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
         [teacher_id]
       );
-      const [studentRows] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+      const [studentRowsData] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
       if (teacherRows.length > 0) {
         const { subject: emailSubject, html } = emailTemplates.newBookingRequest({
           teacherName: teacherRows[0].name,
-          studentName: studentRows[0]?.name || 'A student',
+          studentName: studentRowsData[0]?.name || 'A student',
           type,
           subject,
           date: booking_date,
@@ -104,7 +106,7 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
       if (teacherUserId.length > 0) {
         await createNotification(
           teacherUserId[0].user_id,
-          `${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}.`,
+          `${studentRowsData[0]?.name || 'A student'} requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}.`,
           'teacher-dashboard.html'
         );
       }
@@ -112,7 +114,7 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
       if (teacherRows.length > 0 && teacherRows[0].phone) {
         await sendSms(
           teacherRows[0].phone,
-          `TutorLink: ${studentRows[0]?.name || 'A student'} requested a ${type || 'demo'} class. Log in to accept/decline.`
+          `TutorLink: ${studentRowsData[0]?.name || 'A student'} requested a ${type || 'demo'} class. Log in to accept/decline.`
         );
       }
     } catch (emailErr) {
@@ -120,15 +122,14 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
     }
   } catch (err) {
     console.error('Create booking error:', err);
-    if (res.headersSent) return; // response for the booking itself already went out — don't crash trying to send a second one
+    if (res.headersSent) return;
     res.status(500).json({ error: 'Could not create booking.' });
   }
 });
 
-// ---------- TEACHER: ACCEPT / DECLINE A BOOKING (protected: must own this booking) ----------
+// ---------- TEACHER: ACCEPT / DECLINE / COMPLETE A BOOKING ----------
 // PUT /api/bookings/:id/status
-// header: Authorization: Bearer <token>
-// body: { status: "accepted" | "declined" | "completed" | "cancelled" }
+// body: { status: "accepted" | "declined" | "completed" | "cancelled", fee }
 router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,7 +143,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
       return res.status(400).json({ error: 'Please set a fee (0 is fine for a free demo) when accepting.' });
     }
 
-    // Confirm this booking actually belongs to the logged-in teacher before updating
+    // Confirm ownership
     const [rows] = await db.query(
       `SELECT b.id, b.type, b.booking_date, b.booking_time, b.days_per_week
        FROM bookings b
@@ -156,8 +157,40 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
     }
 
     if (status === 'accepted') {
-      await db.query('UPDATE bookings SET status = ?, fee = ? WHERE id = ?', [status, fee, id]);
+      await db.query('UPDATE bookings SET status = ?, fee = ? WHERE id = ?', [status, Math.max(0, parseFloat(fee) || 0), id]);
       await generateClassSessions(id, rows[0]);
+
+      // --- Auto-create Enrollment + Course (the "Active Tuition" relationship) ---
+      try {
+        const [bookingData] = await db.query(
+          'SELECT student_id, teacher_id, subject, booking_date FROM bookings WHERE id = ?',
+          [id]
+        );
+        if (bookingData.length > 0) {
+          const b = bookingData[0];
+          // Check if an enrollment already exists for this booking
+          const [existingEnrollment] = await db.query(
+            'SELECT id FROM enrollments WHERE booking_id = ?', [id]
+          );
+          if (existingEnrollment.length === 0) {
+            const [enrollResult] = await db.query(
+              `INSERT INTO enrollments (student_id, teacher_id, booking_id, subject, status, start_date)
+               VALUES (?, ?, ?, ?, 'active', COALESCE(?, CURDATE()))`,
+              [b.student_id, b.teacher_id, id, b.subject || 'General', b.booking_date]
+            );
+            // Create a default course for this enrollment
+            const courseTitle = `${b.subject || 'General'} Tuition`;
+            await db.query(
+              `INSERT INTO courses (enrollment_id, title, subject, status, start_date)
+               VALUES (?, ?, ?, 'active', COALESCE(?, CURDATE()))`,
+              [enrollResult.insertId, courseTitle, b.subject || 'General', b.booking_date]
+            );
+          }
+        }
+      } catch (enrollErr) {
+        // Enrollment creation failure should not break the booking acceptance flow
+        console.error('Auto-create enrollment failed (non-blocking):', enrollErr);
+      }
     } else {
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
     }

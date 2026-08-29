@@ -35,12 +35,12 @@ router.post('/create-order', verifyToken, requireRole('student'), async (req, re
     if (booking.payment_status === 'paid') {
       return res.status(400).json({ error: 'This booking is already paid.' });
     }
-    if (!booking.fee || booking.fee <= 0) {
-      return res.status(400).json({ error: 'The teacher has not set a fee for this booking yet.' });
+    if (!booking.fee || Number(booking.fee) <= 0) {
+      return res.status(400).json({ error: 'The teacher has not set a payable fee for this booking yet.' });
     }
 
     const order = await razorpay.orders.create({
-      amount: Math.round(booking.fee * 100), // paise
+      amount: Math.round(Number(booking.fee) * 100), // paise
       currency: 'INR',
       receipt: `booking_${booking_id}`,
       notes: { booking_id: String(booking_id) },
@@ -70,16 +70,22 @@ router.post('/verify', verifyToken, requireRole('student'), async (req, res) => 
       return res.status(400).json({ error: 'Missing payment details.' });
     }
 
-    // This is the step that actually matters: recompute the signature
-    // ourselves from the order+payment IDs using our secret key, and only
-    // trust the payment if it matches exactly. Never trust "payment
-    // succeeded" just because the browser says so.
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ error: 'Payment verification secret is not configured.' });
+    }
+
+    // Recompute signature and compare timing-safely to prevent side-channel timing attacks
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
+    const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+    const receivedBuf = Buffer.from(razorpay_signature, 'utf8');
+
+    const isMatch = expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
+
+    if (!isMatch) {
       return res.status(400).json({ error: 'Payment verification failed. If money was deducted, contact support.' });
     }
 
@@ -115,7 +121,7 @@ router.post('/verify', verifyToken, requireRole('student'), async (req, res) => 
     }
   } catch (err) {
     console.error('Verify payment error:', err);
-    if (res.headersSent) return; // payment was already verified and the success response already sent
+    if (res.headersSent) return;
     res.status(500).json({ error: 'Could not verify payment.' });
   }
 });

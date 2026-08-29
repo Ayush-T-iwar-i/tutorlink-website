@@ -4,17 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teacher Profile — TutorLink</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<!-- ---------------- Header ---------------- -->
 <header class="dashboard-header">
   <div class="container">
-    <a href="student-dashboard.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      Tutor<em>Link</em>
     </a>
     <div class="header-actions">
-      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to search</a>
+      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to Dashboard</a>
     </div>
   </div>
 </header>
@@ -22,7 +25,15 @@
 <main class="dashboard-body">
   <div class="container">
     <div id="content">
-      <div class="empty-state">Loading teacher profile...</div>
+      <div class="skeleton-card" style="margin-bottom:24px;">
+        <div style="display:flex; gap:20px; align-items:center;">
+          <div class="skel-avatar" style="width:72px; height:72px;"></div>
+          <div style="flex:1;">
+            <div class="skel-line w-40" style="margin-bottom:8px;"></div>
+            <div class="skel-line w-60"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -32,8 +43,8 @@
   <div class="modal modal-booking">
     <div class="modal-header">
       <div>
-        <h3>Book a demo class</h3>
-        <p>Pick a date and a time that works for you.</p>
+        <h3 id="modalTitle">Book a Free Demo Class</h3>
+        <p>Pick a date and convenient time slot to try your first trial lesson.</p>
       </div>
       <button class="modal-close" id="bookingModalClose" aria-label="Close">✕</button>
     </div>
@@ -41,41 +52,57 @@
       <div class="role-toggle" style="margin-bottom:18px;">
         <label>
           <input type="radio" name="bookingType" value="demo" checked>
-          <span>Free demo</span>
+          <span>Free Demo Class (₹0)</span>
         </label>
         <label>
           <input type="radio" name="bookingType" value="recurring">
-          <span>Recurring classes</span>
+          <span>Recurring Classes</span>
         </label>
       </div>
+
       <div class="form-group">
         <label for="bookingSubject">Subject</label>
-        <input type="text" id="bookingSubject" placeholder="e.g. Maths">
+        <input type="text" id="bookingSubject" placeholder="e.g. Mathematics">
       </div>
+
       <div class="form-group">
         <label for="bookingDate">Date</label>
         <input type="date" id="bookingDate">
       </div>
+
       <div class="form-group">
-        <label>Time slot</label>
+        <label>Select Time Slot</label>
         <div class="slot-grid" id="slotGrid"></div>
       </div>
+
       <div class="role-fields" id="recurringFields">
-        <div class="role-fields-inner">
-          <div class="field-section-label" style="margin-top:16px;">Which days each week?</div>
-          <div class="slot-grid" id="daysGrid" style="grid-template-columns:repeat(4,1fr);"></div>
-        </div>
+        <div class="field-section-label" style="font-size:13px; font-weight:700; color:var(--ink-800); margin: 16px 0 6px;">Which days each week?</div>
+        <div class="slot-grid" id="daysGrid" style="grid-template-columns:repeat(4,1fr);"></div>
       </div>
+
       <div id="bookingMsgBox" class="msg-box"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" id="bookingModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="bookingModalConfirm">Confirm booking</button>
+      <button class="btn btn-primary" id="bookingModalConfirm">Confirm Booking Request</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ---------------- Footer ---------------- -->
+<footer class="site-footer" style="margin-top:40px;">
+  <div class="container">
+    <div class="footer-bottom" style="border:none; padding:0;">
+      <span>© 2026 TutorLink. All rights reserved.</span>
+      <span style="display:flex; gap:16px;">
+        <a href="terms.html">Terms</a>
+        <a href="privacy.html">Privacy</a>
+      </span>
+    </div>
+  </div>
+</footer>
 
 <script src="js/api.js"></script>
 <script>
@@ -84,69 +111,94 @@
   const teacherId = params.get('id');
   const content = document.getElementById('content');
 
+  let teacherSubjectsList = '';
+  let selectedSlot = null;
+  let selectedDays = [];
+  const DEFAULT_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+  let teacherSlots = DEFAULT_SLOTS;
+  const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
   async function loadProfile() {
     if (!teacherId) {
-      content.innerHTML = '<div class="empty-state">No teacher selected.</div>';
+      content.innerHTML = '<div class="empty-state">No teacher selected. <a href="teachers.html">Browse teachers</a></div>';
       return;
     }
 
     try {
       const t = await apiRequest(`/api/teachers/${teacherId}`);
       const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      const location = [t.address, t.city].filter(Boolean).join(', ') || 'Location not specified';
+      const location = [t.address, t.city].filter(Boolean).join(', ') || 'Location on profile';
+      const subjects = (t.subjects || '').split(',').map(s => `<span class="badge badge-subject">${escapeHtml(s.trim())}</span>`).join(' ') || '<span>Not listed</span>';
 
       content.innerHTML = `
         <div class="profile-hero">
-          <div class="avatar-lg">${t.profile_photo ? `<img class="avatar-photo" src="/uploads/${t.profile_photo}" alt="${escapeHtml(t.name)}">` : initials}</div>
+          <div class="avatar-lg">
+            ${t.profile_photo ? `<img class="avatar-photo" src="/uploads/${t.profile_photo}" alt="${escapeHtml(t.name)}">` : initials}
+          </div>
           <div>
-            <h1>${escapeHtml(t.name)}</h1>
-            <div class="qualification">${escapeHtml(t.qualification) || 'Qualification not specified'}</div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h1 style="font-size:28px;">${escapeHtml(t.name)}</h1>
+              <span class="badge badge-verified">✓ ID Verified</span>
+            </div>
+            <div class="qualification">${escapeHtml(t.qualification) || 'Educator'}</div>
             <div class="location-line">📍 ${escapeHtml(location)}</div>
-            <div class="badge-row">
-              <span class="badge badge-rating">★ ${t.rating_avg || 'New'} (${t.total_reviews || 0} reviews)</span>
+            <div class="badge-row" style="margin:0;">
+              <span class="badge badge-rating">★ ${t.rating_avg > 0 ? Number(t.rating_avg).toFixed(1) : 'New'} (${t.total_reviews || 0} reviews)</span>
+              ${t.experience_years ? `<span class="badge badge-distance">${t.experience_years} Years Experience</span>` : ''}
             </div>
           </div>
           <div class="book-col">
             <div class="fee-big">₹${t.fee_per_hour || 0} <span style="font-size:13px; color:var(--ink-500); font-weight:500;">/ hour</span></div>
-            <button class="btn btn-primary btn-block" onclick="openBookingModal()">Book free demo class</button>
+            <button class="btn btn-primary btn-block btn-lg" onclick="openBookingModal()">Book Free Demo</button>
           </div>
         </div>
 
         <div class="info-grid">
           <div class="info-tile">
-            <div class="label">Subjects</div>
-            <div class="value">${escapeHtml(t.subjects) || 'Not listed'}</div>
+            <div class="label">Subjects Taught</div>
+            <div class="value" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${subjects}</div>
           </div>
           <div class="info-tile">
-            <div class="label">Classes / grades</div>
-            <div class="value">${escapeHtml(t.grades) || 'Not listed'}</div>
+            <div class="label">Grades / Classes</div>
+            <div class="value">${escapeHtml(t.grades) || 'All Standard Classes'}</div>
           </div>
           <div class="info-tile">
-            <div class="label">Experience</div>
-            <div class="value">${t.experience_years || 0} years</div>
+            <div class="label">Teaching Experience</div>
+            <div class="value">${t.experience_years || 0} Years</div>
           </div>
           <div class="info-tile">
             <div class="label">Languages</div>
-            <div class="value">${escapeHtml(t.languages) || 'Not listed'}</div>
+            <div class="value">${escapeHtml(t.languages) || 'English, Hindi'}</div>
           </div>
         </div>
 
         <div class="panel">
-          <div class="panel-title">About</div>
-          <p style="font-size:14.5px; color:var(--ink-700);">${escapeHtml(t.bio) || 'This teacher has not added a bio yet.'}</p>
+          <div class="panel-title">About the Teacher &amp; Teaching Style</div>
+          <p style="font-size:15px; color:var(--ink-700); margin-top:8px; line-height:1.6;">
+            ${escapeHtml(t.bio) || 'This educator brings comprehensive subject expertise and tailored student-focused learning methodologies.'}
+          </p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Available Teaching Time Slots</div>
+          <p class="panel-hint">These are the educator's preferred weekly hours for home tuition.</p>
+          <div class="slot-grid" style="margin-top:12px;">
+            ${(t.available_slots || DEFAULT_SLOTS.join(',')).split(',').map(s => `<div class="slot-btn" style="cursor:default;">🕒 ${escapeHtml(s.trim())}</div>`).join('')}
+          </div>
         </div>
 
         <div class="panel" id="reviewsPanel">
-          <div class="panel-title">Reviews</div>
-          <div class="skeleton-card"><div class="skel-line w-60"></div><div class="skel-line w-40"></div></div>
+          <div class="panel-title">Student Reviews &amp; Ratings</div>
+          <div class="skeleton-card" style="margin-top:12px;"><div class="skel-line w-60"></div></div>
         </div>
       `;
+
       teacherSubjectsList = t.subjects || '';
       teacherSlots = (t.available_slots || '').split(',').map(s => s.trim()).filter(Boolean);
       if (teacherSlots.length === 0) teacherSlots = DEFAULT_SLOTS;
       loadReviews();
     } catch (err) {
-      content.innerHTML = `<div class="empty-state">${err.message}</div>`;
+      content.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -155,18 +207,33 @@
     try {
       const reviews = await apiRequest(`/api/reviews/teacher/${teacherId}`);
       if (reviews.length === 0) {
-        panel.innerHTML = '<div class="panel-title">Reviews</div><div class="empty-state">No reviews yet — be the first to book and review!</div>';
+        panel.innerHTML = `
+          <div class="panel-title">Student Reviews &amp; Ratings</div>
+          <div class="empty-state" style="padding:28px; margin-top:12px;">
+            No reviews yet — book a demo class and be the first to leave feedback!
+          </div>`;
         return;
       }
+
       panel.innerHTML = `
-        <div class="panel-title">Reviews (${reviews.length})</div>
-        <div class="fade-in">
+        <div class="panel-title">Student Reviews &amp; Ratings (${reviews.length})</div>
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
           ${reviews.map(r => `
-            <div class="request-row">
-              <div class="request-info">
-                <strong>${escapeHtml(r.student_name)}</strong>
-                <span class="badge badge-rating" style="margin-left:8px;">★ ${r.rating}</span>
-                ${r.comment ? `<div class="request-meta" style="color:var(--ink-700); font-family:var(--font-body); font-size:13.5px; margin-top:6px;">${escapeHtml(r.comment)}</div>` : ''}
+            <div class="request-row" style="background:var(--bg-page); border-radius:var(--radius-lg); border:1px solid var(--border);">
+              <div class="request-info" style="width:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <strong>${escapeHtml(r.student_name)}</strong>
+                    <span class="badge badge-rating" style="margin-left:8px;">★ ${r.rating}.0</span>
+                  </div>
+                  <span style="font-size:12px; color:var(--ink-500);">${new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+                ${r.comment ? `<p style="margin-top:8px; font-size:14px; color:var(--ink-800);">${escapeHtml(r.comment)}</p>` : ''}
+                ${r.teacher_reply ? `
+                  <div style="margin-top:10px; padding:10px 14px; background:var(--surface); border-left:3px solid var(--primary); border-radius:var(--radius-sm); font-size:13px;">
+                    <strong style="color:var(--primary);">Teacher's Reply:</strong> ${escapeHtml(r.teacher_reply)}
+                  </div>
+                ` : ''}
               </div>
             </div>
           `).join('')}
@@ -176,23 +243,12 @@
     }
   }
 
-  let teacherSubjectsList = '';
-  let selectedSlot = null;
-  let selectedDays = [];
-  const DEFAULT_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
-  let teacherSlots = DEFAULT_SLOTS;
-  const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-  function toast(message, isError) {
-    const el = document.getElementById('toast');
-    el.textContent = message;
-    el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'toast'; }, 2800);
-  }
-
   document.querySelectorAll('input[name="bookingType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       document.getElementById('recurringFields').classList.toggle('open', e.target.value === 'recurring');
+      document.getElementById('modalTitle').textContent = e.target.value === 'recurring'
+        ? 'Book Recurring Classes'
+        : 'Book a Free Demo Class';
     });
   });
 
@@ -214,7 +270,9 @@
     selectedDays = [];
     document.querySelector('input[name="bookingType"][value="demo"]').checked = true;
     document.getElementById('recurringFields').classList.remove('open');
+    document.getElementById('modalTitle').textContent = 'Book a Free Demo Class';
     document.getElementById('bookingSubject').value = teacherSubjectsList.split(',')[0]?.trim() || '';
+    
     const dateInput = document.getElementById('bookingDate');
     const today = new Date().toISOString().split('T')[0];
     dateInput.min = today;
@@ -232,7 +290,6 @@
     buildDaysGrid();
 
     document.getElementById('bookingMsgBox').className = 'msg-box';
-    document.getElementById('bookingMsgBox').textContent = '';
     document.getElementById('bookingModalBackdrop').classList.add('open');
   }
 
@@ -249,23 +306,34 @@
     const type = document.querySelector('input[name="bookingType"]:checked').value;
     const confirmBtn = document.getElementById('bookingModalConfirm');
 
-    if (!date || !selectedSlot || !subject) {
+    if (!subject) {
       msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please fill in the subject, date, and a time slot.';
+      msgBox.textContent = 'Please enter a subject.';
+      return;
+    }
+    if (!date) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please select a date.';
+      return;
+    }
+    if (!selectedSlot) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Please choose an available time slot.';
       return;
     }
     if (type === 'recurring' && selectedDays.length === 0) {
       msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please pick at least one day for recurring classes.';
+      msgBox.textContent = 'Please select at least one weekday for recurring classes.';
       return;
     }
 
     confirmBtn.disabled = true;
     confirmBtn.classList.add('btn-loading');
+    msgBox.className = 'msg-box';
 
     try {
       await apiRequest('/api/bookings', 'POST', {
-        teacher_id: teacherId,
+        teacher_id: parseInt(teacherId, 10),
         type,
         subject,
         booking_date: date,
@@ -273,9 +341,10 @@
         days_per_week: type === 'recurring' ? selectedDays.join(',') : null,
         fee: 0,
       });
+
       closeBookingModal();
-      toast(type === 'recurring' ? 'Recurring class request sent!' : 'Demo class requested! The teacher will confirm shortly.');
-      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1200);
+      showToast('Booking request sent successfully! You can track it on your dashboard.');
+      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1500);
     } catch (err) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = err.message;

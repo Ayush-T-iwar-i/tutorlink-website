@@ -3,19 +3,23 @@ const path = require('path');
 const fs = require('fs');
 
 // All uploaded documents land in backend/uploads — created automatically
-// if it doesn't exist yet. Add this folder to .gitignore; uploaded files
-// should never be committed to the repo.
+// if it doesn't exist yet. Uploaded files are excluded in .gitignore.
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+// Sanitize extensions: ensure only alphanumeric lowercase extensions
+function sanitizeExt(originalname) {
+  const ext = path.extname(originalname || '').toLowerCase();
+  const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+  return allowedExts.includes(ext) ? ext : '.bin';
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
-    // userId + field name + timestamp, so re-uploads don't collide and
-    // filenames can't be used to guess/overwrite someone else's file.
-    const ext = path.extname(file.originalname);
+    const ext = sanitizeExt(file.originalname);
     const safeName = `${req.params.userId}_${file.fieldname}_${Date.now()}${ext}`;
     cb(null, safeName);
   },
@@ -25,7 +29,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf
 
 function fileFilter(req, file, cb) {
   if (!ALLOWED_TYPES.includes(file.mimetype)) {
-    return cb(new Error('Only JPG, PNG, WEBP, or PDF files are allowed.'));
+    const err = new Error('Only JPG, PNG, WEBP, or PDF files are allowed.');
+    err.code = 'INVALID_FILE_TYPE';
+    return cb(err);
   }
   cb(null, true);
 }
@@ -37,10 +43,6 @@ const upload = multer({
 });
 
 // ---------- Profile photos ----------
-// Separate from the ID/verification documents above: these are meant to
-// be publicly visible on a teacher's profile, so they live in their own
-// folder that's served as public static files (see server.js), while the
-// documents folder above never is.
 const PHOTO_DIR = path.join(__dirname, '..', 'uploads', 'photos');
 if (!fs.existsSync(PHOTO_DIR)) {
   fs.mkdirSync(PHOTO_DIR, { recursive: true });
@@ -49,7 +51,7 @@ if (!fs.existsSync(PHOTO_DIR)) {
 const photoStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, PHOTO_DIR),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
+    const ext = sanitizeExt(file.originalname);
     cb(null, `${req.params.userId}_photo_${Date.now()}${ext}`);
   },
 });
@@ -60,7 +62,9 @@ const uploadPhoto = multer({
   storage: photoStorage,
   fileFilter: (req, file, cb) => {
     if (!IMAGE_TYPES.includes(file.mimetype)) {
-      return cb(new Error('Only JPG, PNG, or WEBP images are allowed.'));
+      const err = new Error('Only JPG, PNG, or WEBP images are allowed.');
+      err.code = 'INVALID_FILE_TYPE';
+      return cb(err);
     }
     cb(null, true);
   },

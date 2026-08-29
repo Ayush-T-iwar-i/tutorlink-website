@@ -43,8 +43,7 @@ router.post('/signup', [
       return res.status(400).json({ error: 'Role must be student or teacher.' });
     }
 
-    // Check if email or phone already exists (two separate checks so we
-    // can tell the person exactly which one is the problem)
+    // Check if email or phone already exists
     const [existingEmail] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existingEmail.length > 0) {
       return res.status(409).json({ error: 'An account with this email already exists.' });
@@ -63,9 +62,7 @@ router.post('/signup', [
 
     const userId = result.insertId;
 
-    // Create the matching profile row — save whatever the signup form
-    // already collected, so the person doesn't have to retype it on the
-    // complete-profile page.
+    // Create the matching profile row
     if (role === 'student') {
       await db.query(
         'INSERT INTO students (user_id, preferred_grade, preferred_subjects) VALUES (?, ?, ?)',
@@ -74,7 +71,7 @@ router.post('/signup', [
     } else if (role === 'teacher') {
       await db.query(
         'INSERT INTO teachers (user_id, subjects, qualification, experience_years) VALUES (?, ?, ?, ?)',
-        [userId, subjects || '', qualification || null, experience_years || 0]
+        [userId, subjects || '', qualification || null, Math.max(0, parseInt(experience_years, 10) || 0)]
       );
     }
 
@@ -116,7 +113,7 @@ router.post('/login', [
 
     const user = rows[0];
 
-    // Locked out? Tell them how much longer, without revealing anything else.
+    // Locked out check
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const minutesLeft = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
       return res.status(423).json({ error: `Too many failed attempts. Please try again in ${minutesLeft} minute(s).` });
@@ -142,7 +139,7 @@ router.post('/login', [
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Successful login — reset the counter
+    // Successful login — reset the failed attempts counter
     if (user.failed_login_attempts > 0 || user.locked_until) {
       await db.query('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?', [user.id]);
     }
@@ -163,15 +160,16 @@ router.post('/login', [
 // ---------- FORGOT PASSWORD ----------
 // POST /api/auth/forgot-password
 // body: { email }
-// Always responds with the same generic message whether or not the email
-// exists — this prevents attackers from using this endpoint to find out
-// which emails are registered on TutorLink.
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', [
+  body('email').trim().isEmail().withMessage('Please enter a valid email address.').normalizeEmail(),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ error: errors.array()[0].msg });
+  }
+
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required.' });
-    }
 
     const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
 
@@ -184,7 +182,8 @@ router.post('/forgot-password', async (req, res) => {
         [resetToken, expires, rows[0].id]
       );
 
-      const resetLink = `${process.env.FRONTEND_URL || ''}/reset-password.html?token=${resetToken}`;
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const resetLink = `${baseUrl}/reset-password.html?token=${resetToken}`;
 
       const { subject, html } = emailTemplates.passwordReset(resetLink);
       await sendMail({ to: email, subject, html });
@@ -200,12 +199,17 @@ router.post('/forgot-password', async (req, res) => {
 // ---------- RESET PASSWORD ----------
 // POST /api/auth/reset-password
 // body: { token, password }
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required.'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ error: errors.array()[0].msg });
+  }
+
   try {
     const { token, password } = req.body;
-    if (!token || !password) {
-      return res.status(400).json({ error: 'Token and new password are required.' });
-    }
 
     const [rows] = await db.query(
       'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW()',
@@ -233,6 +237,7 @@ router.post('/reset-password', async (req, res) => {
 // PUT /api/auth/change-password
 // body: { current_password, new_password }
 router.put('/change-password', verifyToken, [
+  body('current_password').notEmpty().withMessage('Please enter your current password.'),
   body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.'),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -242,14 +247,10 @@ router.put('/change-password', verifyToken, [
 
   try {
     const { current_password, new_password } = req.body;
-    if (!current_password) {
-      return res.status(400).json({ error: 'Please enter your current password.' });
-    }
 
     const [rows] = await db.query('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Account not found.' });
 
-    // Google-only accounts have no password_hash yet — guide them instead of a confusing failure
     if (!rows[0].password_hash) {
       return res.status(400).json({ error: 'This account signed up with Google and has no password set yet. Use "Forgot password" to set one.' });
     }
@@ -269,7 +270,7 @@ router.put('/change-password', verifyToken, [
   }
 });
 
-// ---------- GET CURRENT LOGGED-IN USER (used to check if a session is still valid) ----------
+// ---------- GET CURRENT LOGGED-IN USER ----------
 // GET /api/auth/me
 // header: Authorization: Bearer <token>
 router.get('/me', verifyToken, async (req, res) => {
@@ -290,7 +291,7 @@ router.get('/me', verifyToken, async (req, res) => {
 
 // ---------- GOOGLE SIGN-IN / SIGN-UP ----------
 // POST /api/auth/google
-// body: { credential, role }  — role is only required the first time (signup)
+// body: { credential, role }
 router.post('/google', async (req, res) => {
   try {
     const { credential, role } = req.body;
@@ -302,7 +303,6 @@ router.post('/google', async (req, res) => {
       return res.status(500).json({ error: 'Google sign-in is not configured on this server yet.' });
     }
 
-    // Verify the token actually came from Google and wasn't tampered with
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -310,7 +310,6 @@ router.post('/google', async (req, res) => {
     const payload = ticket.getPayload();
     const { sub: googleId, email, name } = payload;
 
-    // Check if this Google account (or this email) already has a TutorLink account
     const [existing] = await db.query(
       'SELECT * FROM users WHERE google_id = ? OR email = ?',
       [googleId, email]
@@ -319,15 +318,11 @@ router.post('/google', async (req, res) => {
     let user;
 
     if (existing.length > 0) {
-      // Existing user — just log them in
       user = existing[0];
-
-      // Link the Google ID if they'd originally signed up with email/password
       if (!user.google_id) {
         await db.query('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
       }
     } else {
-      // New user — role is required to create the account
       if (!role || !['student', 'teacher'].includes(role)) {
         return res.status(400).json({ error: 'Please choose whether you are a student or a teacher first.' });
       }
