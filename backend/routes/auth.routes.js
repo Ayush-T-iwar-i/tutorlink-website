@@ -21,7 +21,11 @@ router.post('/signup', [
   body('name').trim().isLength({ min: 2 }).withMessage('Please enter your full name.'),
   body('email').trim().isEmail().withMessage('Please enter a valid email address.').normalizeEmail(),
   body('phone').trim().matches(/^[6-9]\d{9}$/).withMessage('Please enter a valid 10-digit Indian mobile number.'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters.')
+    .matches(/[A-Z]/).withMessage('Password must include at least one uppercase letter.')
+    .matches(/[a-z]/).withMessage('Password must include at least one lowercase letter.')
+    .matches(/[0-9]/).withMessage('Password must include at least one number.'),
   body('role').isIn(['student', 'teacher']).withMessage('Role must be student or teacher.'),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -43,7 +47,6 @@ router.post('/signup', [
       return res.status(400).json({ error: 'Role must be student or teacher.' });
     }
 
-    // Check if email or phone already exists
     const [existingEmail] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existingEmail.length > 0) {
       return res.status(409).json({ error: 'An account with this email already exists.' });
@@ -62,7 +65,6 @@ router.post('/signup', [
 
     const userId = result.insertId;
 
-    // Create the matching profile row
     if (role === 'student') {
       await db.query(
         'INSERT INTO students (user_id, preferred_grade, preferred_subjects) VALUES (?, ?, ?)',
@@ -113,7 +115,6 @@ router.post('/login', [
 
     const user = rows[0];
 
-    // Locked out check
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const minutesLeft = Math.ceil((new Date(user.locked_until) - new Date()) / 60000);
       return res.status(423).json({ error: `Too many failed attempts. Please try again in ${minutesLeft} minute(s).` });
@@ -139,7 +140,6 @@ router.post('/login', [
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Successful login — reset the failed attempts counter
     if (user.failed_login_attempts > 0 || user.locked_until) {
       await db.query('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?', [user.id]);
     }
@@ -201,7 +201,11 @@ router.post('/forgot-password', [
 // body: { token, password }
 router.post('/reset-password', [
   body('token').notEmpty().withMessage('Reset token is required.'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters.'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters.')
+    .matches(/[A-Z]/).withMessage('Password must include at least one uppercase letter.')
+    .matches(/[a-z]/).withMessage('Password must include at least one lowercase letter.')
+    .matches(/[0-9]/).withMessage('Password must include at least one number.'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -238,7 +242,11 @@ router.post('/reset-password', [
 // body: { current_password, new_password }
 router.put('/change-password', verifyToken, [
   body('current_password').notEmpty().withMessage('Please enter your current password.'),
-  body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.'),
+  body('new_password')
+    .isLength({ min: 8 }).withMessage('New password must be at least 8 characters.')
+    .matches(/[A-Z]/).withMessage('New password must include at least one uppercase letter.')
+    .matches(/[a-z]/).withMessage('New password must include at least one lowercase letter.')
+    .matches(/[0-9]/).withMessage('New password must include at least one number.'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

@@ -6,11 +6,14 @@
 // If served on port 5000 or in production (same origin), use relative paths ("").
 // If running on a local Live Server (port 5500, 3000, 8080, etc.), point to localhost:5000.
 const isSeparateDevServer = typeof window !== 'undefined' &&
-  window.location.hostname === 'localhost' &&
+  (window.location.hostname === 'localhost' ||
+   window.location.hostname === '127.0.0.1') &&
   window.location.port !== '' &&
   window.location.port !== '5000';
 
-const API_BASE = isSeparateDevServer ? 'http://localhost:5000' : '';
+const API_BASE = isSeparateDevServer
+  ? 'http://localhost:5000'
+  : '';
 
 async function apiRequest(path, method = "GET", body = null) {
   const headers = { "Content-Type": "application/json" };

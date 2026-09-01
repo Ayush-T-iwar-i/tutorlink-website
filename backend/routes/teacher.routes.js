@@ -17,6 +17,7 @@ router.post(
     { name: 'address_proof', maxCount: 1 },
     { name: 'certificate', maxCount: 1 },
   ]),
+  upload.verifyRealFileType('document'), // 👈 added: rejects files whose real content doesn't match an allowed type
   async (req, res) => {
     try {
       const { userId } = req.params;
@@ -313,15 +314,19 @@ router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
 
 // ---------- UPLOAD PROFILE PHOTO ----------
 // POST /api/teachers/:userId/photo   multipart/form-data field: "photo"
-router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
-    await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
-    res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
-  } catch (err) {
-    console.error('Upload teacher photo error:', err);
-    res.status(500).json({ error: err.message || 'Could not upload photo.' });
+router.post('/:userId/photo', verifyToken, requireOwnUser,
+  upload.photo.single('photo'),
+  upload.verifyRealFileType('photo'), // 👈 added: rejects files whose real content doesn't match an allowed type
+  async (req, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
+      await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
+      res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
+    } catch (err) {
+      console.error('Upload teacher photo error:', err);
+      res.status(500).json({ error: err.message || 'Could not upload photo.' });
+    }
   }
-});
+);
 
 module.exports = router;

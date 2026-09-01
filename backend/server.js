@@ -26,41 +26,43 @@ const courseRoutes = require('./routes/course.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Needed when deployed behind a proxy/load balancer (Render, Railway, Heroku, Nginx, etc.)
-// so rate limiting and client IPs are read correctly.
 app.set('trust proxy', 1);
 
 // ---------- Security middleware ----------
 app.use(helmet({
-  contentSecurityPolicy: false, // keep permissive for simple HTML/CSS/JS frontend; tighten later if needed
+  contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// Request logging — 'dev' format is concise and colour-coded, good for
-// local development. Skipped in tests to keep test output clean.
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+// Fail fast if someone deploys to production without setting a real origin —
+// "*" + credentials:true is both a security gap and gets silently rejected
+// by browsers for credentialed requests anyway.
+if (process.env.NODE_ENV === 'production' && (!process.env.ALLOWED_ORIGIN || process.env.ALLOWED_ORIGIN === '*')) {
+  console.error('❌ ALLOWED_ORIGIN must be set to your real frontend domain in production. Refusing to start.');
+  process.exit(1);
+}
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*', // set ALLOWED_ORIGIN in production .env to your real domain
+  origin: process.env.ALLOWED_ORIGIN || '*',
   credentials: true,
 }));
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// Limit repeated requests to auth endpoints to slow down brute-force attempts
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30,                  // 30 requests per IP per window
+  windowMs: 15 * 60 * 1000,
+  max: 30,
   message: { error: 'Too many attempts. Please try again in a few minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/auth', authLimiter);
 
-// General API rate limit (protects the whole backend from abuse/scraping)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -70,15 +72,10 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
-// ---------- Serve the frontend (HTML/CSS/JS) as static files ----------
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-// Profile photos are meant to be publicly visible (teacher directory,
-// profile pages). Verification documents are NOT served this way — those
-// stay behind the authenticated route in teacher.routes.js.
 app.use('/uploads/photos', express.static(path.join(__dirname, 'uploads', 'photos')));
 
-// ---------- API Routes ----------
 app.use('/api/auth', authRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/students', studentRoutes);
@@ -92,7 +89,6 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
 
-// ---------- Health check (used by hosting platforms to confirm the app is alive) ----------
 app.get('/health', async (req, res) => {
   const health = {
     status: 'ok',
@@ -110,20 +106,15 @@ app.get('/health', async (req, res) => {
   res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
-// ---------- 404 handler for unknown API routes ----------
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API route not found.' });
 });
 
-// ---------- 404 handler for unknown frontend pages ----------
-// (Only reached if express.static above found no matching file.)
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', 'frontend', '404.html'));
 });
 
-// ---------- Global error handler ----------
 app.use((err, req, res, next) => {
-  // Handle Multer upload errors gracefully
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'Uploaded file is too large (max limit exceeded).' });
@@ -142,7 +133,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ---------- Start server ----------
 let server = null;
 if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, () => {
