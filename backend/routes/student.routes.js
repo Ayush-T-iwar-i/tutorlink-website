@@ -21,6 +21,11 @@ router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('studen
   longitude
 } = req.body;
 
+// Safety net: truncate to the actual column sizes so a bad/unexpected
+// value from the client (or a future bug) can never crash the query with
+// "Data too long for column ..." — it just gets stored trimmed instead.
+const safe = (val, max) => (typeof val === 'string' ? val.slice(0, max) : val);
+
    await db.query(
   `UPDATE students
    SET

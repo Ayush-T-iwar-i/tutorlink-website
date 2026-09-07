@@ -105,15 +105,16 @@ main {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   color: var(--ink-900);
-  line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-h1 { font-size: 38px; }
-h2 { font-size: 28px; }
-h3 { font-size: 20px; }
-h4 { font-size: 17px; }
+h1 { font-size: 38px; line-height: 1.15; }
+h2 { font-size: 28px; line-height: 1.2; }
+h3 { font-size: 20px; line-height: 1.3; }
+h4 { font-size: 17px; line-height: 1.35; }
+h5 { font-size: 15px; line-height: 1.4; letter-spacing: -0.01em; }
+h6 { font-size: 13px; line-height: 1.4; letter-spacing: 0; text-transform: none; }
 
 p {
   color: var(--ink-700);
@@ -159,20 +160,28 @@ button, input, select, textarea {
 
 /* ---------------- Badge & Pill Components ---------------- */
 .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--primary);
+  letter-spacing: -0.005em;
+  color: var(--primary-dark);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   margin-bottom: 12px;
   background: var(--primary-light);
-  padding: 4px 12px;
+  padding: 5px 12px 5px 10px;
   border-radius: var(--radius-full);
   border: 1px solid rgba(15, 118, 110, 0.15);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
 }
 
 .badge {
@@ -361,6 +370,46 @@ button, input, select, textarea {
   justify-content: center;
   font-size: 11.5px;
   font-weight: 700;
+  overflow: hidden;
+}
+
+.avatar-sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* ---------------- Profile photo upload (student & teacher complete-profile pages) ---------------- */
+.photo-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.photo-preview {
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  overflow: hidden;
+  border: 3px solid var(--border);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ---------------- Notification Bell Dropdown ---------------- */
@@ -506,14 +555,14 @@ button, input, select, textarea {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, #0D9488 100%);
   color: #FFFFFF;
-  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.2);
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.25);
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #0B7A70 100%);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.32);
   color: #FFFFFF;
 }
 
@@ -598,6 +647,25 @@ button, input, select, textarea {
 }
 
 /* ---------------- Form Controls ---------------- */
+.form-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-section h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
 .form-group {
   margin-bottom: 18px;
   text-align: left;
@@ -784,6 +852,30 @@ button, input, select, textarea {
   stroke-width: 1.5;
   stroke-dasharray: 6 6;
   opacity: 0.45;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ringSpin 26s linear infinite;
+}
+
+/* Each successive ring spins a little slower and in the opposite direction
+   from the one before it, so the rings feel layered instead of locked
+   together. Works regardless of how many rings a page has (2 on the
+   homepage, 3 on login/signup/forgot-password). */
+.radius-visual .ring + .ring {
+  animation-duration: 34s;
+  animation-direction: reverse;
+}
+.radius-visual .ring + .ring + .ring {
+  animation-duration: 42s;
+  animation-direction: normal;
+}
+
+/* The soft glow behind the rings on the homepage hero (fed by the
+   #radarGlow gradient) gets a slow breathing pulse. */
+.radius-visual circle[fill="url(#radarGlow)"] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: glowPulse 5s ease-in-out infinite;
 }
 
 .radius-visual .ring-label {
@@ -793,9 +885,64 @@ button, input, select, textarea {
   font-weight: 600;
 }
 
-.radius-visual .center-pin { fill: var(--ink-900); }
-.radius-visual .tutor-pin { fill: var(--primary); }
-.radius-visual .tutor-pin.out { fill: var(--ink-300); }
+.radius-visual .center-pin {
+  fill: var(--ink-900);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: centerPulse 2.6s ease-in-out infinite;
+}
+
+.radius-visual .tutor-pin {
+  fill: var(--primary);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tutorPulse 2.4s ease-in-out infinite;
+}
+
+/* Stagger each dot's pulse slightly so they don't all breathe in unison —
+   reads like a radar picking up tutors one by one. */
+.radius-visual .tutor-pin + .tutor-pin { animation-delay: 0.35s; }
+.radius-visual .tutor-pin + .tutor-pin + .tutor-pin { animation-delay: 0.7s; }
+.radius-visual .tutor-pin + .tutor-pin + .tutor-pin + .tutor-pin { animation-delay: 1.05s; }
+.radius-visual .tutor-pin + .tutor-pin + .tutor-pin + .tutor-pin + .tutor-pin { animation-delay: 1.4s; }
+
+/* Tutors outside the radius stay muted and static — reinforces that
+   they're excluded from the match, visually distinct from the pulsing
+   in-range dots above. */
+.radius-visual .tutor-pin.out {
+  fill: var(--ink-300);
+  animation: none;
+}
+
+@keyframes ringSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes centerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes tutorPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.55; }
+}
+
+/* Respect users who've asked their OS/browser to reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .radius-visual .ring,
+  .radius-visual circle[fill="url(#radarGlow)"],
+  .radius-visual .center-pin,
+  .radius-visual .tutor-pin {
+    animation: none;
+  }
+}
 
 /* ---------------- How It Works / Process ---------------- */
 .process {
@@ -1073,6 +1220,106 @@ button, input, select, textarea {
   min-width: 100px;
 }
 
+/* ---------------- Signature hero (student dashboard + complete-profile) ----------------
+   A scoped modifier — the plain .dash-hero used on other dashboards (teacher, admin)
+   is untouched. This gives the student-facing hero a distinct, premium identity
+   instead of looking like just another white card. */
+.dash-hero-brand {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  border: none;
+  box-shadow: var(--shadow-glow), var(--shadow-pop);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-hero-brand::after {
+  content: '';
+  position: absolute;
+  top: -70px;
+  right: -70px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.dash-hero-brand .eyebrow {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.dash-hero-brand .eyebrow::before {
+  background: var(--accent);
+}
+
+.dash-hero-brand h1 {
+  color: #fff;
+}
+
+.dash-hero-brand p {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dash-hero-brand .progress-bar {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.dash-hero-brand .dash-stat-row {
+  gap: 0;
+}
+
+.dash-hero-brand .dash-stat {
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  padding: 4px 24px;
+  text-align: left;
+  min-width: 0;
+}
+
+.dash-hero-brand .dash-stat:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.dash-hero-brand .dash-stat .num {
+  color: #fff;
+}
+
+.dash-hero-brand .dash-stat .lbl {
+  color: rgba(255, 255, 255, 0.62);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-subtle);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.progress-label {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+}
+
 .dash-stat .num {
   font-family: var(--font-display);
   font-size: 22px;
@@ -1082,11 +1329,9 @@ button, input, select, textarea {
 }
 
 .dash-stat .lbl {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ink-500);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* ---------------- Filter & Search Bar ---------------- */
@@ -1258,11 +1503,9 @@ button, input, select, textarea {
 }
 
 .info-tile .label {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  text-transform: uppercase;
   color: var(--ink-500);
-  letter-spacing: 0.04em;
   margin-bottom: 6px;
 }
 
@@ -1830,5 +2073,36 @@ button, input, select, textarea {
   .dash-stat-row {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+  .info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dash-stat-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .dash-hero-brand .dash-stat {
+    border-right: none;
+    padding: 0;
+    min-width: 40%;
+  }
+  .notif-dropdown {
+    width: calc(100vw - 32px);
+    right: -8px;
+  }
+  .auth-card {
+    padding: 28px 22px;
+  }
+  .photo-upload-row {
+    flex-wrap: wrap;
+  }
+  .modal {
+    max-width: calc(100vw - 24px);
   }
 }

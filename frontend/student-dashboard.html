@@ -42,7 +42,7 @@
   <div class="container">
 
     <!-- ---------------- Hero / greeting band ---------------- -->
-    <div class="dash-hero">
+    <div class="dash-hero dash-hero-brand">
       <div class="dash-hero-top">
         <div>
           <div class="eyebrow">Student dashboard</div>
@@ -282,6 +282,17 @@
     document.getElementById('avatarInitials').textContent =
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
+
+    // Show the real profile photo in the header avatar if one has been uploaded.
+    (async () => {
+      try {
+        const me = await apiRequest('/api/auth/me');
+        if (me.user && me.user.profile_photo) {
+          document.getElementById('avatarInitials').innerHTML =
+            `<img src="/uploads/${me.user.profile_photo}" alt="">`;
+        }
+      } catch (e) { /* keep initials if this fails */ }
+    })();
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {

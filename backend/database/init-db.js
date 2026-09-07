@@ -44,7 +44,7 @@ async function initializeDatabase() {
         await connection.query(sql);
         console.log(`✅ Migration applied: ${file}`);
       } catch (migErr) {
-        if (migErr.code === 'ER_DUP_FIELDNAME' || migErr.code === 'ER_TABLE_EXISTS_ERROR') {
+           if (migErr.code === 'ER_DUP_FIELDNAME' || migErr.code === 'ER_TABLE_EXISTS_ERROR' || migErr.code === 'ER_DUP_KEYNAME') {
           console.log(`↪️  Skipped (already applied): ${file}`);
         } else {
           throw new Error(`Migration "${file}" failed: ${migErr.message}`);

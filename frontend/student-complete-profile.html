@@ -23,7 +23,7 @@
 <main class="dashboard-body">
   <div class="container form-page">
 
-    <div class="dash-hero" style="margin-bottom:26px;">
+    <div class="dash-hero dash-hero-brand" style="margin-bottom:26px;">
       <div class="eyebrow">Student profile</div>
       <h1 style="font-size:24px;">Complete your profile</h1>
       <p>Helps us match you with the right nearby teachers — takes under a minute.</p>
@@ -197,9 +197,20 @@
   }
   loadExisting();
 
-  // ---------------- Profile photo ----------------
+  // ---------------- Profile photo ----------------  // ---------------- Profile photo ----------------
   const photoPreview = document.getElementById('photoPreview');
   photoPreview.textContent = session.user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  // Load an already-uploaded photo (if any) instead of always showing
+  // initials — session.user doesn't carry profile_photo, so fetch it fresh.
+  (async () => {
+    try {
+      const me = await apiRequest('/api/auth/me');
+      if (me.user && me.user.profile_photo) {
+        photoPreview.innerHTML = `<img src="/uploads/${me.user.profile_photo}" alt="Profile photo">`;
+      }
+    } catch (e) { /* keep initials if this fails */ }
+  })();
 
   document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
     const file = document.getElementById('photoInput').files[0];
@@ -517,11 +528,16 @@
         preferred_grade: document.getElementById('preferredGrade').value.trim()
       });
 
+      const addressValue = document.getElementById('address').value.trim();
+      const cityValue = document.getElementById('city').value.trim();
+
       await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
-        address: document.getElementById('address').value.trim(),
-        city: document.getElementById('city').value.trim(),
-        area: currentAddress ? currentAddress.area : document.getElementById('address').value.trim(),
-        district: document.getElementById('city').value.trim(),
+        address: addressValue,
+        city: cityValue,
+        // Fall back to a short slice of the address (not the whole thing) —
+        // "area" is a VARCHAR(150) column and a full address can easily be longer.
+        area: currentAddress ? currentAddress.area : addressValue.slice(0, 140),
+        district: cityValue,
         pincode: currentAddress ? currentAddress.pincode : '',
         latitude: currentLat,
         longitude: currentLng
