@@ -1,4 +1,15 @@
 node_modules/
+
+# Never commit secrets — copy .env.example and fill in your values
+.env
+.env.local
+.env.production
+
+# Test coverage artifacts
+coverage/
+
+# Uploaded files (not code — use a volume or cloud storage in production)
+uploads/*/
 .env
 .env.local
 *.log

@@ -12,6 +12,20 @@ const { verifyToken } = require('../middleware/auth.middleware');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// The JWT lives in an httpOnly cookie so client-side JS can never read it —
+// closes off token theft via XSS. `secure` only in production because local
+// HTTP dev servers can't set secure cookies. `sameSite: 'lax'` allows the
+// cookie on normal top-level navigation (e.g. clicking a link to the site)
+// while still blocking it on cross-site POSTs.
+function setAuthCookie(res, token) {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, matches the JWT's own expiry
+  });
+}
+
 // ---------- SIGNUP ----------
 // POST /api/auth/signup
 // body (common): { name, email, phone, password, role: "student" | "teacher" }
@@ -78,11 +92,29 @@ router.post('/signup', [
     }
 
     const token = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    setAuthCookie(res, token);
+
+    // Send a verification email — doesn't block login, just marks the
+    // account unverified until the link is clicked.
+    try {
+      const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+      const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      await db.query(
+        'UPDATE users SET email_verify_token = ?, email_verify_expires = ? WHERE id = ?',
+        [emailVerifyToken, verifyExpires, userId]
+      );
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const verifyLink = `${baseUrl}/verify-email.html?token=${emailVerifyToken}`;
+      const { subject: verifySubject, html: verifyHtml } = emailTemplates.emailVerification(verifyLink);
+      await sendMail({ to: email, subject: verifySubject, html: verifyHtml });
+    } catch (verifyErr) {
+      console.error('Could not send verification email:', verifyErr);
+      // Non-fatal — the account still gets created either way.
+    }
 
     res.status(201).json({
       message: 'Account created successfully.',
-      token,
-      user: { id: userId, name, email, role }
+      user: { id: userId, name, email, role, email_verified: false }
     });
   } catch (err) {
     console.error('Signup error:', err);
@@ -145,10 +177,10 @@ router.post('/login', [
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    setAuthCookie(res, token);
 
     res.json({
       message: 'Login successful.',
-      token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (err) {
@@ -284,7 +316,7 @@ router.put('/change-password', verifyToken, [
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT id, name, email, phone, role, profile_photo FROM users WHERE id = ?',
+      'SELECT id, name, email, phone, role, profile_photo, email_verified FROM users WHERE id = ?',
       [req.user.id]
     );
     if (rows.length === 0) {
@@ -352,16 +384,93 @@ router.post('/google', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    setAuthCookie(res, token);
 
     res.json({
       message: 'Signed in with Google.',
-      token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (err) {
     console.error('Google sign-in error:', err);
     res.status(401).json({ error: 'Could not verify Google sign-in. Please try again.' });
   }
+});
+
+// ---------- VERIFY EMAIL ----------
+// GET /api/auth/verify-email?token=...
+// Public route — the link from the verification email hits this directly.
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ error: 'Verification token is required.' });
+    }
+
+    const [rows] = await db.query(
+      'SELECT id FROM users WHERE email_verify_token = ? AND email_verify_expires > NOW()',
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'This verification link is invalid or has expired. Please request a new one.' });
+    }
+
+    await db.query(
+      'UPDATE users SET email_verified = 1, email_verify_token = NULL, email_verify_expires = NULL WHERE id = ?',
+      [rows[0].id]
+    );
+
+    res.json({ message: 'Email verified successfully.' });
+  } catch (err) {
+    console.error('Verify email error:', err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// ---------- RESEND VERIFICATION EMAIL (logged in, protected) ----------
+// POST /api/auth/resend-verification
+router.post('/resend-verification', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT email, email_verified FROM users WHERE id = ?', [req.user.id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+    if (rows[0].email_verified) {
+      return res.status(400).json({ error: 'Your email is already verified.' });
+    }
+
+    const newVerifyToken = crypto.randomBytes(32).toString('hex');
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await db.query(
+      'UPDATE users SET email_verify_token = ?, email_verify_expires = ? WHERE id = ?',
+      [newVerifyToken, verifyExpires, req.user.id]
+    );
+
+    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+    const verifyLink = `${baseUrl}/verify-email.html?token=${newVerifyToken}`;
+    const { subject, html } = emailTemplates.emailVerification(verifyLink);
+    await sendMail({ to: rows[0].email, subject, html });
+
+    res.json({ message: 'Verification email sent. Please check your inbox.' });
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    res.status(500).json({ error: 'Could not resend verification email.' });
+  }
+});
+
+// ---------- LOGOUT ----------
+// POST /api/auth/logout
+// Clears the httpOnly cookie server-side — client-side JS has no way to
+// remove an httpOnly cookie itself, so this endpoint is required for
+// logout to actually invalidate the session rather than just forgetting
+// the (non-existent, now) client-side copy of the token.
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  res.json({ message: 'Logged out.' });
 });
 
 module.exports = router;

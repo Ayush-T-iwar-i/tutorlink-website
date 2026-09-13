@@ -127,6 +127,62 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
   }
 });
 
+// ---------- STUDENT: CANCEL THEIR OWN BOOKING ----------
+// PUT /api/bookings/:id/cancel
+// Students can only cancel bookings that are still 'requested' or 'accepted'.
+// Completed or declined bookings cannot be cancelled.
+router.put('/:id/cancel', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify this booking belongs to this student and is in a cancellable state
+    const [rows] = await db.query(
+      `SELECT b.id, b.status, b.teacher_id
+       FROM bookings b
+       JOIN students s ON s.id = b.student_id
+       WHERE b.id = ? AND s.user_id = ?`,
+      [id, req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(403).json({ error: 'You can only cancel your own bookings.' });
+    }
+
+    const booking = rows[0];
+    if (!['requested', 'accepted'].includes(booking.status)) {
+      return res.status(400).json({
+        error: `Cannot cancel a booking that is already '${booking.status}'.`
+      });
+    }
+
+    await db.query('UPDATE bookings SET status = ? WHERE id = ?', ['cancelled', id]);
+    res.json({ message: 'Booking cancelled.' });
+
+    // Notify the teacher
+    try {
+      const [teacherRows] = await db.query(
+        `SELECT u.email, u.name, t.user_id FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
+        [booking.teacher_id]
+      );
+      const [studentName] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+      if (teacherRows.length > 0) {
+        await createNotification(
+          teacherRows[0].user_id,
+          `${studentName[0]?.name || 'A student'} cancelled their booking request.`,
+          'teacher-dashboard.html'
+        );
+      }
+    } catch (notifyErr) {
+      console.error('Cancel booking notification failed:', notifyErr);
+    }
+  } catch (err) {
+    console.error('Cancel booking error:', err);
+    if (res.headersSent) return;
+    res.status(500).json({ error: 'Could not cancel booking.' });
+  }
+});
+
+
 // ---------- TEACHER: ACCEPT / DECLINE / COMPLETE A BOOKING ----------
 // PUT /api/bookings/:id/status
 // body: { status: "accepted" | "declined" | "completed" | "cancelled", fee }

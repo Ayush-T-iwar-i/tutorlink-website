@@ -274,7 +274,7 @@
 
     try {
       const data = await apiRequest('/api/auth/signup', 'POST', payload);
-      saveSession(data.user, data.token);
+      saveSession(data.user);
       msgBox.className = 'msg-box success';
       msgBox.textContent = 'Account created! Redirecting...';
 

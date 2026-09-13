@@ -270,7 +270,7 @@
   // fetch the CSV as a blob and trigger the download manually.
   async function downloadCsv(path, filename) {
     try {
-      const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const res = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Export failed.');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

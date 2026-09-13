@@ -40,7 +40,7 @@
 <main class="dashboard-body">
   <div class="container">
 
-    <div class="dash-hero">
+    <div class="dash-hero dash-hero-brand">
       <div class="dash-hero-top">
         <div>
           <div class="eyebrow">Teacher dashboard</div>
@@ -174,6 +174,48 @@
     document.getElementById('avatarInitials').textContent =
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
+
+    // Show the real profile photo in the header avatar if one has been uploaded,
+    // and remind the teacher to verify their email if they haven't yet.
+    (async () => {
+      try {
+        const me = await apiRequest('/api/auth/me');
+        if (me.user && me.user.profile_photo) {
+          document.getElementById('avatarInitials').innerHTML =
+            `<img src="${photoUrl(me.user.profile_photo)}" alt="">`;
+        }
+        if (me.user && !me.user.email_verified) {
+          showVerifyEmailBanner();
+        }
+      } catch (e) { /* keep initials if this fails */ }
+    })();
+  }
+
+  function showVerifyEmailBanner() {
+    const bar = document.createElement('div');
+    bar.className = 'banner';
+    bar.style.cssText = 'margin-bottom:16px;';
+    bar.innerHTML = `
+      <div class="banner-text">
+        <strong>Please verify your email</strong>
+        <span>Check your inbox for a verification link, or resend it below.</span>
+      </div>
+      <button type="button" class="btn btn-accent btn-sm" id="resendVerifyBtn">Resend email</button>
+    `;
+    const main = document.querySelector('.dashboard-body .container');
+    if (main) main.insertBefore(bar, main.firstChild);
+
+    document.getElementById('resendVerifyBtn').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      e.target.textContent = 'Sending…';
+      try {
+        await apiRequest('/api/auth/resend-verification', 'POST');
+        e.target.textContent = 'Sent! Check your inbox';
+      } catch (err) {
+        e.target.textContent = 'Could not send — try again';
+        e.target.disabled = false;
+      }
+    });
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -280,9 +322,9 @@
             <span class="badge badge-rating" style="margin-left:8px;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
             ${r.comment ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">${escapeHtml(r.comment)}</div>` : ''}
             ${r.teacher_reply
-              ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--green-700); margin-top:6px; padding-left:10px; border-left:2px solid var(--green-700);"><strong>Your reply:</strong> ${escapeHtml(r.teacher_reply)}</div>`
+              ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--primary); margin-top:6px; padding-left:10px; border-left:2px solid var(--primary);"><strong>Your reply:</strong> ${escapeHtml(r.teacher_reply)}</div>`
               : `<div style="margin-top:8px;">
-                   <input type="text" id="replyInput-${r.id}" placeholder="Write a public reply…" style="width:60%; padding:8px 10px; border:1.4px solid var(--line-strong); border-radius:var(--radius-sm); font-size:13px;">
+                   <input type="text" id="replyInput-${r.id}" placeholder="Write a public reply…" style="width:60%; padding:8px 10px; border:1.4px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px;">
                    <button class="btn btn-outline btn-sm" onclick="replyToReview(${r.id})">Reply</button>
                  </div>`}
           </div>

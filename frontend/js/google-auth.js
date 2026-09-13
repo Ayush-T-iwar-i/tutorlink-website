@@ -65,7 +65,7 @@ async function handleGoogleCredential(response, getRole, onError) {
     if (getRole) payload.role = getRole();
 
     const data = await apiRequest("/api/auth/google", "POST", payload);
-    saveSession(data.user, data.token);
+    saveSession(data.user);
 
     window.location.href =
       data.user.role === "teacher" ? "teacher-dashboard.html" : "student-dashboard.html";

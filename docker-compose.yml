@@ -11,37 +11,61 @@ services:
       - NODE_ENV=production
       - PORT=5000
       - DB_HOST=db
-      - DB_USER=tutorlink_user
-      - DB_PASSWORD=tutorlink_secure_password
-      - DB_NAME=tutorlink
-      - JWT_SECRET=tutorlink_production_super_secret_jwt_key_32bytes
-      - DEFAULT_RADIUS_KM=5
-      - ALLOWED_ORIGIN=*
+      # ⚠️  Override these via a .env file or CI/CD secrets — do NOT hardcode real values here.
+      # Tip: run `docker-compose --env-file .env.production up` to inject production vars.
+      - DB_USER=${DB_USER:-tutorlink_user}
+      - DB_PASSWORD=${DB_PASSWORD:-change_me_in_production}
+      - DB_NAME=${DB_NAME:-tutorlink}
+      - JWT_SECRET=${JWT_SECRET:-change_me_in_production_min_32_chars}
+      - DEFAULT_RADIUS_KM=${DEFAULT_RADIUS_KM:-5}
+      # ALLOWED_ORIGIN must be your real frontend domain in production (e.g. https://tutorlink.com)
+      # Setting it to * is a security vulnerability when credentials:true is also set.
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-http://localhost:5000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5000}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-}
     volumes:
       - tutorlink_uploads:/app/backend/uploads
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   db:
     image: mysql:8.0
     container_name: tutorlink-mysql
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=root_secure_password
-      - MYSQL_DATABASE=tutorlink
-      - MYSQL_USER=tutorlink_user
-      - MYSQL_PASSWORD=tutorlink_secure_password
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_change_me}
+      - MYSQL_DATABASE=${DB_NAME:-tutorlink}
+      - MYSQL_USER=${DB_USER:-tutorlink_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-change_me_in_production}
+    # In production, remove the port exposure below to prevent direct external DB access.
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "tutorlink_user", "-ptutorlink_secure_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER:-tutorlink_user}", "-p${DB_PASSWORD:-change_me_in_production}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
 volumes:
   mysql_data:

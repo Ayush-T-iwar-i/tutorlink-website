@@ -36,7 +36,15 @@
     <form id="profileForm" novalidate>
 
       <div class="form-section">
-        <h3>Profile photo</h3>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </span>
+          <div>
+            <h3>Profile photo</h3>
+            <p>A friendly photo helps teachers recognize and trust you.</p>
+          </div>
+        </div>
         <div class="photo-upload-row">
           <div class="photo-preview" id="photoPreview">—</div>
           <div>
@@ -48,8 +56,15 @@
       </div>
 
       <div class="form-section">
-        <h3>What are you looking for</h3>
-        <p class="section-hint">Tell us the subjects and grade so we only show relevant teachers.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <div>
+            <h3>What are you looking for</h3>
+            <p>Tell us the subjects and grade so we only show relevant teachers.</p>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label for="preferredSubjects">Preferred subjects</label>
@@ -63,8 +78,15 @@
       </div>
 
       <div class="form-section">
-        <h3>Your location</h3>
-        <p class="section-hint">We use this to show only teachers within your chosen radius.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          </span>
+          <div>
+            <h3>Your location</h3>
+            <p>We use this to show only teachers within your chosen radius.</p>
+          </div>
+        </div>
 
         <div id="locationNotSet" class="location-panel">
           <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
@@ -207,7 +229,7 @@
     try {
       const me = await apiRequest('/api/auth/me');
       if (me.user && me.user.profile_photo) {
-        photoPreview.innerHTML = `<img src="/uploads/${me.user.profile_photo}" alt="Profile photo">`;
+        photoPreview.innerHTML = `<img src="${photoUrl(me.user.profile_photo)}" alt="Profile photo">`;
       }
     } catch (e) { /* keep initials if this fails */ }
   })();
@@ -225,15 +247,15 @@
     formData.append('photo', file);
 
     try {
-      const res = await fetch(`/api/students/${session.user.id}/photo`, {
+      const res = await fetch(`${API_BASE}/api/students/${session.user.id}/photo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
+        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed.');
 
-      photoPreview.innerHTML = `<img src="/uploads/${data.path}" alt="Profile photo">`;
+      photoPreview.innerHTML = `<img src="${photoUrl(data.path)}" alt="Profile photo">`;
       photoMsgBox.className = 'msg-box success';
       photoMsgBox.textContent = 'Photo updated.';
       toast('Profile photo updated');

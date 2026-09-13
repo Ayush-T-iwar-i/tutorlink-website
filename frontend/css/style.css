@@ -389,6 +389,30 @@ button, input, select, textarea {
   margin-bottom: 4px;
 }
 
+.photo-upload-row input[type="file"] {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  max-width: 220px;
+}
+
+.photo-upload-row input[type="file"]::file-selector-button {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid rgba(15, 118, 110, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.photo-upload-row input[type="file"]::file-selector-button:hover {
+  background: #DCFCE7;
+}
+
 .photo-preview {
   width: 96px;
   height: 96px;
@@ -664,6 +688,71 @@ button, input, select, textarea {
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
+}
+
+/* Icon + title + hint header for form sections — matches the panel-icon-title
+   pattern already used on the dashboards, so profile-setup pages feel like
+   part of the same product instead of a plain stack of white boxes. */
+.form-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-section-head .ic {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-section-head h3 {
+  font-size: 16px;
+  margin-bottom: 3px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.form-section-head p {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-bottom: 0;
+}
+
+.section-hint {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: -10px;
+  margin-bottom: 18px;
+}
+
+.field-section-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-500);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-group {

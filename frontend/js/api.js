@@ -17,14 +17,13 @@ const API_BASE = isSeparateDevServer
 
 async function apiRequest(path, method = "GET", body = null) {
   const headers = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   let response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       method,
       headers,
+      credentials: 'include', // sends the httpOnly auth cookie automatically
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (networkErr) {
@@ -64,13 +63,17 @@ function defaultErrorFor(status) {
 }
 
 /* ---------- session ---------- */
+// The JWT itself now lives only in an httpOnly cookie set by the server —
+// it's never stored in localStorage or readable by JS, which closes off
+// token theft via XSS. localStorage only keeps the non-sensitive user
+// object (name/role/etc.) so pages can show it instantly without an
+// extra round trip; actual authorization on every API call is enforced
+// server-side via the cookie regardless of what's in localStorage.
 
 const SESSION_USER_KEY = "tutorlink.user";
-const SESSION_TOKEN_KEY = "tutorlink.token";
 
-function saveSession(user, token) {
+function saveSession(user) {
   localStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
-  localStorage.setItem(SESSION_TOKEN_KEY, token);
 }
 
 function getSession() {
@@ -78,13 +81,12 @@ function getSession() {
   return raw ? JSON.parse(raw) : null;
 }
 
-function getToken() {
-  return localStorage.getItem(SESSION_TOKEN_KEY);
-}
-
 function clearSession() {
   localStorage.removeItem(SESSION_USER_KEY);
-  localStorage.removeItem(SESSION_TOKEN_KEY);
+  // Fire-and-forget: an httpOnly cookie can't be cleared by JS, so the
+  // server has to do it. `keepalive` lets this request finish even if the
+  // page navigates away (e.g. to login.html) right after this call.
+  fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include', keepalive: true }).catch(() => {});
 }
 
 // ---------- XSS-safe text rendering ----------
@@ -142,7 +144,7 @@ function initNotificationBell() {
   }
 
   async function loadNotifications() {
-    if (!getToken()) return;
+    if (!getSession()) return;
     const list = document.getElementById('notifList');
     const badge = document.getElementById('notifBadge');
     if (!list || !badge) return;
@@ -174,7 +176,7 @@ function initNotificationBell() {
 
   loadNotifications();
   const pollInterval = setInterval(() => {
-    if (!getToken()) {
+    if (!getSession()) {
       clearInterval(pollInterval);
       return;
     }
@@ -371,9 +373,8 @@ async function submitReport() {
 
 function requireLogin(requiredRole = null) {
   const user = getSession();
-  const token = getToken();
 
-  if (!user || !token) {
+  if (!user) {
     window.location.href = "login.html";
     return null;
   }
@@ -386,5 +387,15 @@ function requireLogin(requiredRole = null) {
     return null;
   }
 
-  return { user, token };
+  return { user };
+}
+
+// Profile photos used to be stored as a local relative path (e.g.
+// "photos/8_photo_123.jpg") served from /uploads/. They're now stored as
+// full Cloudinary URLs instead, so uploads survive redeploys. This helper
+// makes both formats work: a full URL is used as-is, an old relative path
+// still falls back to the local /uploads/ route.
+function photoUrl(path) {
+  if (!path) return '';
+  return /^https?:\/\//i.test(path) ? path : `/uploads/${path}`;
 }

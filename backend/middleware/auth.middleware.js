@@ -2,15 +2,23 @@ const jwt = require('jsonwebtoken');
 
 // ---------- Verify that a valid login token was sent ----------
 // Used on any route that should only work for a logged-in user.
-// Frontend must send: Authorization: Bearer <token>
+// The token normally arrives as an httpOnly "token" cookie (set by
+// login/signup) so client-side JS never has direct access to it — this
+// closes off a whole class of XSS token-theft. The Authorization header
+// is still accepted as a fallback for non-browser API clients.
 function verifyToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
+  let token = req.cookies && req.cookies.token;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Not logged in. Please log in and try again.' });
+  if (!token) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Not logged in. Please log in and try again.' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

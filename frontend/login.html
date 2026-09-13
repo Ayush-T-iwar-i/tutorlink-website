@@ -131,7 +131,7 @@
 
     try {
       const data = await apiRequest('/api/auth/login', 'POST', { email, password, remember: rememberMe });
-      saveSession(data.user, data.token);
+      saveSession(data.user);
       msgBox.className = 'msg-box success';
       msgBox.textContent = 'Login successful! Redirecting...';
 

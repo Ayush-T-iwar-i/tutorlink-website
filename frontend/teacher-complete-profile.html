@@ -23,7 +23,7 @@
 <main class="dashboard-body">
   <div class="container form-page">
 
-    <div class="dash-hero" style="margin-bottom:26px;">
+    <div class="dash-hero dash-hero-brand" style="margin-bottom:26px;">
       <div class="eyebrow">Teacher profile</div>
       <h1 style="font-size:24px;">Complete your teaching profile</h1>
       <p>This is exactly what students will see before booking a demo class with you.</p>
@@ -36,8 +36,15 @@
     <form id="profileForm" novalidate>
 
       <div class="form-section">
-        <h3>Profile photo</h3>
-        <p class="section-hint">Students see this on your public profile — a clear headshot builds trust.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </span>
+          <div>
+            <h3>Profile photo</h3>
+            <p>Students see this on your public profile — a clear headshot builds trust.</p>
+          </div>
+        </div>
         <div class="photo-upload-row">
           <div class="photo-preview" id="photoPreview">—</div>
           <div>
@@ -49,8 +56,15 @@
       </div>
 
       <div class="form-section">
-        <h3>Qualifications & subjects</h3>
-        <p class="section-hint">Your academic background and what you teach.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
+          </span>
+          <div>
+            <h3>Qualifications & subjects</h3>
+            <p>Your academic background and what you teach.</p>
+          </div>
+        </div>
 
         <div class="form-group">
           <label for="qualification">Highest qualification</label>
@@ -97,8 +111,15 @@
       </div>
 
       <div class="form-section">
-        <h3>Where you teach</h3>
-        <p class="section-hint">Students within your travel radius of this location will see you in search results.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          </span>
+          <div>
+            <h3>Where you teach</h3>
+            <p>Students within your travel radius of this location will see you in search results.</p>
+          </div>
+        </div>
 
         <div id="locationNotSet" class="location-panel">
           <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
@@ -136,13 +157,20 @@
         <div class="form-group" style="margin-top:20px; max-width:320px;">
           <label for="radius">Travel radius</label>
           <input type="range" id="radius" min="1" max="15" value="5">
-          <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--green-700); font-weight:600; margin-top:4px;">5 km</div>
+          <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--primary); font-weight:600; margin-top:4px;">5 km</div>
         </div>
       </div>
 
       <div class="form-section">
-        <h3>Verification documents</h3>
-        <p class="section-hint">Upload these once — an admin reviews them before your profile goes live to students. JPG, PNG, or PDF, up to 5MB each.</p>
+        <div class="form-section-head">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2 3 6v6c0 5 3.8 8.7 9 10 5.2-1.3 9-5 9-10V6l-9-4z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <div>
+            <h3>Verification documents</h3>
+            <p>Upload these once — an admin reviews them before your profile goes live. JPG, PNG, or PDF, up to 5MB each.</p>
+          </div>
+        </div>
 
         <div class="form-row">
           <div class="form-group">
@@ -286,6 +314,17 @@
   const photoPreview = document.getElementById('photoPreview');
   photoPreview.textContent = session.user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
+  // Load an already-uploaded photo (if any) instead of always showing
+  // initials — session.user doesn't carry profile_photo, so fetch it fresh.
+  (async () => {
+    try {
+      const me = await apiRequest('/api/auth/me');
+      if (me.user && me.user.profile_photo) {
+        photoPreview.innerHTML = `<img src="${photoUrl(me.user.profile_photo)}" alt="Profile photo">`;
+      }
+    } catch (e) { /* keep initials if this fails */ }
+  })();
+
   document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
     const file = document.getElementById('photoInput').files[0];
     const photoMsgBox = document.getElementById('photoMsgBox');
@@ -299,15 +338,15 @@
     formData.append('photo', file);
 
     try {
-      const res = await fetch(`/api/teachers/${session.user.id}/photo`, {
+      const res = await fetch(`${API_BASE}/api/teachers/${session.user.id}/photo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
+        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed.');
 
-      photoPreview.innerHTML = `<img src="/uploads/${data.path}" alt="Profile photo">`;
+      photoPreview.innerHTML = `<img src="${photoUrl(data.path)}" alt="Profile photo">`;
       photoMsgBox.className = 'msg-box success';
       photoMsgBox.textContent = 'Photo updated.';
       toast('Profile photo updated');
@@ -597,9 +636,9 @@
     try {
       // Uses fetch directly (not apiRequest) because file uploads need
       // multipart/form-data — apiRequest always sends JSON.
-      const res = await fetch(`/api/teachers/${session.user.id}/documents`, {
+      const res = await fetch(`${API_BASE}/api/teachers/${session.user.id}/documents`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
+        credentials: 'include',
         body: formData,
       });
       const data = await res.json();

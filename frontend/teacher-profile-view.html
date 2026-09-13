@@ -133,7 +133,7 @@
       content.innerHTML = `
         <div class="profile-hero">
           <div class="avatar-lg">
-            ${t.profile_photo ? `<img class="avatar-photo" src="/uploads/${t.profile_photo}" alt="${escapeHtml(t.name)}">` : initials}
+            ${t.profile_photo ? `<img class="avatar-photo" src="${photoUrl(t.profile_photo)}" alt="${escapeHtml(t.name)}">` : initials}
           </div>
           <div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">

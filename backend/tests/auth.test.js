@@ -103,7 +103,7 @@ describe('POST /api/auth/signup', () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeDefined();
+    expect(res.headers['set-cookie'][0]).toMatch(/^token=/);
     expect(res.body.user.email).toBe('priya@example.com');
   });
 });
@@ -148,7 +148,7 @@ describe('POST /api/auth/login', () => {
 
     const res = await request(app).post('/api/auth/login').send({ email: 'a@example.com', password: 'correct-password' });
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
+    expect(res.headers['set-cookie'][0]).toMatch(/^token=/);
     expect(res.body.user.role).toBe('student');
   });
 

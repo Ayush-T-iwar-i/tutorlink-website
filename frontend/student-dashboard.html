@@ -283,16 +283,47 @@
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
 
-    // Show the real profile photo in the header avatar if one has been uploaded.
+    // Show the real profile photo in the header avatar if one has been uploaded,
+    // and remind the student to verify their email if they haven't yet.
     (async () => {
       try {
         const me = await apiRequest('/api/auth/me');
         if (me.user && me.user.profile_photo) {
           document.getElementById('avatarInitials').innerHTML =
-            `<img src="/uploads/${me.user.profile_photo}" alt="">`;
+            `<img src="${photoUrl(me.user.profile_photo)}" alt="">`;
+        }
+        if (me.user && !me.user.email_verified) {
+          showVerifyEmailBanner();
         }
       } catch (e) { /* keep initials if this fails */ }
     })();
+  }
+
+  function showVerifyEmailBanner() {
+    const bar = document.createElement('div');
+    bar.className = 'banner';
+    bar.style.cssText = 'margin-bottom:16px;';
+    bar.innerHTML = `
+      <div class="banner-text">
+        <strong>Please verify your email</strong>
+        <span>Check your inbox for a verification link, or resend it below.</span>
+      </div>
+      <button type="button" class="btn btn-accent btn-sm" id="resendVerifyBtn">Resend email</button>
+    `;
+    const main = document.querySelector('.dashboard-body .container');
+    if (main) main.insertBefore(bar, main.firstChild);
+
+    document.getElementById('resendVerifyBtn').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      e.target.textContent = 'Sending…';
+      try {
+        await apiRequest('/api/auth/resend-verification', 'POST');
+        e.target.textContent = 'Sent! Check your inbox';
+      } catch (err) {
+        e.target.textContent = 'Could not send — try again';
+        e.target.disabled = false;
+      }
+    });
   }
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -326,6 +357,22 @@
             </div>
             <a href="student-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
           </div>`;
+      }
+
+      // The student may already have a saved location from a previous
+      // session — load it into the location panel instead of leaving it
+      // on the default "Not set" state until they press "Get my location"
+      // again.
+      if (s.latitude !== null && s.longitude !== null && s.latitude !== undefined && s.longitude !== undefined) {
+        currentLat = parseFloat(s.latitude);
+        currentLng = parseFloat(s.longitude);
+        currentAddress = {
+          area: s.area || '',
+          district: s.district || '',
+          pincode: s.pincode || '',
+          display: s.address || '',
+        };
+        renderLocation();
       }
     } catch (e) {
       banner.innerHTML = `
@@ -912,7 +959,7 @@
               ${'★'.repeat(b.review_rating)}${'☆'.repeat(5 - b.review_rating)} ${b.review_comment ? '— ' + escapeHtml(b.review_comment) : ''}
             </div>
             ${b.teacher_reply ? `
-              <div class="request-meta" style="font-family:var(--font-body); color:var(--green-700); margin-top:4px; padding-left:10px; border-left:2px solid var(--green-700);">
+              <div class="request-meta" style="font-family:var(--font-body); color:var(--primary); margin-top:4px; padding-left:10px; border-left:2px solid var(--primary);">
                 <strong>Teacher's reply:</strong> ${escapeHtml(b.teacher_reply)}
               </div>` : ''}
           ` : ''}
