@@ -22,7 +22,7 @@ describe('POST /api/auth/signup', () => {
   let app;
   beforeEach(() => {
     app = buildApp();
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env.JWT_SECRET = 'test_secret';
   });
 
@@ -31,7 +31,7 @@ describe('POST /api/auth/signup', () => {
       name: 'Test User',
       email: 'not-an-email',
       phone: '9876543210',
-      password: 'password123',
+      password: 'Password123',
       role: 'student',
     });
     expect(res.status).toBe(422);
@@ -43,7 +43,7 @@ describe('POST /api/auth/signup', () => {
       name: 'Test User',
       email: 'test@example.com',
       phone: '12345',
-      password: 'password123',
+      password: 'Password123',
       role: 'student',
     });
     expect(res.status).toBe(422);
@@ -59,7 +59,7 @@ describe('POST /api/auth/signup', () => {
       role: 'student',
     });
     expect(res.status).toBe(422);
-    expect(res.body.error).toMatch(/6 characters/i);
+    expect(res.body.error).toMatch(/8 characters/i);
   });
 
   it('rejects an invalid role', async () => {
@@ -67,7 +67,7 @@ describe('POST /api/auth/signup', () => {
       name: 'Test User',
       email: 'test@example.com',
       phone: '9876543210',
-      password: 'password123',
+      password: 'Password123',
       role: 'admin',
     });
     expect(res.status).toBe(422);
@@ -80,7 +80,7 @@ describe('POST /api/auth/signup', () => {
       name: 'Test User',
       email: 'taken@example.com',
       phone: '9876543210',
-      password: 'password123',
+      password: 'Password123',
       role: 'student',
     });
     expect(res.status).toBe(409);
@@ -92,13 +92,14 @@ describe('POST /api/auth/signup', () => {
       .mockResolvedValueOnce([[]])                 // no existing email
       .mockResolvedValueOnce([[]])                 // no existing phone
       .mockResolvedValueOnce([{ insertId: 42 }])    // INSERT INTO users
-      .mockResolvedValueOnce([{}]);                 // INSERT INTO students
+      .mockResolvedValueOnce([{}])                 // INSERT INTO students
+      .mockResolvedValueOnce([{}]);                // UPDATE users SET email_verify_token ...
 
     const res = await request(app).post('/api/auth/signup').send({
       name: 'Priya Sharma',
       email: 'priya@example.com',
       phone: '9876543210',
-      password: 'password123',
+      password: 'Password123',
       role: 'student',
     });
 
@@ -112,7 +113,7 @@ describe('POST /api/auth/login', () => {
   let app;
   beforeEach(() => {
     app = buildApp();
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     process.env.JWT_SECRET = 'test_secret';
   });
 

@@ -68,6 +68,22 @@
 
     <div id="profileBanner"></div>
 
+    <!-- ---------------- My courses panel ---------------- -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon-title">
+          <span class="ic">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <div>
+            <div class="panel-title" style="margin-bottom:0;">My courses</div>
+            <p class="panel-hint" style="margin-bottom:0;">Opens automatically once a teacher accepts your booking.</p>
+          </div>
+        </div>
+      </div>
+      <div id="myCoursesList"><div class="empty-state">Loading…</div></div>
+    </div>
+
     <!-- ---------------- Location panel ---------------- -->
     <div class="panel">
       <div class="panel-head">
@@ -138,6 +154,22 @@
       </div>
       <div id="savedTeachersArea" style="margin-top:14px;">
         <div class="empty-state">No saved teachers yet — tap the 🤍 on any teacher card to save them here.</div>
+      </div>
+    </div>
+
+    <!-- ---------------- My courses ---------------- -->
+    <div class="panel" style="margin-top:34px;">
+      <div class="panel-icon-title">
+        <span class="ic">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </span>
+        <div>
+          <div class="panel-title" style="margin-bottom:0;">My courses</div>
+          <p class="panel-hint" style="margin-bottom:0;">Lessons, assignments and progress set up by your teachers.</p>
+        </div>
+      </div>
+      <div id="coursesArea" style="margin-top:14px;">
+        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
       </div>
     </div>
 
@@ -919,6 +951,28 @@
   // =====================================================
   // My bookings
   // =====================================================
+  async function loadCourses() {
+    const coursesArea = document.getElementById('coursesArea');
+    try {
+      const courses = await apiRequest('/api/courses');
+      if (courses.length === 0) {
+        coursesArea.innerHTML = '<div class="empty-state">No courses yet — your teacher will set one up once your classes are underway.</div>';
+        return;
+      }
+      coursesArea.innerHTML = courses.map(c => `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${escapeHtml(c.title)}</strong> — ${escapeHtml(c.teacher_name)}
+            <div class="request-meta">${c.module_count} module${c.module_count === 1 ? '' : 's'} · <span class="status-tag ${c.status}">${escapeHtml(c.status)}</span></div>
+          </div>
+          <a href="course.html?id=${c.id}" class="btn btn-outline btn-sm">Open</a>
+        </div>
+      `).join('');
+    } catch (err) {
+      coursesArea.innerHTML = '<div class="empty-state">Could not load your courses.</div>';
+    }
+  }
+
   async function loadBookings() {
     const area = document.getElementById('bookingsArea');
     try {
@@ -981,6 +1035,7 @@
     `;
   }
   loadBookings();
+  loadCourses();
 
   async function payNow(bookingId, fee) {
     try {

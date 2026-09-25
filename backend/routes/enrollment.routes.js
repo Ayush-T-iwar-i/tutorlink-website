@@ -14,11 +14,13 @@ async function verifyEnrollmentParticipant(enrollmentId, userId, userRole) {
     query = `SELECT e.* FROM enrollments e
              JOIN teachers t ON t.id = e.teacher_id
              WHERE e.id = ? AND t.user_id = ?`;
-  } else {
+  } else if (userRole === 'admin') {
     // Admin can access any enrollment
     query = `SELECT e.* FROM enrollments e WHERE e.id = ?`;
     const [rows] = await db.query(query, [enrollmentId]);
     return rows[0] || null;
+  } else {
+    return null;
   }
   const [rows] = await db.query(query, [enrollmentId, userId]);
   return rows[0] || null;

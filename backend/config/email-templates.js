@@ -74,6 +74,18 @@ const templates = {
       <p>A student just paid for their class. Check your Earnings tab for details.</p>
     `),
   }),
+
+  emailVerification: (verifyLink) => ({
+    subject: 'Verify your TutorLink email address',
+    html: layout(`
+      <p>Hi,</p>
+      <p>Thank you for joining TutorLink! Please click the link below to verify your email address. This link is valid for 24 hours:</p>
+      <p><a href="${verifyLink}" style="display:inline-block; padding:10px 20px; background:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">Verify Email</a></p>
+      <p>Or paste this link into your browser:</p>
+      <p><a href="${verifyLink}" style="color:${BRAND_COLOR};">${verifyLink}</a></p>
+      <p>If you did not sign up for TutorLink, you can safely ignore this email.</p>
+    `),
+  }),
 };
 
 module.exports = templates;

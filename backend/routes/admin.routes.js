@@ -128,7 +128,12 @@ router.get('/stats/signups-by-day', verifyToken, requireRole('admin'), async (re
 
     // Fill in any missing days with 0 so the chart doesn't have gaps
     const byDay = {};
-    rows.forEach(r => { byDay[r.day.toISOString().split('T')[0]] = r.count; });
+    rows.forEach(r => {
+      const dayKey = r.day instanceof Date
+        ? r.day.toISOString().split('T')[0]
+        : String(r.day || '').split('T')[0];
+      if (dayKey) byDay[dayKey] = r.count;
+    });
 
     const result = [];
     for (let i = 13; i >= 0; i--) {

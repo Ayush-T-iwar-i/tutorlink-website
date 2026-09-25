@@ -85,7 +85,7 @@
         </div>
         <div class="form-group password-field">
           <label for="password">Password</label>
-          <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+          <input type="password" id="password" required minlength="8" placeholder="At least 8 chars (uppercase, lowercase, number)" autocomplete="new-password">
           <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">👁️</button>
         </div>
         <div class="strength-meter" id="strengthMeter" style="display:none;">
@@ -222,13 +222,13 @@
     strengthMeter.style.display = 'flex';
 
     let score = 0;
-    if (val.length >= 6) score++;
-    if (val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val)) score++;
     if (val.length >= 10 && /[^A-Za-z0-9]/.test(val)) score++;
 
     strengthMeter.className = 'strength-meter';
-    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Weak — try adding numbers or a symbol'; }
-    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good — could still be stronger'; }
+    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Must be 8+ chars with uppercase, lowercase, and a number'; }
+    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good — add a special character for extra strength'; }
     else { strengthMeter.classList.add('strong'); strengthLabel.textContent = 'Strong password'; }
   });
 
@@ -257,6 +257,12 @@
     const email = document.getElementById('email').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const password = document.getElementById('password').value;
+
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'Password must be at least 8 characters and include uppercase, lowercase, and a number.';
+      return;
+    }
 
     const payload = { name, email, phone, password, role };
 

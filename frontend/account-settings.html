@@ -51,7 +51,7 @@
         </div>
         <div class="form-group password-field">
           <label for="newPassword">New password</label>
-          <input type="password" id="newPassword" required minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+          <input type="password" id="newPassword" required minlength="8" placeholder="At least 8 chars (uppercase, lowercase, number)" autocomplete="new-password">
           <button type="button" class="password-toggle" data-target="newPassword" aria-label="Show password">👁️</button>
         </div>
         <div class="strength-meter" id="strengthMeter" style="display:none;">
@@ -60,7 +60,7 @@
         <span class="strength-label" id="strengthLabel"></span>
         <div class="form-group">
           <label for="confirmNewPassword">Confirm new password</label>
-          <input type="password" id="confirmNewPassword" required minlength="6" autocomplete="new-password">
+          <input type="password" id="confirmNewPassword" required minlength="8" placeholder="Re-enter new password" autocomplete="new-password">
         </div>
         <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
           <span class="btn-label">Update password</span>
@@ -118,13 +118,13 @@
     if (!val) { strengthMeter.style.display = 'none'; strengthLabel.textContent = ''; return; }
     strengthMeter.style.display = 'flex';
     let score = 0;
-    if (val.length >= 6) score++;
-    if (val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val)) score++;
     if (val.length >= 10 && /[^A-Za-z0-9]/.test(val)) score++;
     strengthMeter.className = 'strength-meter';
-    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Weak'; }
-    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good'; }
-    else { strengthMeter.classList.add('strong'); strengthLabel.textContent = 'Strong'; }
+    if (score <= 1) { strengthMeter.classList.add('weak'); strengthLabel.textContent = 'Must be 8+ chars with uppercase, lowercase, and a number'; }
+    else if (score === 2) { strengthMeter.classList.add('medium'); strengthLabel.textContent = 'Good — add a symbol for extra strength'; }
+    else { strengthMeter.classList.add('strong'); strengthLabel.textContent = 'Strong password'; }
   });
 
   document.getElementById('passwordForm').addEventListener('submit', async (e) => {
@@ -135,6 +135,12 @@
     const current = document.getElementById('currentPassword').value;
     const next = newPasswordInput.value;
     const confirm = document.getElementById('confirmNewPassword').value;
+
+    if (next.length < 8 || !/[A-Z]/.test(next) || !/[a-z]/.test(next) || !/[0-9]/.test(next)) {
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'New password must be at least 8 characters and include uppercase, lowercase, and a number.';
+      return;
+    }
 
     if (next !== confirm) {
       msgBox.className = 'msg-box error';

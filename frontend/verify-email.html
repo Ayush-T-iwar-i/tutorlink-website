@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Email — TutorLink</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" style="text-decoration:none;">
+      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    </a>
+    <div class="nav-links">
+      <a href="login.html">Log in</a>
+    </div>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-side">
+    <div class="side-top">
+      <div class="eyebrow">Account verification</div>
+      <h2>Confirm your email address.</h2>
+      <p>Verifying your email ensures you receive important booking updates, class reminders, and receipts.</p>
+    </div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-card" style="text-align:center;">
+      <div id="statusIcon" style="font-size:48px; margin-bottom:12px;">⏳</div>
+      <h2 id="heading">Verifying your email…</h2>
+      <p class="subtitle" id="subtext">Please wait while we confirm your verification link.</p>
+
+      <div id="msgBox" class="msg-box" role="alert" style="text-align:left; margin-top:20px;"></div>
+
+      <div id="actionArea" style="margin-top:24px; display:none;">
+        <a id="actionBtn" href="login.html" class="btn btn-primary btn-block">Continue to TutorLink</a>
+      </div>
+
+      <div class="auth-footer" style="margin-top:24px;">
+        <a href="login.html">Back to log in</a> &bull; <a href="index.html">Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  (async function() {
+    const heading = document.getElementById('heading');
+    const subtext = document.getElementById('subtext');
+    const statusIcon = document.getElementById('statusIcon');
+    const msgBox = document.getElementById('msgBox');
+    const actionArea = document.getElementById('actionArea');
+    const actionBtn = document.getElementById('actionBtn');
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (!token) {
+      statusIcon.textContent = '⚠️';
+      heading.textContent = 'Missing Token';
+      subtext.textContent = 'This verification link is invalid or incomplete.';
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = 'No verification token was provided. Please check the link in your email or log in to request a new one.';
+      actionArea.style.display = 'block';
+      actionBtn.href = 'login.html';
+      actionBtn.textContent = 'Go to Log In';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Verification failed.');
+      }
+
+      statusIcon.textContent = '✅';
+      heading.textContent = 'Email Verified!';
+      subtext.textContent = 'Your email address has been successfully verified.';
+      msgBox.className = 'msg-box success';
+      msgBox.textContent = data.message || 'Thank you for verifying your email address.';
+      actionArea.style.display = 'block';
+
+      // If user is already logged in, route to their dashboard
+      const session = getSession();
+      if (session && session.role) {
+        session.email_verified = 1;
+        saveSession(session);
+        const home = session.role === 'teacher' ? 'teacher-dashboard.html'
+          : session.role === 'admin' ? 'admin-dashboard.html'
+          : 'student-dashboard.html';
+        actionBtn.href = home;
+        actionBtn.textContent = 'Go to Dashboard';
+      } else {
+        actionBtn.href = 'login.html';
+        actionBtn.textContent = 'Log In to Your Account';
+      }
+    } catch (err) {
+      statusIcon.textContent = '❌';
+      heading.textContent = 'Verification Failed';
+      subtext.textContent = 'Could not verify your email address.';
+      msgBox.className = 'msg-box error';
+      msgBox.textContent = err.message || 'This verification link is invalid or has expired.';
+      actionArea.style.display = 'block';
+      actionBtn.href = 'login.html';
+      actionBtn.textContent = 'Go to Log In';
+    }
+  })();
+</script>
+</body>
+</html>

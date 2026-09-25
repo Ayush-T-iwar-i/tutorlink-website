@@ -156,6 +156,8 @@ router.put('/:id/cancel', verifyToken, requireRole('student'), async (req, res) 
     }
 
     await db.query('UPDATE bookings SET status = ? WHERE id = ?', ['cancelled', id]);
+    await db.query("UPDATE class_sessions SET status = 'cancelled' WHERE booking_id = ? AND status = 'scheduled'", [id]);
+    await db.query("UPDATE enrollments SET status = 'cancelled' WHERE booking_id = ? AND status = 'active'", [id]);
     res.json({ message: 'Booking cancelled.' });
 
     // Notify the teacher
@@ -249,6 +251,13 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
       }
     } else {
       await db.query('UPDATE bookings SET status = ? WHERE id = ?', [status, id]);
+      if (['declined', 'cancelled'].includes(status)) {
+        await db.query("UPDATE class_sessions SET status = 'cancelled' WHERE booking_id = ? AND status = 'scheduled'", [id]);
+        await db.query("UPDATE enrollments SET status = 'cancelled' WHERE booking_id = ? AND status = 'active'", [id]);
+      } else if (status === 'completed') {
+        await db.query("UPDATE class_sessions SET status = 'completed' WHERE booking_id = ? AND status = 'scheduled'", [id]);
+        await db.query("UPDATE enrollments SET status = 'completed' WHERE booking_id = ? AND status = 'active'", [id]);
+      }
     }
     res.json({ message: `Booking marked as ${status}.` });
 

@@ -189,7 +189,7 @@ router.post('/', verifyToken, requireRole('teacher'), async (req, res) => {
       await createNotification(
         studentUser[0].user_id,
         `A new course "${title.trim()}" has been created for you.`,
-        `course.html?id=${result.insertId}`
+        'student-dashboard.html'
       );
     }
 

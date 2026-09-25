@@ -31,10 +31,10 @@ async function initializeDatabase() {
     // 2) Every migration_*.sql file, sorted numerically (so migration_10 runs
     //    after migration_2, not before — plain alphabetical sort gets this wrong)
     const files = fs.readdirSync(__dirname)
-      .filter((f) => /^migration_\d+.*\.sql$/i.test(f))
+      .filter((f) => /^migration[-_]\d+.*\.sql$/i.test(f))
       .sort((a, b) => {
-        const numA = parseInt(a.match(/^migration_(\d+)/)[1], 10);
-        const numB = parseInt(b.match(/^migration_(\d+)/)[1], 10);
+        const numA = parseInt(a.match(/^migration[-_](\d+)/)[1], 10);
+        const numB = parseInt(b.match(/^migration[-_](\d+)/)[1], 10);
         return numA - numB;
       });
 

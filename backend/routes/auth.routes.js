@@ -360,7 +360,9 @@ router.post('/google', async (req, res) => {
     if (existing.length > 0) {
       user = existing[0];
       if (!user.google_id) {
-        await db.query('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
+        await db.query('UPDATE users SET google_id = ?, email_verified = 1 WHERE id = ?', [googleId, user.id]);
+      } else if (!user.email_verified) {
+        await db.query('UPDATE users SET email_verified = 1 WHERE id = ?', [user.id]);
       }
     } else {
       if (!role || !['student', 'teacher'].includes(role)) {
@@ -368,7 +370,7 @@ router.post('/google', async (req, res) => {
       }
 
       const [result] = await db.query(
-        'INSERT INTO users (name, email, google_id, role) VALUES (?, ?, ?, ?)',
+        'INSERT INTO users (name, email, google_id, role, email_verified) VALUES (?, ?, ?, ?, 1)',
         [name, email, googleId, role]
       );
       const userId = result.insertId;
@@ -388,7 +390,7 @@ router.post('/google', async (req, res) => {
 
     res.json({
       message: 'Signed in with Google.',
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, email_verified: true }
     });
   } catch (err) {
     console.error('Google sign-in error:', err);

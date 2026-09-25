@@ -90,6 +90,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/courses', courseRoutes);
 
 app.get('/health', async (req, res) => {
   const health = {

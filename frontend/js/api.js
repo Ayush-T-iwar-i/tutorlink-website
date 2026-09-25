@@ -397,5 +397,8 @@ function requireLogin(requiredRole = null) {
 // still falls back to the local /uploads/ route.
 function photoUrl(path) {
   if (!path) return '';
-  return /^https?:\/\//i.test(path) ? path : `/uploads/${path}`;
+  if (/^https?:\/\//i.test(path)) return path;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const normalized = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+  return `${API_BASE}/${normalized}`;
 }
