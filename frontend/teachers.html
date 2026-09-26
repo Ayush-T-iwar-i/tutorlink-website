@@ -6,24 +6,29 @@
 <title>Find Verified Home Tutors — TutorLink</title>
 <meta name="description" content="Browse verified home tutors on TutorLink — filter by subject, city, rating, and hourly fee.">
 <link rel="canonical" href="https://tutorlink.com/teachers.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <!-- ---------------- Navbar ---------------- -->
-<nav class="navbar">
+<nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
-    <a href="index.html" class="brand">
-      <span class="brand-mark"></span>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>
       Tutor<em>Link</em>
     </a>
     <div class="nav-links" id="navLinks">
-      <a href="teachers.html" style="color:var(--primary); font-weight:700;">Browse Teachers</a>
+      <a href="teachers.html" style="color:var(--primary); font-weight:700;" aria-current="page">Browse Teachers</a>
       <a href="index.html#how-it-works">How It Works</a>
       <a href="login.html" id="navLoginBtn">Log in</a>
       <a href="signup.html" class="btn btn-primary btn-sm" id="navSignupBtn">Sign up</a>
     </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -61,12 +66,12 @@
     </div>
 
     <!-- ---------------- Results Area ---------------- -->
-    <div id="resultsArea">
+    <div id="resultsArea" aria-live="polite" aria-label="Teacher search results">
       <div class="teacher-grid"></div>
     </div>
 
     <!-- ---------------- Pagination ---------------- -->
-    <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:36px;" id="paginationArea"></div>
+    <nav style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:36px;" id="paginationArea" aria-label="Pagination"></nav>
 
   </div>
 </main>
@@ -86,6 +91,7 @@
 </footer>
 
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
   let currentPage = 1;
 

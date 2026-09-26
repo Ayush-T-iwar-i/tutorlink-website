@@ -1,22 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" data-role="login">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Log In — TutorLink</title>
+<meta name="description" content="Log in to your TutorLink account to manage bookings, chat with tutors, and access your dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
-    <a href="index.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       <a href="signup.html">Need an account?</a>
     </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -91,6 +98,7 @@
 </div>
 
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script src="js/google-auth.js"></script>
 <script>
   const form = document.getElementById('loginForm');

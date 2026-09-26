@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const path = require('path');
 const multer = require('multer');
 const db = require('./config/db');
@@ -29,11 +30,27 @@ const PORT = process.env.PORT || 5000;
 
 app.set('trust proxy', 1);
 
+// ---------- Gzip / Brotli compression (saves 60-80% bandwidth) ----------
+app.use(compression({
+  level: 6,                    // balanced speed vs ratio
+  threshold: 1024,             // only compress responses > 1 KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+}));
+
 // ---------- Security middleware ----------
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+
+// Add request ID header for easier log tracing
+app.use((req, res, next) => {
+  res.setHeader('X-Request-Id', Math.random().toString(36).slice(2, 10));
+  next();
+});
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
@@ -74,7 +91,26 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
+// Serve frontend static files with proper cache headers
+app.use(express.static(path.join(__dirname, '..', 'frontend'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // HTML files: no cache (always fresh)
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+    // CSS/JS with content hash: long-term cache
+    else if (/\.(css|js)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    }
+    // Images/fonts: very long cache
+    else if (/\.(woff2?|ttf|otf|eot|svg|png|jpg|jpeg|webp|ico)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  },
+}));
 
 app.use('/uploads/photos', express.static(path.join(__dirname, 'uploads', 'photos')));
 

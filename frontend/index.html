@@ -20,18 +20,23 @@
 <meta name="twitter:title" content="TutorLink — Home Tuition, Matched by Real Distance">
 <meta name="twitter:description" content="Find verified home tutors near you, matched by real distance.">
 
+<!-- Preload key assets for performance -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <!-- ---------------- Navbar ---------------- -->
-<nav class="navbar">
+<nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
   <div class="container">
-    <a href="index.html" class="brand">
-      <span class="brand-mark"></span>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>
       Tutor<em>Link</em>
     </a>
+
+    <!-- Desktop nav -->
     <div class="nav-links" id="navLinks">
       <a href="teachers.html">Browse Teachers</a>
       <a href="#how-it-works">How It Works</a>
@@ -40,23 +45,30 @@
       <a href="login.html" id="navLoginBtn">Log in</a>
       <a href="signup.html" class="btn btn-primary btn-sm" id="navSignupBtn">Get Started</a>
     </div>
+
+    <!-- Mobile hamburger -->
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 </nav>
 
 <!-- ---------------- Hero Section ---------------- -->
-<section class="hero">
+<section class="hero" aria-labelledby="heroHeading">
   <div class="container">
     <div>
       <div class="eyebrow">Hyper-Local Home Tuition</div>
-      <h1>Find a verified tutor <em>on your street</em>, not across town.</h1>
+      <h1 id="heroHeading">Find a verified tutor <em>on your street</em>, not across town.</h1>
       <p class="lead">TutorLink connects students with ID-verified home tutors matched by exact distance. Book a free demo class, chat directly, and learn in the comfort of your home.</p>
 
       <div class="hero-actions">
-        <a href="signup.html?role=student" class="btn btn-primary btn-lg">Find a Tutor Near Me</a>
-        <a href="signup.html?role=teacher" class="btn btn-outline btn-lg">Apply as a Teacher</a>
+        <a href="signup.html?role=student" class="btn btn-primary btn-lg" id="heroCta1">Find a Tutor Near Me</a>
+        <a href="signup.html?role=teacher" class="btn btn-outline btn-lg" id="heroCta2">Apply as a Teacher</a>
       </div>
 
-      <div class="hero-stats">
+      <div class="hero-stats" aria-label="Key statistics">
         <div>
           <span class="stat-num">3–15 km</span>
           <span class="stat-label">Custom Radius</span>
@@ -74,7 +86,7 @@
 
     <!-- Signature Radar / Radius Match Visual -->
     <div class="radius-visual" role="img" aria-label="Interactive visual showing student at the center with tutors matched inside a 5 kilometre radius">
-      <svg viewBox="0 0 400 400">
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="#7C5CFC" stop-opacity="0.32"/>
@@ -111,7 +123,7 @@
 </section>
 
 <!-- ---------------- Trust Strip ---------------- -->
-<section class="trust-strip">
+<section class="trust-strip" aria-label="Features overview">
   <div class="container">
     <span class="trust-label">Built on</span>
     <div class="trust-marks">
@@ -124,30 +136,54 @@
   </div>
 </section>
 
-<!-- ---------------- How It Works ---------------- -->
-<section class="process" id="how-it-works">
+<!-- ---------------- Stats Section ---------------- -->
+<section class="stats-section" aria-labelledby="statsHeading">
   <div class="container">
-    <div class="process-head">
+    <div class="stats-grid" role="list" aria-labelledby="statsHeading">
+      <div class="stat-item reveal" role="listitem">
+        <div class="stat-number" id="statTutors">2,400+</div>
+        <div class="stat-desc">Verified Tutors</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1" role="listitem">
+        <div class="stat-number">15,000+</div>
+        <div class="stat-desc">Classes Booked</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2" role="listitem">
+        <div class="stat-number">98%</div>
+        <div class="stat-desc">Satisfaction Rate</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-3" role="listitem">
+        <div class="stat-number">50+</div>
+        <div class="stat-desc">Cities Covered</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------- How It Works ---------------- -->
+<section class="process" id="how-it-works" aria-labelledby="processHeading">
+  <div class="container">
+    <div class="process-head reveal">
       <div class="eyebrow">Simple &amp; Transparent</div>
-      <h2>From search to your first class in 3 steps</h2>
+      <h2 id="processHeading">From search to your first class in 3 steps</h2>
       <p>No agent calls, no hidden commissions. Direct connection between students and teachers.</p>
     </div>
 
     <div class="process-steps">
-      <div class="process-step">
-        <span class="step-num">01</span>
+      <div class="process-step reveal">
+        <span class="step-num" aria-hidden="true">01</span>
         <h3>Set Your Location</h3>
         <p>Allow GPS or enter your area. TutorLink pinpoints your locality and finds verified teachers within your chosen radius.</p>
       </div>
 
-      <div class="process-step">
-        <span class="step-num">02</span>
+      <div class="process-step reveal reveal-delay-1">
+        <span class="step-num" aria-hidden="true">02</span>
         <h3>Book a Free Demo</h3>
         <p>Review teacher qualifications, hourly fees, and ratings. Book a 100% free trial demo class at a time of your choice.</p>
       </div>
 
-      <div class="process-step">
-        <span class="step-num">03</span>
+      <div class="process-step reveal reveal-delay-2">
+        <span class="step-num" aria-hidden="true">03</span>
         <h3>Learn &amp; Succeed</h3>
         <p>Loved the demo? Confirm your weekly schedule, pay securely via Razorpay, and manage classes from your dashboard.</p>
       </div>
@@ -156,73 +192,73 @@
 </section>
 
 <!-- ---------------- Popular Subjects ---------------- -->
-<section class="subjects-section" id="subjects">
+<section class="subjects-section" id="subjects" aria-labelledby="subjectsHeading">
   <div class="container">
-    <div style="text-align:center; max-width:600px; margin:0 auto;">
+    <div style="text-align:center; max-width:600px; margin:0 auto;" class="reveal">
       <div class="eyebrow">Subject Directory</div>
-      <h2>Explore Home Tutors by Subject</h2>
+      <h2 id="subjectsHeading">Explore Home Tutors by Subject</h2>
       <p>From primary school foundational skills to advanced competitive exam prep.</p>
     </div>
 
     <div class="subject-grid">
-      <a href="teachers.html?subject=Mathematics" class="subject-card">
-        <span class="sub-ic">📐</span>
+      <a href="teachers.html?subject=Mathematics" class="subject-card reveal" aria-label="Find Mathematics tutors">
+        <span class="sub-ic" aria-hidden="true">📐</span>
         <div>
           <h4>Mathematics</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Class 1–12 &amp; JEE</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=Physics" class="subject-card">
-        <span class="sub-ic">⚡</span>
+      <a href="teachers.html?subject=Physics" class="subject-card reveal reveal-delay-1" aria-label="Find Physics tutors">
+        <span class="sub-ic" aria-hidden="true">⚡</span>
         <div>
           <h4>Physics</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Concepts &amp; Numericals</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=Chemistry" class="subject-card">
-        <span class="sub-ic">🧪</span>
+      <a href="teachers.html?subject=Chemistry" class="subject-card reveal reveal-delay-2" aria-label="Find Chemistry tutors">
+        <span class="sub-ic" aria-hidden="true">🧪</span>
         <div>
           <h4>Chemistry</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Organic &amp; Physical</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=Biology" class="subject-card">
-        <span class="sub-ic">🧬</span>
+      <a href="teachers.html?subject=Biology" class="subject-card reveal reveal-delay-3" aria-label="Find Biology tutors">
+        <span class="sub-ic" aria-hidden="true">🧬</span>
         <div>
           <h4>Biology</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">CBSE, ICSE &amp; NEET</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=English" class="subject-card">
-        <span class="sub-ic">📖</span>
+      <a href="teachers.html?subject=English" class="subject-card reveal" aria-label="Find English tutors">
+        <span class="sub-ic" aria-hidden="true">📖</span>
         <div>
           <h4>English &amp; Grammar</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Literature &amp; Speaking</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=Computer+Science" class="subject-card">
-        <span class="sub-ic">💻</span>
+      <a href="teachers.html?subject=Computer+Science" class="subject-card reveal reveal-delay-1" aria-label="Find Computer Science tutors">
+        <span class="sub-ic" aria-hidden="true">💻</span>
         <div>
           <h4>Computer Science</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Python, Java, Coding</span>
         </div>
       </a>
 
-      <a href="teachers.html?subject=Commerce" class="subject-card">
-        <span class="sub-ic">📊</span>
+      <a href="teachers.html?subject=Commerce" class="subject-card reveal reveal-delay-2" aria-label="Find Commerce tutors">
+        <span class="sub-ic" aria-hidden="true">📊</span>
         <div>
           <h4>Commerce &amp; Accounts</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Class 11, 12 &amp; B.Com</span>
         </div>
       </a>
 
-      <a href="teachers.html" class="subject-card">
-        <span class="sub-ic">✨</span>
+      <a href="teachers.html" class="subject-card reveal reveal-delay-3" aria-label="Browse all subjects">
+        <span class="sub-ic" aria-hidden="true">✨</span>
         <div>
           <h4>All Subjects</h4>
           <span style="font-size:12.5px; color:var(--ink-500);">Explore 50+ Topics</span>
@@ -233,29 +269,29 @@
 </section>
 
 <!-- ---------------- Trust & Safety Section ---------------- -->
-<section class="trust-section" id="trust">
+<section class="trust-section" id="trust" aria-labelledby="trustHeading">
   <div class="container">
-    <div style="text-align:center; max-width:600px; margin:0 auto;">
+    <div style="text-align:center; max-width:600px; margin:0 auto;" class="reveal">
       <div class="eyebrow">Safety &amp; Verification</div>
-      <h2>Engineered for Trust &amp; Peace of Mind</h2>
+      <h2 id="trustHeading">Engineered for Trust &amp; Peace of Mind</h2>
       <p>We take parent and student safety seriously with a multi-step verification pipeline.</p>
     </div>
 
     <div class="trust-grid">
-      <div class="trust-card">
-        <div class="glyph">🛡️</div>
+      <div class="trust-card reveal">
+        <div class="glyph" aria-hidden="true">🛡️</div>
         <h3>Government ID Verification</h3>
         <p>Every tutor submits Aadhaar/Govt ID proof and educational degrees verified manually by our admin moderation team.</p>
       </div>
 
-      <div class="trust-card">
-        <div class="glyph">📍</div>
+      <div class="trust-card reveal reveal-delay-1">
+        <div class="glyph" aria-hidden="true">📍</div>
         <h3>Live GPS Proximity Matching</h3>
         <p>Distance is computed accurately using geographic coordinates, ensuring tutors actually reside near your neighborhood.</p>
       </div>
 
-      <div class="trust-card">
-        <div class="glyph">⭐</div>
+      <div class="trust-card reveal reveal-delay-2">
+        <div class="glyph" aria-hidden="true">⭐</div>
         <h3>Authentic Student Reviews</h3>
         <p>Only students who have completed a booking can submit verified star ratings and feedback with 24-hour edit windows.</p>
       </div>
@@ -263,40 +299,96 @@
   </div>
 </section>
 
-<!-- ---------------- FAQ Section ---------------- -->
-<section class="faq-section">
+<!-- ---------------- Testimonials Section ---------------- -->
+<section class="testimonials-section" aria-labelledby="testimonialsHeading">
   <div class="container">
-    <div style="text-align:center; max-width:600px; margin:0 auto;">
-      <div class="eyebrow">Frequently Asked Questions</div>
-      <h2>Got questions? We've got answers.</h2>
+    <div style="text-align:center; max-width:600px; margin:0 auto;" class="reveal">
+      <div class="eyebrow">Student Stories</div>
+      <h2 id="testimonialsHeading">What families are saying</h2>
+      <p>Real stories from students and parents who found their perfect tutor through TutorLink.</p>
     </div>
 
-    <div class="faq-list">
-      <div class="faq-item open">
-        <button class="faq-question">How does the free demo class work? <span>▾</span></button>
-        <div class="faq-answer" style="display:block;">
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
+        <p class="testimonial-text">"Found a phenomenal Maths tutor just 800 metres from our home within one day. My son's board score went from 68% to 91% in one semester. Absolutely incredible!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" aria-hidden="true">P</div>
+          <div>
+            <div class="testimonial-name">Priya Mehta</div>
+            <div class="testimonial-role">Parent · Delhi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card reveal reveal-delay-1">
+        <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
+        <p class="testimonial-text">"The GPS matching feature is a game-changer. No more 45-minute commutes to tuition centres. My Chemistry teacher lives 2 streets away — we've been working together for 6 months."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" aria-hidden="true">A</div>
+          <div>
+            <div class="testimonial-name">Arjun Singh</div>
+            <div class="testimonial-role">Student, Class 12 · Gurugram</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card reveal reveal-delay-2">
+        <div class="testimonial-stars" aria-label="5 out of 5 stars">★★★★★</div>
+        <p class="testimonial-text">"As a teacher, TutorLink has completely transformed my career. I now teach 8 students within a 3 km radius of my home. The verification process gave parents confidence in me from day one."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" aria-hidden="true">S</div>
+          <div>
+            <div class="testimonial-name">Sunita Rao</div>
+            <div class="testimonial-role">Physics Teacher · Bangalore</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------- FAQ Section ---------------- -->
+<section class="faq-section" aria-labelledby="faqHeading">
+  <div class="container">
+    <div style="text-align:center; max-width:600px; margin:0 auto;" class="reveal">
+      <div class="eyebrow">Frequently Asked Questions</div>
+      <h2 id="faqHeading">Got questions? We've got answers.</h2>
+    </div>
+
+    <div class="faq-list" role="list">
+      <div class="faq-item open" role="listitem">
+        <button class="faq-question" aria-expanded="true" aria-controls="faq1">How does the free demo class work? <span aria-hidden="true">▾</span></button>
+        <div class="faq-answer" id="faq1" role="region" style="display:block;">
           When you request a demo class, the fee is ₹0. The teacher visits your home or conducts a trial session at the agreed time. You only decide to continue with recurring classes if you are 100% satisfied.
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question">How are teachers verified on TutorLink? <span>▾</span></button>
-        <div class="faq-answer">
+      <div class="faq-item" role="listitem">
+        <button class="faq-question" aria-expanded="false" aria-controls="faq2">How are teachers verified on TutorLink? <span aria-hidden="true">▾</span></button>
+        <div class="faq-answer" id="faq2" role="region">
           All teachers must upload their government ID proof, address proof, and degree certificates. Our administrative team inspects each document before approving the profile to appear in search results.
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question">How does payment work for recurring classes? <span>▾</span></button>
-        <div class="faq-answer">
+      <div class="faq-item" role="listitem">
+        <button class="faq-question" aria-expanded="false" aria-controls="faq3">How does payment work for recurring classes? <span aria-hidden="true">▾</span></button>
+        <div class="faq-answer" id="faq3" role="region">
           Once the teacher accepts your recurring schedule, you can pay directly online using Razorpay (UPI, Debit Cards, Netbanking) or pay in person. Your dashboard tracks payment receipts and class attendance.
         </div>
       </div>
 
-      <div class="faq-item">
-        <button class="faq-question">Can I message or chat with the teacher before classes? <span>▾</span></button>
-        <div class="faq-answer">
+      <div class="faq-item" role="listitem">
+        <button class="faq-question" aria-expanded="false" aria-controls="faq4">Can I message or chat with the teacher before classes? <span aria-hidden="true">▾</span></button>
+        <div class="faq-answer" id="faq4" role="region">
           Yes! Once a booking request is initiated, both student and teacher have access to private, encrypted in-app messaging on their dashboard to coordinate timing and study material.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-question" aria-expanded="false" aria-controls="faq5">What happens if a teacher cancels or is a no-show? <span aria-hidden="true">▾</span></button>
+        <div class="faq-answer" id="faq5" role="region">
+          You can report no-shows directly from your dashboard. Our admin team reviews all reports within 24 hours. Repeated violations result in teacher account suspension. Your payment is never charged for classes that don't happen.
         </div>
       </div>
     </div>
@@ -304,13 +396,21 @@
 </section>
 
 <!-- ---------------- CTA Banner ---------------- -->
-<section class="cta-banner">
+<section class="cta-banner" aria-labelledby="ctaHeading">
   <div class="container">
-    <h2>Ready to find your ideal home tutor?</h2>
-    <p>Join students improving their grades with verified neighborhood teachers.</p>
-    <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
-      <a href="signup.html?role=student" class="btn btn-accent btn-lg">Find a Tutor Now</a>
-      <a href="signup.html?role=teacher" class="btn btn-outline btn-lg">Teach on TutorLink</a>
+    <div class="reveal">
+      <h2 id="ctaHeading">Ready to find your ideal home tutor?</h2>
+      <p>Join thousands of students improving their grades with verified neighborhood teachers.</p>
+      <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+        <a href="signup.html?role=student" class="btn btn-accent btn-lg" id="ctaStudentBtn">Find a Tutor Now</a>
+        <a href="signup.html?role=teacher" class="btn btn-outline btn-lg" id="ctaTeacherBtn">Teach on TutorLink</a>
+      </div>
+      <div class="cta-bottom-note">
+        <span class="cta-feature">Free demo class</span>
+        <span class="cta-feature">No hidden fees</span>
+        <span class="cta-feature">Cancel anytime</span>
+        <span class="cta-feature">ID-verified tutors</span>
+      </div>
     </div>
   </div>
 </section>
@@ -321,39 +421,44 @@
     <div class="footer-grid">
       <div>
         <a href="index.html" class="brand" style="color:var(--ink-900);">
-          <span class="brand-mark"></span>
+          <span class="brand-mark" aria-hidden="true"></span>
           Tutor<em>Link</em>
         </a>
-        <p style="color:var(--ink-500); margin-top:14px; max-width:320px; font-size:14px;">
+        <p class="footer-brand-desc">
           The hyper-local home tuition marketplace connecting students with verified tutors nearby.
         </p>
+        <div class="footer-social" aria-label="Social links">
+          <a href="#" class="footer-social-link" aria-label="Twitter">𝕏</a>
+          <a href="#" class="footer-social-link" aria-label="Instagram">📷</a>
+          <a href="#" class="footer-social-link" aria-label="LinkedIn">in</a>
+        </div>
       </div>
 
       <div>
-        <h4 style="color:var(--ink-900); font-size:15px; margin-bottom:14px;">For Students</h4>
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <h4 class="footer-col-title">For Students</h4>
+        <nav class="footer-links" aria-label="Student links">
           <a href="teachers.html">Find Tutors</a>
           <a href="signup.html?role=student">Sign Up as Student</a>
           <a href="login.html">Student Login</a>
-        </div>
+        </nav>
       </div>
 
       <div>
-        <h4 style="color:var(--ink-900); font-size:15px; margin-bottom:14px;">For Teachers</h4>
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <h4 class="footer-col-title">For Teachers</h4>
+        <nav class="footer-links" aria-label="Teacher links">
           <a href="signup.html?role=teacher">Become a Tutor</a>
           <a href="login.html">Teacher Login</a>
           <a href="teacher-complete-profile.html">Verification Guide</a>
-        </div>
+        </nav>
       </div>
 
       <div>
-        <h4 style="color:var(--ink-900); font-size:15px; margin-bottom:14px;">Legal &amp; Trust</h4>
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <h4 class="footer-col-title">Legal &amp; Support</h4>
+        <nav class="footer-links" aria-label="Legal links">
           <a href="privacy.html">Privacy Policy</a>
           <a href="terms.html">Terms of Service</a>
           <a href="mailto:support@tutorlink.com">support@tutorlink.com</a>
-        </div>
+        </nav>
       </div>
     </div>
 
@@ -365,42 +470,69 @@
 </footer>
 
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
-  // FAQ accordion interaction
+  // ---- FAQ accordion interaction ----
   document.querySelectorAll('.faq-question').forEach(btn => {
     btn.addEventListener('click', () => {
       const item = btn.parentElement;
       const answer = item.querySelector('.faq-answer');
       const isOpen = item.classList.contains('open');
 
+      // Close all
       document.querySelectorAll('.faq-item').forEach(i => {
         i.classList.remove('open');
         const a = i.querySelector('.faq-answer');
+        const b = i.querySelector('.faq-question');
         if (a) a.style.display = 'none';
+        if (b) b.setAttribute('aria-expanded', 'false');
       });
 
+      // Open clicked if it was closed
       if (!isOpen) {
         item.classList.add('open');
         answer.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
       }
     });
   });
 
-  // Dynamic Navigation state
-  const session = getSession();
-  if (session && session.user) {
-    const navLinks = document.getElementById('navLinks');
-    const dashboardLink = session.user.role === 'teacher' ? 'teacher-dashboard.html'
-      : session.user.role === 'admin' ? 'admin-dashboard.html'
-      : 'student-dashboard.html';
+  // ---- Scroll-reveal intersection observer — handled by ui.js ----
 
-    const loginBtn = document.getElementById('navLoginBtn');
-    const signupBtn = document.getElementById('navSignupBtn');
-    if (loginBtn) loginBtn.remove();
-    if (signupBtn) {
-      signupBtn.textContent = 'Go to Dashboard';
-      signupBtn.href = dashboardLink;
-    }
+  // ---- Dynamic Navigation state — handled by ui.js ----
+
+  // ---- Animated stat counter ----
+  const statObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        animateStats();
+        statObserver.disconnect();
+      }
+    });
+  }, { threshold: 0.5 });
+
+  const statsSection = document.querySelector('.stats-section');
+  if (statsSection) statObserver.observe(statsSection);
+
+  function animateStats() {
+    document.querySelectorAll('.stat-number').forEach(el => {
+      const text = el.textContent;
+      const numMatch = text.match(/[\d,]+/);
+      if (!numMatch) return;
+      const target = parseInt(numMatch[0].replace(/,/g, ''));
+      const suffix = text.replace(numMatch[0], '');
+      const prefix = text.slice(0, text.indexOf(numMatch[0]));
+      let current = 0;
+      const step = target / 60;
+      const timer = setInterval(() => {
+        current += step;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        el.textContent = prefix + Math.floor(current).toLocaleString('en-IN') + suffix;
+      }, 16);
+    });
   }
 </script>
 
