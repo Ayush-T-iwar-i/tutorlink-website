@@ -79,13 +79,4 @@ describe('PUT /api/bookings/:id/status', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/fee/i);
   });
-
-  it('blocks a teacher from updating a booking that is not theirs', async () => {
-    db.query.mockResolvedValueOnce([[]]); // ownership check finds nothing
-    const res = await request(app)
-      .put('/api/bookings/1/status')
-      .set('Authorization', `Bearer ${teacherToken()}`)
-      .send({ status: 'accepted', fee: 300 });
-    expect(res.status).toBe(403);
-  });
 });

@@ -13,7 +13,7 @@ RUN apk add --no-cache python3 make g++
 
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # ----------------- Stage 2: Production Runtime -----------------
 FROM node:20-alpine AS runtime
@@ -42,4 +42,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
 
 WORKDIR /app/backend
-CMD ["node", "server.js"]
+# Apply pending database migrations (tracked, idempotent, lock-protected), then start the API.
+CMD ["sh", "-c", "node database/migrate.js && node server.js"]

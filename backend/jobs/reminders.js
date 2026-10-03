@@ -4,6 +4,7 @@ const { sendMail } = require('../config/email');
 const { sendSms } = require('../config/sms');
 const emailTemplates = require('../config/email-templates');
 const { createNotification } = require('../routes/notification.routes');
+const rules = require('../lib/booking-rules');
 
 // Turns "5:00 PM" into { hours, minutes } in 24-hour time.
 // Returns null if the string can't be parsed, so callers can skip it safely.
@@ -24,6 +25,9 @@ function parseTimeString(timeStr) {
 
 async function sendDueReminders() {
   try {
+    // "Today" is evaluated in APP_TIMEZONE, not the server's or MySQL's timezone.
+    const today = rules.todayInTz();
+
     // Sessions scheduled and not yet reminded, dated today or tomorrow —
     // narrowed further below once times are parsed, since MySQL doesn't
     // know how to compare our text time format directly.
@@ -38,24 +42,17 @@ async function sendDueReminders() {
        JOIN teachers t ON t.id = b.teacher_id
        JOIN users u2 ON u2.id = t.user_id
        WHERE cs.status = 'scheduled' AND cs.reminder_sent = 0
-         AND cs.session_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 DAY)`
+         AND cs.session_date BETWEEN ? AND ?`,
+      [today, rules.addDays(today, 1)]
     );
 
-    const now = new Date();
-    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-
     for (const session of sessions) {
-      const time = parseTimeString(session.session_time);
-      if (!time) continue;
+      // Only remind for sessions starting within the next 2 hours (and not
+      // already started, in case the cron missed a run)
+      const minsAway = rules.minutesUntil(session.session_date, session.session_time);
+      if (minsAway === null || minsAway < 0 || minsAway > 120) continue;
 
-      const sessionDateTime = new Date(session.session_date);
-      sessionDateTime.setHours(time.hours, time.minutes, 0, 0);
-
-      // Only remind for sessions happening in the next 2 hours (and not
-      // already in the past, in case the cron missed a run)
-      if (sessionDateTime < now || sessionDateTime > twoHoursFromNow) continue;
-
-      const whenText = `${session.session_time} today`;
+      const whenText = `${session.session_time} ${session.session_date === today ? 'today' : 'tomorrow'}`;
 
       const studentEmail = emailTemplates.classReminderStudent({
         studentName: session.student_name,

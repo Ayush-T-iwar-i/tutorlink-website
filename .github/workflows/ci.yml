@@ -11,6 +11,19 @@ jobs:
     name: Lint, Audit & Test
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_pw
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_pw"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -30,12 +43,23 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
-      - name: Run Test Suite
+      - name: Unit tests
         working-directory: ./backend
         run: npm test
         env:
           JWT_SECRET: ci_test_secret_32bytes_long_string
           NODE_ENV: test
+
+      # Runs the real schema + every migration on a fresh MySQL, then exercises the API against it.
+      - name: Integration tests (real MySQL)
+        working-directory: ./backend
+        run: npm run test:integration
+        env:
+          JWT_SECRET: ci_test_secret_32bytes_long_string
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: ci_root_pw
+          TEST_DB_NAME: tutorlink_test
 
   docker-build:
     name: Docker Build Verification
