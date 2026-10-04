@@ -43,27 +43,20 @@
     "nodemon": "^3.1.0",
     "supertest": "^7.0.0"
   },
-  "jest": {
+   "jest": {
+    "testTimeout": 30000,
     "projects": [
       {
         "displayName": "unit",
         "testEnvironment": "node",
-        "testPathIgnorePatterns": [
-          "/node_modules/",
-          "/tests/integration/"
-        ]
+        "testPathIgnorePatterns": ["/node_modules/", "/tests/integration/"]
       },
       {
         "displayName": "integration",
         "testEnvironment": "node",
-        "testMatch": [
-          "<rootDir>/tests/integration/**/*.test.js"
-        ],
+        "testMatch": ["<rootDir>/tests/integration/**/*.test.js"],
         "globalSetup": "<rootDir>/tests/integration/global-setup.js",
-        "setupFiles": [
-          "<rootDir>/tests/integration/setup-env.js"
-        ],
-        "testTimeout": 30000
+        "setupFiles": ["<rootDir>/tests/integration/setup-env.js"]
       }
     ]
   }

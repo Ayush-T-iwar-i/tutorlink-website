@@ -2,7 +2,7 @@ const request = require('supertest');
 const app = require('../../server');
 const { drain } = require('../../lib/after-response');
 const {
-  db, auth, createStudent, createTeacher, futureDate, pastDate, insertBooking,
+  db, auth, createStudent, createTeacher, insertPayment, futureDate, pastDate, insertBooking,
 } = require('./helpers');
 
 afterAll(async () => {
@@ -329,11 +329,12 @@ describe('PUT /api/bookings/:id/status — teacher actions', () => {
     expect((await put('abc', teacher.token, { status: 'declined' })).status).toBe(400);
   });
 
-  it('teacher cancelling a paid accepted booking is flagged needs_refund', async () => {
+  it('cancelling a booking that was paid in cash tells the user to settle it with the other person', async () => {
     const id = await insertBooking({ studentId: student.studentId, teacherId: teacher.teacherId, status: 'accepted', date: futureDate(9), fee: 500, payment: 'paid' });
+    await insertPayment({ bookingId: id, method: 'offline', status: 'paid', amountPaise: 50000 });
     const res = await put(id, teacher.token, { status: 'cancelled' });
     expect(res.status).toBe(200);
-    expect(res.body.needs_refund).toBe(true);
+    expect(res.body.refund).toBe('manual');
   });
 });
 

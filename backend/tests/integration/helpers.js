@@ -36,6 +36,28 @@ async function createTeacher({ approved = true, slots = null, ...overrides } = {
   return { userId, teacherId: r.insertId, token: tokenFor(userId, 'teacher') };
 }
 
+async function createAdmin() {
+  const userId = await createUser('admin');
+  return { userId, token: tokenFor(userId, 'admin') };
+}
+
+let payCounter = 0;
+/** Insert a row straight into the payments ledger (does not touch bookings.payment_status). */
+async function insertPayment({ bookingId, method = 'razorpay', status = 'paid', amountPaise = 30000, orderId, paymentId }) {
+  const n = ++payCounter;
+  const [r] = await db.query(
+    `INSERT INTO payments (booking_id, method, status, amount_paise, razorpay_order_id, razorpay_payment_id, paid_at)
+     VALUES (?, ?, ?, ?, ?, ?, IF(? IN ('paid','refund_pending','refunded','duplicate'), NOW(), NULL))`,
+    [
+      bookingId, method, status, amountPaise,
+      method === 'razorpay' ? (orderId || `order_seed_${uniq()}_${n}`) : null,
+      method === 'razorpay' && status !== 'created' ? (paymentId || `pay_seed_${uniq()}_${n}`) : null,
+      status,
+    ]
+  );
+  return r.insertId;
+}
+
 /** A date `n` days from today in the app timezone. */
 const futureDate = (n = 3) => rules.addDays(rules.todayInTz(), n);
 const pastDate = (n = 3) => rules.addDays(rules.todayInTz(), -n);
@@ -49,4 +71,4 @@ async function insertBooking({ studentId, teacherId, status = 'requested', type 
   return r.insertId;
 }
 
-module.exports = { db, tokenFor, auth, createStudent, createTeacher, futureDate, pastDate, insertBooking };
+module.exports = { db, tokenFor, auth, createStudent, createTeacher, createAdmin, insertPayment, futureDate, pastDate, insertBooking };

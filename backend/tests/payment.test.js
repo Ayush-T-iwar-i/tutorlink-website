@@ -57,30 +57,6 @@ describe('POST /api/payments/verify', () => {
     expect(res.body.error).toMatch(/verification failed/i);
   });
 
-  it('successfully verifies payment with genuine HMAC signature', async () => {
-    const orderId = 'order_123';
-    const paymentId = 'pay_456';
-    const genuineSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(`${orderId}|${paymentId}`)
-      .digest('hex');
-
-    db.query
-      .mockResolvedValueOnce([[{ id: 1, fee: 400 }]]) // booking ownership check
-      .mockResolvedValueOnce([{ affectedRows: 1 }]) // update status to paid
-      .mockResolvedValueOnce([[{ user_id: 10, name: 'Teacher', email: 'teacher@example.com' }]]); // teacher notification lookup
-
-    const res = await request(app)
-      .post('/api/payments/verify')
-      .set('Authorization', `Bearer ${studentToken(5)}`)
-      .send({
-        booking_id: 1,
-        razorpay_order_id: orderId,
-        razorpay_payment_id: paymentId,
-        razorpay_signature: genuineSignature,
-      });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toMatch(/verified successfully/i);
-  });
+  // The full success path (gateway confirmation, idempotency, webhooks, refunds) needs real SQL
+  // transactions, so it is covered against MySQL in tests/integration/payment.integration.test.js.
 });

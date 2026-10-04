@@ -9,6 +9,8 @@ const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const rules = require('../lib/booking-rules');
 const { withTransaction } = require('../lib/tx');
 const { runAfterResponse } = require('../lib/after-response');
+const payments = require('../lib/payments');
+const { refundAndNotify } = require('../lib/payment-jobs');
 
 const MAX_FEE = 100000;
 
@@ -198,6 +200,15 @@ router.get('/availability/:teacherId', verifyToken, async (req, res) => {
   }
 });
 
+function refundMessage(base, refund) {
+  switch (refund) {
+    case 'initiated': return `${base} Your payment is being refunded to the original payment method.`;
+    case 'not_eligible': return `${base} It was cancelled less than ${payments.refundWindowHours()} hours before the class, so it is not refunded automatically. Contact support if you think this is wrong.`;
+    case 'manual': return `${base} This class was paid directly to the teacher, so any refund must be settled with them.`;
+    default: return base;
+  }
+}
+
 // ---------- STUDENT: CANCEL THEIR OWN BOOKING ----------
 // PUT /api/bookings/:id/cancel
 // Only 'requested' or 'accepted' bookings can be cancelled (see STUDENT_TRANSITIONS).
@@ -210,7 +221,7 @@ router.put('/:id/cancel', verifyToken, requireRole('student'), async (req, res) 
   try {
     const outcome = await withTransaction(db, async (conn) => {
       const [rows] = await conn.query(
-        `SELECT b.id, b.status, b.teacher_id, b.payment_status
+        `SELECT b.id, b.status, b.teacher_id, b.payment_status, b.booking_date, b.booking_time
          FROM bookings b
          JOIN students s ON s.id = b.student_id
          WHERE b.id = ? AND s.user_id = ?
@@ -227,13 +238,17 @@ router.put('/:id/cancel', verifyToken, requireRole('student'), async (req, res) 
       await conn.query("UPDATE bookings SET status = 'cancelled' WHERE id = ?", [bookingId]);
       await conn.query("UPDATE class_sessions SET status = 'cancelled' WHERE booking_id = ? AND status = 'scheduled'", [bookingId]);
       await conn.query("UPDATE enrollments SET status = 'cancelled' WHERE booking_id = ? AND status = 'active'", [bookingId]);
-      return booking;
+      const refund = await payments.startRefundForCancelledBooking(conn, booking, 'student');
+      return { booking, refund };
     });
 
-    res.json({ message: 'Booking cancelled.', needs_refund: outcome.payment_status === 'paid' });
+    res.json({ message: refundMessage('Booking cancelled.', outcome.refund.refund), refund: outcome.refund.refund });
+    if (outcome.refund.refundPaymentId) {
+      runAfterResponse(res, 'Refund', () => refundAndNotify(outcome.refund.refundPaymentId, 'student_cancelled'));
+    }
 
     runAfterResponse(res, 'Cancel-booking notification', async () => {
-      const [teacherRows] = await db.query('SELECT user_id FROM teachers WHERE id = ?', [outcome.teacher_id]);
+      const [teacherRows] = await db.query('SELECT user_id FROM teachers WHERE id = ?', [outcome.booking.teacher_id]);
       const [studentRows] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
       if (teacherRows.length > 0) {
         await createNotification(
@@ -335,13 +350,15 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
           await conn.query("UPDATE enrollments SET status = 'completed' WHERE booking_id = ? AND status = 'active'", [bookingId]);
         }
       }
-      return booking;
+      let refund = { refund: 'none' };
+      if (status === 'cancelled') refund = await payments.startRefundForCancelledBooking(conn, booking, 'teacher');
+      return { booking, refund };
     });
 
-    res.json({
-      message: `Booking marked as ${status}.`,
-      needs_refund: status === 'cancelled' && outcome.payment_status === 'paid',
-    });
+    res.json({ message: refundMessage(`Booking marked as ${status}.`, outcome.refund.refund), refund: outcome.refund.refund });
+    if (outcome.refund.refundPaymentId) {
+      runAfterResponse(res, 'Refund', () => refundAndNotify(outcome.refund.refundPaymentId, 'teacher_cancelled'));
+    }
 
     if (['accepted', 'declined', 'cancelled'].includes(status)) {
       runAfterResponse(res, 'Booking-status notification', () => notifyStudentOfStatus(bookingId, status));
@@ -421,32 +438,79 @@ router.get('/teacher/me', verifyToken, requireRole('teacher'), async (req, res) 
 
 // ---------- TEACHER: MARK A BOOKING AS PAID/UNPAID/REFUNDED ----------
 // PUT /api/bookings/:id/payment
-// body: { payment_status: "unpaid" | "paid" | "refunded" }
+// body: { payment_status: "paid" | "unpaid" | "refunded" }
+// This endpoint exists for CASH payments only. A teacher can record that they were paid directly, undo
+// that record, or note that they handed the cash back. It can NEVER touch a payment that went through
+// Razorpay — those are changed only by verified gateway events and refunds.
 router.put('/:id/payment', verifyToken, requireRole('teacher'), async (req, res) => {
+  const bookingId = Number(req.params.id);
+  const target = req.body && req.body.payment_status;
+  const allowed = ['unpaid', 'paid', 'refunded'];
+
+  if (!Number.isInteger(bookingId) || bookingId < 1) {
+    return res.status(400).json({ error: 'Invalid booking id.', code: 'VALIDATION_ERROR' });
+  }
+  if (!allowed.includes(target)) {
+    return res.status(400).json({ error: `payment_status must be one of: ${allowed.join(', ')}`, code: 'VALIDATION_ERROR' });
+  }
+
   try {
-    const { id } = req.params;
-    const { payment_status } = req.body;
-    const allowed = ['unpaid', 'paid', 'refunded'];
+    await withTransaction(db, async (conn) => {
+      const [rows] = await conn.query(
+        `SELECT b.id, b.status, b.fee, b.payment_status
+         FROM bookings b JOIN teachers t ON t.id = b.teacher_id
+         WHERE b.id = ? AND t.user_id = ?
+         FOR UPDATE OF b`,
+        [bookingId, req.user.id]
+      );
+      if (rows.length === 0) throw new BookingError(403, 'You can only update your own booking requests.', 'FORBIDDEN');
+      const booking = rows[0];
 
-    if (!allowed.includes(payment_status)) {
-      return res.status(400).json({ error: `payment_status must be one of: ${allowed.join(', ')}` });
-    }
+      const [active] = await conn.query(
+        "SELECT id, method, status FROM payments WHERE booking_id = ? AND status IN ('paid', 'refund_pending') FOR UPDATE",
+        [bookingId]
+      );
+      const current = active[0];
 
-    const [rows] = await db.query(
-      `SELECT b.id FROM bookings b
-       JOIN teachers t ON t.id = b.teacher_id
-       WHERE b.id = ? AND t.user_id = ?`,
-      [id, req.user.id]
-    );
-    if (rows.length === 0) {
-      return res.status(403).json({ error: 'You can only update your own booking requests.' });
-    }
+      if (target === 'paid') {
+        if (booking.payment_status !== 'unpaid') throw new BookingError(409, 'This booking is already marked as paid.', 'ALREADY_PAID');
+        if (booking.status !== 'accepted' && booking.status !== 'completed') {
+          throw new BookingError(409, 'Only accepted classes can be marked as paid.', 'BOOKING_NOT_ACCEPTED');
+        }
+        const amountPaise = payments.toPaise(booking.fee);
+        if (amountPaise === 0) throw new BookingError(400, 'There is no fee set for this class, so there is nothing to mark as paid.', 'NO_FEE');
+        try {
+          await conn.query(
+            "INSERT INTO payments (booking_id, method, status, amount_paise, currency, paid_at) VALUES (?, 'offline', 'paid', ?, ?, NOW())",
+            [bookingId, amountPaise, payments.CURRENCY]
+          );
+        } catch (err) {
+          if (err.code === 'ER_DUP_ENTRY') throw new BookingError(409, 'This booking is already marked as paid.', 'ALREADY_PAID');
+          throw err;
+        }
+        await conn.query("UPDATE bookings SET payment_status = 'paid' WHERE id = ?", [bookingId]);
+        return;
+      }
 
-    await db.query('UPDATE bookings SET payment_status = ? WHERE id = ?', [payment_status, id]);
-    res.json({ message: `Payment marked as ${payment_status}.` });
+      // 'unpaid' / 'refunded' only make sense for a cash payment this teacher recorded.
+      if (!current || current.method !== 'offline' || current.status !== 'paid') {
+        throw new BookingError(409,
+          current && current.method === 'razorpay'
+            ? 'This was paid online through TutorLink. Online payments cannot be changed here; cancel the class to refund the student.'
+            : 'There is no cash payment recorded for this booking.',
+          'ONLINE_PAYMENT_LOCKED');
+      }
+      if (target === 'unpaid') {
+        await conn.query("UPDATE payments SET status = 'void' WHERE id = ?", [current.id]);
+        await conn.query("UPDATE bookings SET payment_status = 'unpaid' WHERE id = ?", [bookingId]);
+      } else {
+        await conn.query("UPDATE payments SET status = 'refunded', refunded_at = NOW() WHERE id = ?", [current.id]);
+        await conn.query("UPDATE bookings SET payment_status = 'refunded' WHERE id = ?", [bookingId]);
+      }
+    });
+    res.json({ message: `Payment marked as ${target}.` });
   } catch (err) {
-    console.error('Update payment status error:', err);
-    res.status(500).json({ error: 'Could not update payment status.' });
+    sendError(res, err, 'Could not update payment status.', 'Update payment status error:');
   }
 });
 

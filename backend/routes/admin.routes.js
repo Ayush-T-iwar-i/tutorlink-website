@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
+const { refundAndNotify } = require('../lib/payment-jobs');
 
 // ---------- LIST TEACHERS AWAITING APPROVAL ----------
 // GET /api/admin/teachers/pending
@@ -199,6 +200,71 @@ router.get('/export/teachers', verifyToken, requireRole('admin'), async (req, re
   } catch (err) {
     console.error('Export teachers error:', err);
     res.status(500).json({ error: 'Could not export teachers.' });
+  }
+});
+
+// ---------- LIST PAYMENTS ----------
+// GET /api/admin/payments?status=duplicate&page=1
+router.get('/payments', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const statuses = ['created', 'paid', 'refund_pending', 'refunded', 'void', 'duplicate'];
+    const status = req.query.status;
+    if (status !== undefined && !statuses.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${statuses.join(', ')}`, code: 'VALIDATION_ERROR' });
+    }
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const pageSize = 50;
+    const where = status ? 'WHERE p.status = ?' : '';
+    const params = status ? [status] : [];
+    const [rows] = await db.query(
+      `SELECT p.id, p.booking_id, p.method, p.status, p.amount_paise, p.currency, p.failure_reason,
+              p.razorpay_order_id, p.razorpay_payment_id, p.razorpay_refund_id, p.paid_at, p.refunded_at, p.created_at,
+              su.name AS student_name, tu.name AS teacher_name
+       FROM payments p
+       JOIN bookings b ON b.id = p.booking_id
+       JOIN students s ON s.id = b.student_id JOIN users su ON su.id = s.user_id
+       JOIN teachers t ON t.id = b.teacher_id JOIN users tu ON tu.id = t.user_id
+       ${where}
+       ORDER BY p.id DESC LIMIT ? OFFSET ?`,
+      [...params, pageSize, (page - 1) * pageSize]
+    );
+    res.json({ page, page_size: pageSize, payments: rows });
+  } catch (err) {
+    console.error('List payments error:', err);
+    res.status(500).json({ error: 'Could not fetch payments.', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// ---------- REFUND (or retry a stuck refund) ----------
+// POST /api/admin/payments/:id/refund
+// Works for online payments in state paid / refund_pending / duplicate. Cash payments cannot be refunded here.
+router.post('/payments/:id/refund', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid payment id.', code: 'VALIDATION_ERROR' });
+
+    const [rows] = await db.query('SELECT id, method, status FROM payments WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Payment not found.', code: 'NOT_FOUND' });
+    const p = rows[0];
+    if (p.method !== 'razorpay') return res.status(409).json({ error: 'Cash payments are settled between teacher and student.', code: 'MANUAL_PAYMENT' });
+    if (!['paid', 'refund_pending', 'duplicate'].includes(p.status)) {
+      return res.status(409).json({ error: `A payment in state '${p.status}' cannot be refunded.`, code: 'INVALID_STATE' });
+    }
+    if (p.status === 'paid') {
+      // Atomic claim: only one admin click can move paid -> refund_pending.
+      const [claim] = await db.query("UPDATE payments SET status = 'refund_pending' WHERE id = ?", [id]);
+      if (claim.affectedRows === 0) return res.status(409).json({ error: 'This payment was just changed. Reload and try again.', code: 'INVALID_STATE' });
+    }
+    const result = await refundAndNotify(id, 'admin_refund');
+    if (result.outcome === 'refunded') return res.json({ message: 'Refund issued.', outcome: result.outcome });
+    if (result.outcome === 'nothing_to_do') {
+      // Another request (or the gateway webhook) finished this refund first.
+      return res.status(409).json({ error: 'This payment was already refunded or is being refunded.', code: 'INVALID_STATE' });
+    }
+    res.status(502).json({ error: 'The refund could not be completed yet. It stays pending and can be retried.', code: 'REFUND_PENDING', outcome: result.outcome });
+  } catch (err) {
+    console.error('Admin refund error:', err);
+    res.status(500).json({ error: 'Could not process refund.', code: 'INTERNAL_ERROR' });
   }
 });
 
