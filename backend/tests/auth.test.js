@@ -18,7 +18,15 @@ function buildApp() {
   return app;
 }
 
-describe('POST /api/auth/signup', () => {
+// These unit tests cover request VALIDATION only (nothing here reaches the database).
+// Everything that touches accounts, sessions, tokens and lockouts — signup, login, refresh,
+// logout, password reset/change, email verification, Google sign-in — runs against real MySQL in
+// tests/integration/auth.integration.test.js.
+
+const valid = { name: 'Test User', email: 'test@example.com', phone: '9876543210', password: 'Str0ng!Passw0rd', role: 'student' };
+const signup = (app, patch) => request(app).post('/api/auth/signup').send({ ...valid, ...patch });
+
+describe('POST /api/auth/signup — validation', () => {
   let app;
   beforeEach(() => {
     app = buildApp();
@@ -26,90 +34,49 @@ describe('POST /api/auth/signup', () => {
     process.env.JWT_SECRET = 'test_secret';
   });
 
-  it('rejects a signup with an invalid email', async () => {
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Test User',
-      email: 'not-an-email',
-      phone: '9876543210',
-      password: 'Password123',
-      role: 'student',
-    });
+  it('rejects an invalid email', async () => {
+    const res = await signup(app, { email: 'not-an-email' });
     expect(res.status).toBe(422);
     expect(res.body.error).toMatch(/valid email/i);
   });
 
-  it('rejects a signup with an invalid Indian phone number', async () => {
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Test User',
-      email: 'test@example.com',
-      phone: '12345',
-      password: 'Password123',
-      role: 'student',
-    });
+  it('rejects an over-long email before it reaches the database', async () => {
+    const res = await signup(app, { email: `${'a'.repeat(150)}@example.com` });
+    expect(res.status).toBe(422);
+  });
+
+  it('rejects an invalid Indian phone number', async () => {
+    const res = await signup(app, { phone: '12345' });
     expect(res.status).toBe(422);
     expect(res.body.error).toMatch(/mobile number/i);
   });
 
-  it('rejects a signup with a short password', async () => {
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Test User',
-      email: 'test@example.com',
-      phone: '9876543210',
-      password: '123',
-      role: 'student',
-    });
+  it.each([
+    ['too short', '123', /at least 8/i],
+    ['no uppercase', 'alllowercase1', /uppercase/i],
+    ['no lowercase', 'ALLUPPERCASE1', /lowercase/i],
+    ['no number', 'NoNumbersHere', /number/i],
+    ['too common', 'Password123', /too common/i],
+    ['longer than bcrypt can use (72 bytes)', `A1${'a'.repeat(80)}`, /at most 72/i],
+  ])('rejects a password that is %s', async (_n, password, message) => {
+    const res = await signup(app, { password });
     expect(res.status).toBe(422);
-    expect(res.body.error).toMatch(/8 characters/i);
+    expect(res.body.error).toMatch(message);
   });
 
-  it('rejects an invalid role', async () => {
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Test User',
-      email: 'test@example.com',
-      phone: '9876543210',
-      password: 'Password123',
-      role: 'admin',
-    });
+  it('rejects an invalid role (an attacker cannot self-register as admin)', async () => {
+    const res = await signup(app, { role: 'admin' });
     expect(res.status).toBe(422);
+    expect(res.body.error).toMatch(/student or teacher/i);
   });
 
-  it('rejects signup when the email is already registered', async () => {
-    db.query.mockResolvedValueOnce([[{ id: 1 }]]); // existing email lookup finds a row
-
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Test User',
-      email: 'taken@example.com',
-      phone: '9876543210',
-      password: 'Password123',
-      role: 'student',
-    });
-    expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/email already exists/i);
-  });
-
-  it('creates a student account successfully with valid input', async () => {
-    db.query
-      .mockResolvedValueOnce([[]])                 // no existing email
-      .mockResolvedValueOnce([[]])                 // no existing phone
-      .mockResolvedValueOnce([{ insertId: 42 }])    // INSERT INTO users
-      .mockResolvedValueOnce([{}])                 // INSERT INTO students
-      .mockResolvedValueOnce([{}]);                // UPDATE users SET email_verify_token ...
-
-    const res = await request(app).post('/api/auth/signup').send({
-      name: 'Priya Sharma',
-      email: 'priya@example.com',
-      phone: '9876543210',
-      password: 'Password123',
-      role: 'student',
-    });
-
-    expect(res.status).toBe(201);
-    expect(res.headers['set-cookie'][0]).toMatch(/^token=/);
-    expect(res.body.user.email).toBe('priya@example.com');
+  it('rejects a name that is too short', async () => {
+    const res = await signup(app, { name: 'A' });
+    expect(res.status).toBe(422);
   });
 });
 
-describe('POST /api/auth/login', () => {
+describe('POST /api/auth/login — validation', () => {
   let app;
   beforeEach(() => {
     app = buildApp();
@@ -117,50 +84,28 @@ describe('POST /api/auth/login', () => {
     process.env.JWT_SECRET = 'test_secret';
   });
 
-  it('rejects login with missing password', async () => {
-    const res = await request(app).post('/api/auth/login').send({ email: 'a@example.com' });
+  it('rejects a missing password', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: 'test@example.com' });
     expect(res.status).toBe(422);
   });
 
-  it('rejects login for a non-existent email without revealing that', async () => {
-    db.query.mockResolvedValueOnce([[]]);
-    const res = await request(app).post('/api/auth/login').send({ email: 'nobody@example.com', password: 'whatever' });
+  it('rejects a malformed email', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: 'nope', password: 'x' });
+    expect(res.status).toBe(422);
+  });
+
+  it('rejects a password sent as a non-string (JSON type confusion)', async () => {
+    const res = await request(app).post('/api/auth/login').send({ email: 'test@example.com', password: { $ne: '' } });
+    expect(res.status).toBe(422);
+  });
+});
+
+describe('POST /api/auth/refresh without a cookie', () => {
+  it('answers 401 and never touches the database', async () => {
+    const app = buildApp();
+    const res = await request(app).post('/api/auth/refresh');
     expect(res.status).toBe(401);
-    expect(res.body.error).toBe('Invalid email or password.');
-  });
-
-  it('rejects an incorrect password and increments failed attempts', async () => {
-    const hash = await bcrypt.hash('correct-password', 10);
-    db.query
-      .mockResolvedValueOnce([[{ id: 1, password_hash: hash, failed_login_attempts: 0, locked_until: null, role: 'student' }]])
-      .mockResolvedValueOnce([{}]); // the UPDATE that records the failed attempt
-
-    const res = await request(app).post('/api/auth/login').send({ email: 'a@example.com', password: 'wrong-password' });
-    expect(res.status).toBe(401);
-  });
-
-  it('logs in successfully with the correct password', async () => {
-    const hash = await bcrypt.hash('correct-password', 10);
-    db.query
-      .mockResolvedValueOnce([[{
-        id: 1, name: 'Priya', email: 'a@example.com', role: 'student',
-        password_hash: hash, failed_login_attempts: 0, locked_until: null,
-      }]]);
-
-    const res = await request(app).post('/api/auth/login').send({ email: 'a@example.com', password: 'correct-password' });
-    expect(res.status).toBe(200);
-    expect(res.headers['set-cookie'][0]).toMatch(/^token=/);
-    expect(res.body.user.role).toBe('student');
-  });
-
-  it('locks the account after 5 failed attempts', async () => {
-    const hash = await bcrypt.hash('correct-password', 10);
-    db.query
-      .mockResolvedValueOnce([[{ id: 1, password_hash: hash, failed_login_attempts: 4, locked_until: null, role: 'student' }]])
-      .mockResolvedValueOnce([{}]); // the UPDATE that locks the account
-
-    const res = await request(app).post('/api/auth/login').send({ email: 'a@example.com', password: 'wrong-password' });
-    expect(res.status).toBe(423);
-    expect(res.body.error).toMatch(/locked/i);
+    expect(res.body.code).toBe('SESSION_EXPIRED');
+    expect(db.query).not.toHaveBeenCalled();
   });
 });

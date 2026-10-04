@@ -247,9 +247,8 @@
     formData.append('photo', file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/students/${session.user.id}/photo`, {
+      const res = await apiFetch(`/api/students/${session.user.id}/photo`, {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       const data = await res.json();

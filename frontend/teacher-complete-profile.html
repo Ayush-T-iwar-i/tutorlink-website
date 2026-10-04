@@ -338,9 +338,8 @@
     formData.append('photo', file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/teachers/${session.user.id}/photo`, {
+      const res = await apiFetch(`/api/teachers/${session.user.id}/photo`, {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
@@ -636,9 +635,8 @@
     try {
       // Uses fetch directly (not apiRequest) because file uploads need
       // multipart/form-data — apiRequest always sends JSON.
-      const res = await fetch(`${API_BASE}/api/teachers/${session.user.id}/documents`, {
+      const res = await apiFetch(`/api/teachers/${session.user.id}/documents`, {
         method: 'POST',
-        credentials: 'include',
         body: formData,
       });
       const data = await res.json();

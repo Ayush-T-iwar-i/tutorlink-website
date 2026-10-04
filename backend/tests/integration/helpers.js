@@ -1,12 +1,14 @@
-const jwt = require('jsonwebtoken');
 const db = require('../../config/db');
 const rules = require('../../lib/booking-rules');
 
 let counter = 0;
 const uniq = () => `${process.pid}${Date.now() % 100000}${++counter}`;
 
-function tokenFor(userId, role) {
-  return jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+// A real login: inserts a row into `sessions` and returns the access token for it.
+async function tokenFor(userId, role) {
+  const sessions = require('../../lib/sessions');
+  const { accessToken } = await sessions.issueSession(db, { id: userId, role }, { ip: '127.0.0.1', get: () => 'jest' });
+  return accessToken;
 }
 const auth = (token) => ({ Authorization: `Bearer ${token}` });
 
@@ -23,7 +25,7 @@ async function createUser(role, overrides = {}) {
 async function createStudent(overrides = {}) {
   const userId = await createUser('student', overrides);
   const [r] = await db.query('INSERT INTO students (user_id) VALUES (?)', [userId]);
-  return { userId, studentId: r.insertId, token: tokenFor(userId, 'student') };
+  return { userId, studentId: r.insertId, token: await tokenFor(userId, 'student') };
 }
 
 async function createTeacher({ approved = true, slots = null, ...overrides } = {}) {
@@ -33,12 +35,12 @@ async function createTeacher({ approved = true, slots = null, ...overrides } = {
      VALUES (?, 'Maths', 300, ?, ?)`,
     [userId, slots, approved ? 'approved' : 'pending']
   );
-  return { userId, teacherId: r.insertId, token: tokenFor(userId, 'teacher') };
+  return { userId, teacherId: r.insertId, token: await tokenFor(userId, 'teacher') };
 }
 
 async function createAdmin() {
   const userId = await createUser('admin');
-  return { userId, token: tokenFor(userId, 'admin') };
+  return { userId, token: await tokenFor(userId, 'admin') };
 }
 
 let payCounter = 0;

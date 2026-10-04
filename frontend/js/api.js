@@ -15,15 +15,52 @@ const API_BASE = isSeparateDevServer
   ? 'http://localhost:5000'
   : '';
 
+// ---------- silent session refresh ----------
+// The access cookie is short-lived (15 minutes). When a protected call answers 401, the httpOnly refresh
+// cookie is exchanged for a new one ONCE and the call is repeated, so people are not logged out mid-task.
+// Many calls failing at the same moment share a single refresh request (they all wait on one promise).
+const NO_REFRESH_PATHS = [
+  '/api/auth/login', '/api/auth/signup', '/api/auth/google', '/api/auth/refresh', '/api/auth/logout',
+  '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/verify-email',
+];
+let refreshInFlight = null;
+
+function refreshSession() {
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .then((ok) => {
+        setTimeout(() => { refreshInFlight = null; }, 0);
+        return ok;
+      });
+  }
+  return refreshInFlight;
+}
+
+// Drop-in replacement for fetch() against the TutorLink API: pass the path (e.g. "/api/bookings/student/me"),
+// not the full URL. Use it for anything apiRequest cannot do, such as multipart file uploads.
+async function apiFetch(path, init = {}) {
+  const options = { credentials: 'include', ...init }; // sends the httpOnly cookies
+  let res = await fetch(`${API_BASE}${path}`, options);
+  if (res.status === 401 && !NO_REFRESH_PATHS.some((p) => path.startsWith(p))) {
+    if (await refreshSession()) {
+      res = await fetch(`${API_BASE}${path}`, options); // repeat exactly once
+    } else {
+      localStorage.removeItem(SESSION_USER_KEY); // the login is really gone; pages will send the user to log in
+    }
+  }
+  return res;
+}
+
 async function apiRequest(path, method = "GET", body = null) {
   const headers = { "Content-Type": "application/json" };
 
   let response;
   try {
-    response = await fetch(`${API_BASE}${path}`, {
+    response = await apiFetch(path, {
       method,
       headers,
-      credentials: 'include', // sends the httpOnly auth cookie automatically
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (networkErr) {

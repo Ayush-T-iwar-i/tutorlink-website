@@ -3,7 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const db = require('../config/db');
 const { razorpay, isConfigured } = require('../config/razorpay');
-const { verifyToken, requireRole } = require('../middleware/auth.middleware');
+const { verifyToken, requireRole, requireVerifiedEmail } = require('../middleware/auth.middleware');
 const payments = require('../lib/payments');
 const { withTransaction } = require('../lib/tx');
 const { runAfterResponse } = require('../lib/after-response');
@@ -42,7 +42,7 @@ function scheduleFollowUps(res, result) {
 // POST /api/payments/create-order        body: { booking_id }
 // The amount is ALWAYS taken from bookings.fee in the database. Calling this repeatedly (double click,
 // page refresh) re-uses the open order instead of creating a new one.
-router.post('/create-order', verifyToken, requireRole('student'), async (req, res) => {
+router.post('/create-order', verifyToken, requireRole('student'), requireVerifiedEmail, async (req, res) => {
   if (!isConfigured) {
     return res.status(503).json({
       error: 'Online payments are not set up yet. Please ask the teacher to accept manual payment for now.',

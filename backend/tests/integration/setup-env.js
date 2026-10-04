@@ -1,6 +1,7 @@
 // Runs in every integration test worker BEFORE any app module is loaded, so
 // config/db.js connects to the throw-away test database — never a real one.
 process.env.NODE_ENV = 'test';
+process.env.BCRYPT_ROUNDS = '4';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'integration_test_secret_at_least_32_chars';
 process.env.DB_HOST = process.env.TEST_DB_HOST || process.env.DB_HOST || '127.0.0.1';
 process.env.DB_PORT = process.env.TEST_DB_PORT || process.env.DB_PORT || '3306';

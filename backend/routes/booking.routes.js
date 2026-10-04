@@ -5,7 +5,7 @@ const { sendMail } = require('../config/email');
 const emailTemplates = require('../config/email-templates');
 const { sendSms } = require('../config/sms');
 const { createNotification } = require('./notification.routes');
-const { verifyToken, requireRole } = require('../middleware/auth.middleware');
+const { verifyToken, requireRole, requireVerifiedEmail } = require('../middleware/auth.middleware');
 const rules = require('../lib/booking-rules');
 const { withTransaction } = require('../lib/tx');
 const { runAfterResponse } = require('../lib/after-response');
@@ -64,7 +64,7 @@ function conflictWindow(candidate) {
 // Concurrency: the teacher's row and the student's row are locked (always in that order)
 // for the duration of the transaction, so two simultaneous requests for the same slot are
 // serialised and exactly one wins. The unique `slot_key` index is a second, database-level guard.
-router.post('/', verifyToken, requireRole('student'), async (req, res) => {
+router.post('/', verifyToken, requireRole('student'), requireVerifiedEmail, async (req, res) => {
   const parsed = rules.validateNewBooking(req.body);
   if (!parsed.ok) return res.status(400).json({ error: parsed.error, code: parsed.code });
   const input = parsed.value;
@@ -278,6 +278,12 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
   const allowed = ['accepted', 'declined', 'completed', 'cancelled'];
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}`, code: 'VALIDATION_ERROR' });
+  }
+  if (status === 'accepted' && !req.user.email_verified) {
+    return res.status(403).json({
+      error: 'Please verify your email address before accepting classes. Check your inbox, or request a new link from your dashboard.',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
   }
 
   let feeValue = 0;

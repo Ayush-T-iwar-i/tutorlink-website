@@ -179,6 +179,15 @@ app.use((err, req, res, next) => {
 
 let server = null;
 if (process.env.NODE_ENV !== 'test') {
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ JWT_SECRET is not set. Add a long random value to your environment. Refusing to start.');
+    process.exit(1);
+  }
+  if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET.length < 32) {
+    console.error('❌ JWT_SECRET must be at least 32 characters in production. Refusing to start.');
+    process.exit(1);
+  }
+
   server = app.listen(PORT, () => {
     console.log('================================================');
     console.log('  TutorLink website backend is running');
@@ -190,6 +199,7 @@ if (process.env.NODE_ENV !== 'test') {
     console.log('================================================');
 
     require('./jobs/reminders').startReminderJob();
+    require('./jobs/cleanup').startCleanupJob();
   });
 
   server.on('error', (err) => {
@@ -205,10 +215,18 @@ if (process.env.NODE_ENV !== 'test') {
     console.error('Unhandled promise rejection:', reason);
   });
 
-  process.on('SIGINT', () => {
-    console.log('\nShutting down TutorLink backend...');
-    server.close(() => process.exit(0));
-  });
+  // Docker/Kubernetes stop containers with SIGTERM: stop accepting requests, let in-flight emails and
+  // refunds finish, then exit. A watchdog forces exit if something hangs.
+  const shutdown = (signal) => {
+    console.log(`\n${signal} received. Shutting down TutorLink backend...`);
+    setTimeout(() => process.exit(1), 15000).unref();
+    server.close(async () => {
+      try { await require('./lib/after-response').drain(); } catch (_) { /* best effort */ }
+      process.exit(0);
+    });
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 module.exports = app;

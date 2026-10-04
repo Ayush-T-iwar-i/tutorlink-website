@@ -86,6 +86,17 @@ const templates = {
       <p>If you did not sign up for TutorLink, you can safely ignore this email.</p>
     `),
   }),
+
+  // Security notification: sent after a password is changed or reset.
+  passwordChanged: () => ({
+    subject: 'Your TutorLink password was changed',
+    html: layout(`
+      <p>Hi,</p>
+      <p>The password for your TutorLink account was just changed, and you were signed out of your other devices.</p>
+      <p>If this was you, there is nothing more to do.</p>
+      <p><strong>If it was not you</strong>, reset your password straight away using “Forgot password” on the login page, and contact us.</p>
+    `),
+  }),
 };
 
 module.exports = templates;
