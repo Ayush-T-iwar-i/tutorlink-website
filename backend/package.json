@@ -14,7 +14,8 @@
     "db:init": "node database/init-db.js",
     "test:integration": "jest --runInBand --selectProjects integration",
     "test:all": "jest --runInBand",
-    "db:migrate": "node database/migrate.js"
+    "db:migrate": "node database/migrate.js",
+    "admin:create": "node create-admin.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
