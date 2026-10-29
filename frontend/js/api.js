@@ -11,8 +11,9 @@ const isSeparateDevServer = typeof window !== 'undefined' &&
   window.location.port !== '' &&
   window.location.port !== '5000';
 
+// Use the same hostname as the page (localhost or 127.0.0.1), so login cookies stay "same-site".
 const API_BASE = isSeparateDevServer
-  ? 'http://localhost:5000'
+  ? `http://${window.location.hostname}:5000`
   : '';
 
 // ---------- silent session refresh ----------

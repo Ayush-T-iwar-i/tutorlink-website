@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="page-dashboard">
 
 <header class="dashboard-header">
   <div class="container">
@@ -24,7 +24,7 @@
   </div>
 </header>
 
-<main class="dashboard-body">
+<main class="dashboard-body" id="mainContent">
   <div class="container">
 
     <div class="dash-hero">
@@ -55,24 +55,24 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Platform overview</div>
+    <div class="panel reveal">
+      <div class="panel-title reveal reveal-delay-1">Platform overview</div>
       <div id="statsArea" style="margin-top:14px;">
         <div class="skeleton-card"><div class="skel-line w-60"></div></div>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-head">
-        <div class="panel-title" style="margin-bottom:0;">Signups — last 14 days</div>
+    <div class="panel reveal reveal-delay-2">
+      <div class="panel-head reveal reveal-delay-3">
+        <div class="panel-title reveal reveal-delay-4" style="margin-bottom:0;">Signups — last 14 days</div>
       </div>
       <div style="height:220px; margin-top:14px;">
         <canvas id="signupsChart"></canvas>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Export data</div>
+    <div class="panel reveal reveal-delay-0">
+      <div class="panel-title reveal reveal-delay-1">Export data</div>
       <p class="panel-hint">Download a CSV snapshot for spreadsheets or record-keeping.</p>
       <div style="display:flex; gap:10px;">
         <a class="btn btn-outline btn-sm" href="#" id="exportStudentsBtn">⬇ Export students (CSV)</a>
@@ -80,16 +80,16 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Open reports</div>
+    <div class="panel reveal reveal-delay-2">
+      <div class="panel-title reveal reveal-delay-3">Open reports</div>
       <p class="panel-hint">Complaints filed by students/teachers about a booking or person.</p>
       <div id="reportsArea">
         <div class="skeleton-card"><div class="skel-line w-60"></div></div>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title">Pending teachers</div>
+    <div class="panel reveal reveal-delay-4">
+      <div class="panel-title reveal reveal-delay-0">Pending teachers</div>
       <p class="panel-hint">Approve teachers whose details look genuine — this makes them visible to students immediately.</p>
       <div id="pendingArea">
         <div class="skeleton-card">
@@ -105,6 +105,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
   const session = requireLogin('admin');
   if (session) {

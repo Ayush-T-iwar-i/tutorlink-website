@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
-<body>
+<body class="page-profile">
 
 <header class="dashboard-header">
   <div class="container">
@@ -23,20 +23,20 @@
 <main class="dashboard-body">
   <div class="container form-page">
 
-    <div class="dash-hero dash-hero-brand" style="margin-bottom:26px;">
+    <div class="dash-hero dash-hero-brand reveal" style="margin-bottom:26px;">
       <div class="eyebrow">Student profile</div>
       <h1 style="font-size:24px;">Complete your profile</h1>
       <p>Helps us match you with the right nearby teachers — takes under a minute.</p>
       <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
-      <span class="progress-label" id="progressLabel" style="color:rgba(255,255,255,0.7);">0% complete</span>
+      <span class="progress-label" id="progressLabel" style="color:rgba(255,255,255,0.75);">0% complete</span>
     </div>
 
     <div id="msgBox" class="msg-box"></div>
 
     <form id="profileForm" novalidate>
 
-      <div class="form-section">
-        <div class="form-section-head">
+      <div class="form-section reveal">
+        <div class="form-section-head reveal reveal-delay-1">
           <span class="ic">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </span>
@@ -55,8 +55,8 @@
         <div id="photoMsgBox" class="msg-box"></div>
       </div>
 
-      <div class="form-section">
-        <div class="form-section-head">
+      <div class="form-section reveal reveal-delay-2">
+        <div class="form-section-head reveal reveal-delay-3">
           <span class="ic">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </span>
@@ -77,8 +77,8 @@
         </div>
       </div>
 
-      <div class="form-section">
-        <div class="form-section-head">
+      <div class="form-section reveal reveal-delay-4">
+        <div class="form-section-head reveal reveal-delay-0">
           <span class="ic">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
           </span>
@@ -163,6 +163,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
   const session = requireLogin('student');
   const msgBox = document.getElementById('msgBox');

@@ -11,7 +11,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="page-listing">
 
 <!-- ---------------- Navbar ---------------- -->
 <nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
@@ -35,11 +35,11 @@
 <main class="dashboard-body">
   <div class="container">
 
-    <div style="margin-bottom: 28px;">
-      <div class="eyebrow">🎓 Tutor Directory</div>
-      <h1 style="margin-bottom:8px;">Find the Perfect Home Tutor</h1>
-      <p style="font-size:16px; color:var(--ink-500); max-width:640px;">
-        Explore ID-verified tutors across your city. Click any tutor to view full qualifications, available slots, and book a free demo class.
+    <div class="dash-hero" style="margin-bottom:28px;">
+      <div class="eyebrow">Tutor directory</div>
+      <h1 style="font-size:26px; margin-bottom:8px;">Find the perfect home tutor</h1>
+      <p style="max-width:560px; margin:0;">
+        Explore ID-verified tutors near you. Open any profile for qualifications, slots, and a free demo class.
       </p>
     </div>
 
@@ -120,6 +120,14 @@
     }
   }
 
+  // The saved login can be stale (cookie expired or cleared). Ask the server once; if it no longer
+  // recognises us, api.js forgets the saved login and we reload so the page shows "Log in" again.
+  if (session && session.user) {
+    apiRequest('/api/auth/me').catch(() => {
+      if (!getSession()) window.location.reload();
+    });
+  }
+
   function skeletons(n) {
     return `<div class="teacher-grid">${Array(n).fill(`
       <div class="skeleton-card">
@@ -183,7 +191,7 @@
     const displayedSubjects = subjectsArray.slice(0, 3).join(', ') + (subjectsArray.length > 3 ? ` +${subjectsArray.length - 3} more` : '');
 
     return `
-      <div class="teacher-card" onclick="viewProfile(${t.id})" style="cursor:pointer;">
+      <div class="teacher-card" onclick="viewProfile(${Number(t.id)})" style="cursor:pointer;">
         <div>
           <div class="teacher-card-top">
             <div class="avatar">
@@ -199,7 +207,7 @@
           <div class="badge-row">
             <span class="badge badge-rating">★ ${t.rating_avg > 0 ? Number(t.rating_avg).toFixed(1) : 'New'} (${t.total_reviews || 0})</span>
             <span class="badge badge-verified">✓ ID Verified</span>
-            ${t.experience_years ? `<span class="badge badge-distance">${t.experience_years} yrs exp</span>` : ''}
+            ${t.experience_years ? `<span class="badge badge-distance">${escapeHtml(t.experience_years)} yrs exp</span>` : ''}
           </div>
 
           <div style="font-size:13.5px; color:var(--ink-700); margin-bottom:14px; line-height:1.4;">
@@ -216,8 +224,15 @@
   }
 
   function viewProfile(teacherId) {
-    if (!getSession()) {
+    const current = getSession();
+    if (!current || !current.user) {
       window.location.href = `signup.html?role=student&redirect=teacher-profile-view.html?id=${teacherId}`;
+      return;
+    }
+    // Only students can view a profile to book. Without this check a teacher or admin who is still
+    // logged in was silently bounced to their own dashboard.
+    if (current.user.role !== 'student') {
+      showToast('Only student accounts can book a teacher. Log out and sign in as a student to continue.', true);
       return;
     }
     window.location.href = `teacher-profile-view.html?id=${teacherId}`;

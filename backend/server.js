@@ -2,13 +2,24 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const path = require('path');
-const multer = require('multer');
 const db = require('./config/db');
+const logger = require('./lib/logger');
+const security = require('./config/security');
+const { requestContext, bindLogContext, apiNotFound, errorHandler } = require('./middleware/request-context');
+
+// Route every console.log/warn/error through the structured logger (request ids, secret redaction).
+// Skipped under Jest so test output stays readable.
+if (process.env.NODE_ENV !== 'test') logger.installConsoleBridge();
+
+function fatal(message) {
+  logger.error(message);
+  if (process.env.NODE_ENV === 'test') throw new Error(message);
+  process.exit(1);
+}
 
 const authRoutes = require('./routes/auth.routes');
 const teacherRoutes = require('./routes/teacher.routes');
@@ -28,7 +39,29 @@ const courseRoutes = require('./routes/course.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.set('trust proxy', 1);
+let trustProxy;
+try {
+  trustProxy = security.parseTrustProxy(process.env.TRUST_PROXY);
+} catch (err) {
+  fatal(err.message);
+}
+app.set('trust proxy', trustProxy);
+
+let cspMode;
+try {
+  cspMode = security.parseCspMode(process.env.CSP_MODE);
+} catch (err) {
+  fatal(err.message);
+}
+
+// Fail fast if someone deploys to production without setting a real origin —
+// "*" + credentials:true is both a security gap and gets silently rejected
+// by browsers for credentialed requests anyway.
+const corsProblem = security.corsProblem(process.env);
+if (corsProblem) fatal(corsProblem);
+
+// Must be the first middleware: request id, uniform error responses, request log.
+app.use(requestContext);
 
 // ---------- Gzip / Brotli compression (saves 60-80% bandwidth) ----------
 app.use(compression({
@@ -42,32 +75,15 @@ app.use(compression({
 
 // ---------- Security middleware ----------
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: security.buildCsp(cspMode),
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // OpenStreetMap tile servers expect a Referer; strict-origin-when-cross-origin keeps that and still
+  // hides the full URL from other sites.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
+app.use(security.permissionsPolicy);
 
-// Add request ID header for easier log tracing
-app.use((req, res, next) => {
-  res.setHeader('X-Request-Id', Math.random().toString(36).slice(2, 10));
-  next();
-});
-
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
-}
-
-// Fail fast if someone deploys to production without setting a real origin —
-// "*" + credentials:true is both a security gap and gets silently rejected
-// by browsers for credentialed requests anyway.
-if (process.env.NODE_ENV === 'production' && (!process.env.ALLOWED_ORIGIN || process.env.ALLOWED_ORIGIN === '*')) {
-  console.error('❌ ALLOWED_ORIGIN must be set to your real frontend domain in production. Refusing to start.');
-  process.exit(1);
-}
-
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*',
-  credentials: true,
-}));
+app.use(cors(security.buildCorsOptions(process.env)));
 
 // Razorpay signs the exact bytes of the webhook body, so this path must be read as a raw Buffer
 // BEFORE the global JSON parser (which would re-serialise and break the signature).
@@ -76,6 +92,7 @@ app.use('/api/payments/webhook', express.raw({ type: '*/*', limit: '1mb' }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
+app.use(bindLogContext);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -150,53 +167,31 @@ app.get('/health', async (req, res) => {
   res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: 'API route not found.' });
-});
+app.use('/api', apiNotFound);
 
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', 'frontend', '404.html'));
 });
 
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'Uploaded file is too large (max limit exceeded).' });
-    }
-    return res.status(400).json({ error: `Upload error: ${err.message}` });
-  }
-
-  if (err && (err.code === 'INVALID_FILE_TYPE' || err.message?.includes('Only JPG, PNG'))) {
-    return res.status(400).json({ error: err.message });
-  }
-
-  console.error('Unhandled error:', err);
-  const isDev = process.env.NODE_ENV === 'development';
-  res.status(err.status || 500).json({
-    error: isDev ? (err.message || 'Server error') : 'Something went wrong on our end.',
-  });
-});
+app.use(errorHandler);
 
 let server = null;
 if (process.env.NODE_ENV !== 'test') {
   if (!process.env.JWT_SECRET) {
-    console.error('❌ JWT_SECRET is not set. Add a long random value to your environment. Refusing to start.');
-    process.exit(1);
+    fatal('JWT_SECRET is not set. Add a long random value to your environment. Refusing to start.');
   }
   if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET.length < 32) {
-    console.error('❌ JWT_SECRET must be at least 32 characters in production. Refusing to start.');
-    process.exit(1);
+    fatal('JWT_SECRET must be at least 32 characters in production. Refusing to start.');
   }
 
   server = app.listen(PORT, () => {
-    console.log('================================================');
-    console.log('  TutorLink website backend is running');
-    console.log('================================================');
-    console.log(`  Port:           ${PORT}`);
-    console.log(`  Health check:   /health`);
-    console.log(`  API base:       /api`);
-    console.log(`  Environment:    ${process.env.NODE_ENV || 'development'}`);
-    console.log('================================================');
+    logger.info('TutorLink backend is running', {
+      port: Number(PORT),
+      environment: process.env.NODE_ENV || 'development',
+      csp: cspMode,
+      trustProxy,
+      healthCheck: '/health',
+    });
 
     require('./jobs/reminders').startReminderJob();
     require('./jobs/cleanup').startCleanupJob();
@@ -204,21 +199,21 @@ if (process.env.NODE_ENV !== 'test') {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is already in use. Change PORT in .env or close the other process.`);
+      logger.error(`Port ${PORT} is already in use. Change PORT in .env or close the other process.`);
     } else {
-      console.error('Server failed to start:', err);
+      logger.error('Server failed to start', { err });
     }
     process.exit(1);
   });
 
   process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled promise rejection:', reason);
+    logger.error('Unhandled promise rejection', { err: reason });
   });
 
   // Docker/Kubernetes stop containers with SIGTERM: stop accepting requests, let in-flight emails and
   // refunds finish, then exit. A watchdog forces exit if something hangs.
   const shutdown = (signal) => {
-    console.log(`\n${signal} received. Shutting down TutorLink backend...`);
+    logger.info(`${signal} received. Shutting down TutorLink backend...`);
     setTimeout(() => process.exit(1), 15000).unref();
     server.close(async () => {
       try { await require('./lib/after-response').drain(); } catch (_) { /* best effort */ }

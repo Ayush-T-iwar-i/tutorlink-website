@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
-<body>
+<body class="page-dashboard">
 
 <header class="dashboard-header">
   <div class="container">
@@ -31,14 +31,14 @@
         <span class="avatar-sm" id="avatarInitials"></span>
         <span id="welcomeText"></span>
       </a>
-      <a href="student-complete-profile.html" class="btn btn-outline btn-sm">👤 My profile</a>
-      <a href="account-settings.html" class="btn btn-outline btn-sm">⚙️ Settings</a>
+      <a href="student-complete-profile.html" class="btn btn-outline btn-sm">Profile</a>
+      <a href="account-settings.html" class="btn btn-outline btn-sm">Settings</a>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
 </header>
 
-<main class="dashboard-body">
+<main class="dashboard-body" id="mainContent">
   <div class="container">
 
     <!-- ---------------- Hero / greeting band ---------------- -->
@@ -68,31 +68,15 @@
 
     <div id="profileBanner"></div>
 
-    <!-- ---------------- My courses panel ---------------- -->
-    <div class="panel">
-      <div class="panel-head">
-        <div class="panel-icon-title">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          </span>
-          <div>
-            <div class="panel-title" style="margin-bottom:0;">My courses</div>
-            <p class="panel-hint" style="margin-bottom:0;">Opens automatically once a teacher accepts your booking.</p>
-          </div>
-        </div>
-      </div>
-      <div id="myCoursesList"><div class="empty-state">Loading…</div></div>
-    </div>
-
     <!-- ---------------- Location panel ---------------- -->
-    <div class="panel">
-      <div class="panel-head">
-        <div class="panel-icon-title">
+    <div class="panel reveal reveal-delay-4">
+      <div class="panel-head reveal reveal-delay-0">
+        <div class="panel-icon-title reveal reveal-delay-1">
           <span class="ic">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
           </span>
           <div>
-            <div class="panel-title" style="margin-bottom:0;">Your location</div>
+            <div class="panel-title reveal reveal-delay-2" style="margin-bottom:0;">Your location</div>
             <p class="panel-hint" style="margin-bottom:0;">Needed to match you with nearby teachers.</p>
           </div>
         </div>
@@ -144,11 +128,11 @@
     </div>
 
     <!-- ---------------- Saved teachers ---------------- -->
-    <div class="panel" style="margin-top:34px;">
-      <div class="panel-icon-title">
+    <div class="panel reveal reveal-delay-3" style="margin-top:34px;">
+      <div class="panel-icon-title reveal reveal-delay-4">
         <span class="ic">❤️</span>
         <div>
-          <div class="panel-title" style="margin-bottom:0;">Saved teachers</div>
+          <div class="panel-title reveal reveal-delay-0" style="margin-bottom:0;">Saved teachers</div>
           <p class="panel-hint" style="margin-bottom:0;">Teachers you've bookmarked for later.</p>
         </div>
       </div>
@@ -158,13 +142,13 @@
     </div>
 
     <!-- ---------------- My courses ---------------- -->
-    <div class="panel" style="margin-top:34px;">
-      <div class="panel-icon-title">
+    <div class="panel reveal reveal-delay-1" style="margin-top:34px;">
+      <div class="panel-icon-title reveal reveal-delay-2">
         <span class="ic">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </span>
         <div>
-          <div class="panel-title" style="margin-bottom:0;">My courses</div>
+          <div class="panel-title reveal reveal-delay-3" style="margin-bottom:0;">My courses</div>
           <p class="panel-hint" style="margin-bottom:0;">Lessons, assignments and progress set up by your teachers.</p>
         </div>
       </div>
@@ -174,13 +158,13 @@
     </div>
 
     <!-- ---------------- My bookings ---------------- -->
-    <div class="panel" style="margin-top:34px;">
-      <div class="panel-icon-title">
+    <div class="panel reveal reveal-delay-4" style="margin-top:34px;">
+      <div class="panel-icon-title reveal reveal-delay-0">
         <span class="ic">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
         </span>
         <div>
-          <div class="panel-title" style="margin-bottom:0;">My bookings</div>
+          <div class="panel-title reveal reveal-delay-1" style="margin-bottom:0;">My bookings</div>
           <p class="panel-hint" style="margin-bottom:0;">Demo classes you've requested, upcoming and past.</p>
         </div>
       </div>
@@ -307,6 +291,7 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
   const session = requireLogin('student');
   if (session) {
@@ -370,7 +355,7 @@
     const el = document.getElementById('toast');
     el.textContent = message;
     el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'toast'; }, 2800);
+    setTimeout(() => { el.className = 'toast'; }, 5000);
   }
 
   // ---------- Profile completion banner ----------
@@ -738,7 +723,7 @@
       const data = await apiRequest(url);
 
       if (data.teachers.length === 0) {
-        resultsArea.innerHTML = `<div class="empty-state">No teachers found within ${radius} km. Try increasing the search radius.</div>`;
+        resultsArea.innerHTML = `<div class="empty-state">No teachers found within ${escapeHtml(radius)} km. Try increasing the search radius.</div>`;
         return;
       }
 
@@ -746,7 +731,7 @@
       data.teachers.forEach(t => teacherCache[t.id] = t);
       resultsArea.innerHTML = `<div class="teacher-grid fade-in">${data.teachers.map(renderTeacherCard).join('')}</div>`;
     } catch (err) {
-      resultsArea.innerHTML = `<div class="empty-state">${err.message}</div>`;
+      resultsArea.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
     }
   });
 
@@ -857,30 +842,68 @@
   // =====================================================
   let selectedSlot = null;
   let bookingTeacherId = null;
+  // Bookings whose payment was received but is still being confirmed (prevents paying twice)
+  const confirmingPayments = new Set();
+  let slotRequestSeq = 0; // ignores stale responses if the student changes the date quickly
 
-  const TIME_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
+  function slotMessage(grid, text) {
+    grid.innerHTML = '';
+    const note = document.createElement('div');
+    note.className = 'slot-note';
+    note.textContent = text;
+    grid.appendChild(note);
+  }
 
-  function buildSlotGrid() {
+  function renderSlots(slots) {
     const grid = document.getElementById('slotGrid');
-    grid.innerHTML = TIME_SLOTS.map(s =>
-      `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`
-    ).join('');
-    grid.querySelectorAll('.slot-btn').forEach(btn => {
+    grid.innerHTML = '';
+    if (!slots.some(s => s.available)) {
+      slotMessage(grid, 'No free times on this date. Please pick another date.');
+      return;
+    }
+    slots.forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'slot-btn';
+      btn.dataset.slot = s.slot;
+      btn.textContent = s.slot;
+      btn.disabled = !s.available;
+      btn.title = s.available ? '' : 'Not available';
       btn.addEventListener('click', () => {
         grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        selectedSlot = btn.dataset.slot;
+        selectedSlot = s.slot;
       });
+      grid.appendChild(btn);
     });
   }
-  buildSlotGrid();
+
+  async function loadSlots() {
+    const grid = document.getElementById('slotGrid');
+    const date = document.getElementById('bookingDate').value;
+    selectedSlot = null;
+    if (!bookingTeacherId || !date) { grid.innerHTML = ''; return; }
+    const seq = ++slotRequestSeq;
+    slotMessage(grid, 'Loading available times…');
+    try {
+      const data = await apiRequest(
+        `/api/bookings/availability/${bookingTeacherId}?date=${encodeURIComponent(date)}`
+      );
+      if (seq !== slotRequestSeq) return;
+      renderSlots(data.slots || []);
+    } catch (err) {
+      if (seq !== slotRequestSeq) return;
+      slotMessage(grid, err.message || 'Could not load available times.');
+    }
+  }
+
+  document.getElementById('bookingDate').addEventListener('change', loadSlots);
 
   function openBookingModal(teacherId) {
     const t = teacherCache[teacherId];
     if (!t) return;
     bookingTeacherId = teacherId;
     selectedSlot = null;
-    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
 
     document.getElementById('bookingAvatar').textContent =
       t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -891,14 +914,18 @@
       document.getElementById('subjectFilter').value.trim() || (t.subjects ? t.subjects.split(',')[0].trim() : '');
 
     const dateInput = document.getElementById('bookingDate');
-    const today = new Date().toISOString().split('T')[0];
+    // Local calendar date (toISOString() is UTC and gives "yesterday" early morning in India)
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     dateInput.min = today;
     dateInput.value = today;
+    document.getElementById('bookingNotes').value = '';
 
     document.getElementById('bookingMsgBox').className = 'msg-box';
     document.getElementById('bookingMsgBox').textContent = '';
 
     document.getElementById('bookingModalBackdrop').classList.add('open');
+    loadSlots();
   }
 
   function closeBookingModal() {
@@ -942,6 +969,7 @@
     } catch (err) {
       msgBox.className = 'msg-box error';
       msgBox.textContent = err.message;
+      loadSlots(); // if someone else just took the slot, refresh the grid
     } finally {
       confirmBtn.disabled = false;
       confirmBtn.classList.remove('btn-loading');
@@ -1007,7 +1035,7 @@
       <div class="request-row">
         <div class="request-info">
           <strong>${escapeHtml(b.teacher_name) || 'Teacher'}</strong> — ${escapeHtml(b.subject) || 'Subject'}
-          <div class="request-meta">${date} · ${time}</div>
+          <div class="request-meta">${escapeHtml(date)} · ${escapeHtml(time)}</div>
           ${hasReview ? `
             <div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">
               ${'★'.repeat(b.review_rating)}${'☆'.repeat(5 - b.review_rating)} ${b.review_comment ? '— ' + escapeHtml(b.review_comment) : ''}
@@ -1020,16 +1048,21 @@
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span class="status-tag ${status}">${status}</span>
-          ${status === 'accepted' && b.payment_status === 'unpaid' && Number(b.fee) > 0 ? `
-            <button class="btn btn-accent btn-sm" onclick="payNow(${b.id}, ${b.fee})">💳 Pay ₹${b.fee}</button>` : ''}
+          ${status === 'accepted' && b.payment_status === 'unpaid' && Number(b.fee) > 0 ? (
+            confirmingPayments.has(b.id)
+              ? `<button class="btn btn-outline btn-sm" disabled>⏳ Confirming payment…</button>`
+              : `<button class="btn btn-accent btn-sm" onclick="payNow(${Number(b.id)}, ${Number(b.fee)})">💳 Pay ₹${escapeHtml(b.fee)}</button>`
+          ) : ''}
+          ${b.payment_status === 'paid' && Number(b.fee) > 0 ? `<span class="pay-tag">✅ Paid</span>` : ''}
+          ${b.payment_status === 'refunded' ? `<span class="pay-tag">↩️ Refunded</span>` : ''}
           ${['accepted','completed'].includes(status) ? `
-            <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.teacher_name)}')">💬 Chat</button>
-            <button class="btn btn-outline btn-sm" onclick="openReportModal(${b.teacher_user_id}, '${escapeHtml(b.teacher_name)}', ${b.id})" title="Report an issue">🚩</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openChatModal(${Number(b.id)}, ${escapeHtml(JSON.stringify(b.teacher_name || ''))})">💬 Chat</button>
+            <button class="btn btn-outline btn-sm" onclick="openReportModal(${Number(b.teacher_user_id)}, ${escapeHtml(JSON.stringify(b.teacher_name || ''))}, ${Number(b.id)})" title="Report an issue">🚩</button>` : ''}
           ${status === 'completed' && !hasReview ? `
-            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}')">⭐ Leave a review</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${Number(b.id)}, ${escapeHtml(JSON.stringify(b.teacher_name || ''))})">⭐ Leave a review</button>` : ''}
           ${canEditReview ? `
-            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${b.id}, '${escapeHtml(b.teacher_name)}', ${b.review_id}, ${b.review_rating}, '${escapeHtml(b.review_comment || '')}')">✏️ Edit review</button>
-            <button class="btn btn-outline btn-sm" onclick="deleteReview(${b.review_id})">🗑️</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="openReviewModal(${Number(b.id)}, ${escapeHtml(JSON.stringify(b.teacher_name || ''))}, ${Number(b.review_id)}, ${Number(b.review_rating)}, ${escapeHtml(JSON.stringify(b.review_comment || ''))})">✏️ Edit review</button>
+            <button class="btn btn-outline btn-sm" onclick="deleteReview(${Number(b.review_id)})">🗑️</button>` : ''}
         </div>
       </div>
     `;
@@ -1037,7 +1070,33 @@
   loadBookings();
   loadCourses();
 
+  async function waitForPayment(bookingId) {
+    confirmingPayments.add(bookingId);
+    loadBookings();
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const r = await apiRequest('/api/payments/booking/' + bookingId);
+        if (r.payment_status === 'paid') {
+          confirmingPayments.delete(bookingId);
+          toast('Payment confirmed. Thank you!');
+          loadBookings();
+          return;
+        }
+        if (r.payment_status === 'refunded') {
+          confirmingPayments.delete(bookingId);
+          toast('Your payment has been refunded.');
+          loadBookings();
+          return;
+        }
+      } catch (e) { /* keep trying */ }
+    }
+    // Still not confirmed: keep the button disabled until the page is reloaded
+    toast('Still confirming your payment. Please check again in a minute. You will not be charged twice.');
+  }
+
   async function payNow(bookingId, fee) {
+    if (confirmingPayments.has(bookingId)) return;
     try {
       const order = await apiRequest('/api/payments/create-order', 'POST', { booking_id: bookingId });
 
@@ -1050,14 +1109,22 @@
         description: 'Class payment',
         handler: async function (response) {
           try {
-            await apiRequest('/api/payments/verify', 'POST', {
+            const result = await apiRequest('/api/payments/verify', 'POST', {
               booking_id: bookingId,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            toast('Payment successful!');
-            loadBookings();
+            if (result && result.status === 'pending') {
+              toast(result.message || 'Payment received. Confirming…');
+              waitForPayment(bookingId);
+            } else if (result && result.status === 'refund_initiated') {
+              toast(result.message || 'Your payment is being refunded.', true);
+              loadBookings();
+            } else {
+              toast('Payment successful!');
+              loadBookings();
+            }
           } catch (err) {
             toast(err.message, true);
           }
