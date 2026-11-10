@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+
+const MAX_COMMENT = 2000;
+const isValidRating = (r) => Number.isInteger(Number(r)) && Number(r) >= 1 && Number(r) <= 5 && !(typeof r === 'boolean');
+const isValidComment = (c) => c === undefined || c === null || (typeof c === 'string' && c.length <= MAX_COMMENT);
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 
@@ -8,13 +12,16 @@ const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 // body: { booking_id, rating, comment }
 router.post('/', verifyToken, requireRole('student'), async (req, res) => {
   try {
-    const { booking_id, rating, comment } = req.body;
+    const { booking_id, rating, comment } = req.body || {};
 
-    if (!booking_id || !rating) {
+    if (!booking_id || rating === undefined || rating === null || rating === '') {
       return res.status(400).json({ error: 'booking_id and rating are required.' });
     }
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    if (!isValidRating(rating)) {
+      return res.status(400).json({ error: 'Rating must be a whole number between 1 and 5.' });
+    }
+    if (!isValidComment(comment)) {
+      return res.status(400).json({ error: `Comment must be text of at most ${MAX_COMMENT} characters.` });
     }
 
     // Confirm this booking belongs to the logged-in student, is completed,
@@ -39,10 +46,16 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
       return res.status(409).json({ error: 'You already reviewed this booking.' });
     }
 
-    await db.query(
-      'INSERT INTO reviews (booking_id, rating, comment) VALUES (?, ?, ?)',
-      [booking_id, rating, comment || null]
-    );
+    try {
+      await db.query(
+        'INSERT INTO reviews (booking_id, rating, comment) VALUES (?, ?, ?)',
+        [booking_id, Number(rating), (comment && comment.trim()) || null]
+      );
+    } catch (err) {
+      // Two submits racing past the check above: the unique key on reviews.booking_id rejects the second.
+      if (err && err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'You already reviewed this booking.' });
+      throw err;
+    }
 
     // Recalculate this teacher's average rating + review count
     const teacherId = bookingRows[0].teacher_id;
@@ -107,9 +120,13 @@ router.get('/teacher/:teacherId', async (req, res) => {
 // body: { rating, comment }
 router.put('/:id', verifyToken, requireRole('student'), async (req, res) => {
   try {
-    const { rating, comment } = req.body;
-    if (rating && (rating < 1 || rating > 5)) {
-      return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    const { rating, comment } = req.body || {};
+    const hasRating = rating !== undefined && rating !== null && rating !== '';
+    if (hasRating && !isValidRating(rating)) {
+      return res.status(400).json({ error: 'Rating must be a whole number between 1 and 5.' });
+    }
+    if (!isValidComment(comment)) {
+      return res.status(400).json({ error: `Comment must be text of at most ${MAX_COMMENT} characters.` });
     }
 
     const [rows] = await db.query(
@@ -129,10 +146,10 @@ router.put('/:id', verifyToken, requireRole('student'), async (req, res) => {
 
     await db.query(
       'UPDATE reviews SET rating = COALESCE(?, rating), comment = ?, edited_at = NOW() WHERE id = ?',
-      [rating || null, comment ?? null, req.params.id]
+      [hasRating ? Number(rating) : null, (typeof comment === 'string' && comment.trim()) || null, req.params.id]
     );
 
-    if (rating) {
+    if (hasRating) {
       await db.query(
         `UPDATE teachers t SET rating_avg = (
            SELECT AVG(r.rating) FROM reviews r JOIN bookings b ON b.id = r.booking_id WHERE b.teacher_id = t.id
@@ -189,8 +206,9 @@ router.delete('/:id', verifyToken, requireRole('student'), async (req, res) => {
 // body: { reply }
 router.put('/:id/reply', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
-    const { reply } = req.body;
-    if (!reply || !reply.trim()) return res.status(400).json({ error: 'Reply cannot be empty.' });
+    const { reply } = req.body || {};
+    if (typeof reply !== 'string' || !reply.trim()) return res.status(400).json({ error: 'Reply cannot be empty.' });
+    if (reply.length > MAX_COMMENT) return res.status(400).json({ error: `Reply must be at most ${MAX_COMMENT} characters.` });
 
     const [rows] = await db.query(
       `SELECT r.id FROM reviews r

@@ -54,28 +54,39 @@ async function sendDueReminders() {
 
       const whenText = `${session.session_time} ${session.session_date === today ? 'today' : 'tomorrow'}`;
 
-      const studentEmail = emailTemplates.classReminderStudent({
-        studentName: session.student_name,
-        teacherName: session.teacher_name,
-        whenText,
-      });
-      await sendMail({ to: session.student_email, subject: studentEmail.subject, html: studentEmail.html });
+      // Claim the session first so a second server instance (or an overlapping run) cannot send the
+      // same reminder; release the claim if sending fails so the next run retries it.
+      const [claim] = await db.query(
+        'UPDATE class_sessions SET reminder_sent = 1 WHERE id = ? AND reminder_sent = 0',
+        [session.id]
+      );
+      if (claim.affectedRows === 0) continue;
 
-      const teacherEmail = emailTemplates.classReminderTeacher({
-        teacherName: session.teacher_name,
-        studentName: session.student_name,
-        whenText,
-      });
-      await sendMail({ to: session.teacher_email, subject: teacherEmail.subject, html: teacherEmail.html });
+      try {
+        const studentEmail = emailTemplates.classReminderStudent({
+          studentName: session.student_name,
+          teacherName: session.teacher_name,
+          whenText,
+        });
+        await sendMail({ to: session.student_email, subject: studentEmail.subject, html: studentEmail.html });
 
-      if (session.student_phone) {
-        await sendSms(session.student_phone, `TutorLink: reminder — your class is at ${whenText}.`);
+        const teacherEmail = emailTemplates.classReminderTeacher({
+          teacherName: session.teacher_name,
+          studentName: session.student_name,
+          whenText,
+        });
+        await sendMail({ to: session.teacher_email, subject: teacherEmail.subject, html: teacherEmail.html });
+
+        if (session.student_phone) {
+          await sendSms(session.student_phone, `TutorLink: reminder — your class is at ${whenText}.`);
+        }
+        if (session.teacher_phone) {
+          await sendSms(session.teacher_phone, `TutorLink: reminder — your class is at ${whenText}.`);
+        }
+      } catch (sendErr) {
+        console.error(`[reminders] sending reminder for session ${session.id} failed:`, sendErr);
+        await db.query('UPDATE class_sessions SET reminder_sent = 0 WHERE id = ?', [session.id]);
       }
-      if (session.teacher_phone) {
-        await sendSms(session.teacher_phone, `TutorLink: reminder — your class is at ${whenText}.`);
-      }
-
-      await db.query('UPDATE class_sessions SET reminder_sent = 1 WHERE id = ?', [session.id]);
     }
 
     if (sessions.length > 0) {

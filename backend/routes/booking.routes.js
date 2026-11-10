@@ -72,10 +72,11 @@ router.post('/', verifyToken, requireRole('student'), requireVerifiedEmail, asyn
   try {
     const created = await withTransaction(db, async (conn) => {
       const [teacherRows] = await conn.query(
-        'SELECT id, user_id, verification_status, available_slots FROM teachers WHERE id = ? FOR UPDATE',
+        `SELECT t.id, t.user_id, t.verification_status, t.available_slots, u.suspended_at
+         FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ? FOR UPDATE OF t`,
         [input.teacher_id]
       );
-      if (teacherRows.length === 0 || teacherRows[0].verification_status !== 'approved') {
+      if (teacherRows.length === 0 || teacherRows[0].verification_status !== 'approved' || teacherRows[0].suspended_at) {
         throw new BookingError(404, 'Teacher not found.', 'TEACHER_NOT_FOUND');
       }
       const teacher = teacherRows[0];
@@ -172,7 +173,8 @@ router.get('/availability/:teacherId', verifyToken, async (req, res) => {
     if (!rules.isValidDateString(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.', code: 'VALIDATION_ERROR' });
 
     const [teacherRows] = await db.query(
-      `SELECT id, available_slots FROM teachers WHERE id = ? AND verification_status = 'approved'`,
+      `SELECT t.id, t.available_slots FROM teachers t JOIN users u ON u.id = t.user_id
+       WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL`,
       [teacherId]
     );
     if (teacherRows.length === 0) return res.status(404).json({ error: 'Teacher not found.', code: 'TEACHER_NOT_FOUND' });

@@ -3,6 +3,11 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const { refundAndNotify } = require('../lib/payment-jobs');
+const sessions = require('../lib/sessions');
+
+const REPORT_STATUSES = ['open', 'reviewed', 'resolved'];
+const USER_ROLES = ['student', 'teacher', 'admin'];
+const USER_PAGE_SIZE = 25;
 
 // ---------- LIST TEACHERS AWAITING APPROVAL ----------
 // GET /api/admin/teachers/pending
@@ -80,6 +85,9 @@ router.get('/stats', verifyToken, requireRole('admin'), async (req, res) => {
 router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
   try {
     const { status } = req.query;
+    if (status !== undefined && !REPORT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${REPORT_STATUSES.join(', ')}`, code: 'VALIDATION_ERROR' });
+    }
     let query = `
       SELECT r.*, ru.name AS reporter_name, tu.name AS reported_name
       FROM reports r
@@ -87,7 +95,7 @@ router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
       JOIN users tu ON tu.id = r.reported_user_id`;
     const params = [];
     if (status) { query += ' WHERE r.status = ?'; params.push(status); }
-    query += ' ORDER BY r.created_at DESC';
+    query += ' ORDER BY r.created_at DESC LIMIT 200';
 
     const [rows] = await db.query(query, params);
     res.json(rows);
@@ -102,12 +110,15 @@ router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
 // body: { status: "reviewed" | "resolved", admin_notes }
 router.put('/reports/:id', verifyToken, requireRole('admin'), async (req, res) => {
   try {
-    const { status, admin_notes } = req.body;
-    const allowed = ['open', 'reviewed', 'resolved'];
-    if (!allowed.includes(status)) {
-      return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+    const { status, admin_notes } = req.body || {};
+    if (!REPORT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${REPORT_STATUSES.join(', ')}`, code: 'VALIDATION_ERROR' });
     }
-    await db.query('UPDATE reports SET status = ?, admin_notes = ? WHERE id = ?', [status, admin_notes || null, req.params.id]);
+    if (admin_notes != null && (typeof admin_notes !== 'string' || admin_notes.length > 2000)) {
+      return res.status(400).json({ error: 'admin_notes must be text of at most 2000 characters.', code: 'VALIDATION_ERROR' });
+    }
+    const [result] = await db.query('UPDATE reports SET status = ?, admin_notes = ? WHERE id = ?', [status, admin_notes || null, req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Report not found.', code: 'NOT_FOUND' });
     res.json({ message: `Report marked as ${status}.` });
   } catch (err) {
     console.error('Update report error:', err);
@@ -151,12 +162,118 @@ router.get('/stats/signups-by-day', verifyToken, requireRole('admin'), async (re
   }
 });
 
+
+// ---------- USER MANAGEMENT ----------
+// GET /api/admin/users?role=student|teacher|admin&status=active|suspended&q=<name/email/phone>&page=1
+router.get('/users', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const { role, status } = req.query;
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    const page = Math.min(Math.max(parseInt(req.query.page, 10) || 1, 1), 10000);
+    if (role !== undefined && role !== '' && !USER_ROLES.includes(role)) {
+      return res.status(400).json({ error: `role must be one of: ${USER_ROLES.join(', ')}`, code: 'VALIDATION_ERROR' });
+    }
+    if (status !== undefined && status !== '' && !['active', 'suspended'].includes(status)) {
+      return res.status(400).json({ error: 'status must be active or suspended', code: 'VALIDATION_ERROR' });
+    }
+
+    const where = [];
+    const params = [];
+    if (role) { where.push('u.role = ?'); params.push(role); }
+    if (status === 'active') where.push('u.suspended_at IS NULL');
+    if (status === 'suspended') where.push('u.suspended_at IS NOT NULL');
+    if (q) {
+      const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      where.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)');
+      params.push(like, like, like);
+    }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM users u ${whereSql}`, params);
+    const [users] = await db.query(
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.email_verified, u.created_at,
+              u.suspended_at, u.suspended_reason, t.verification_status
+       FROM users u
+       LEFT JOIN teachers t ON t.user_id = u.id
+       ${whereSql}
+       ORDER BY u.created_at DESC, u.id DESC
+       LIMIT ? OFFSET ?`,
+      [...params, USER_PAGE_SIZE, (page - 1) * USER_PAGE_SIZE]
+    );
+    res.json({ users, page, pageSize: USER_PAGE_SIZE, total, totalPages: Math.max(1, Math.ceil(total / USER_PAGE_SIZE)) });
+  } catch (err) {
+    console.error('List users error:', err);
+    res.status(500).json({ error: 'Could not fetch users.' });
+  }
+});
+
+async function loadManageableUser(req, res) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid user id.', code: 'VALIDATION_ERROR' });
+    return null;
+  }
+  if (id === req.user.id) {
+    res.status(400).json({ error: 'You cannot change your own account status.', code: 'VALIDATION_ERROR' });
+    return null;
+  }
+  const [rows] = await db.query('SELECT id, name, role, suspended_at FROM users WHERE id = ?', [id]);
+  if (rows.length === 0) {
+    res.status(404).json({ error: 'User not found.', code: 'NOT_FOUND' });
+    return null;
+  }
+  if (rows[0].role === 'admin') {
+    res.status(403).json({ error: 'Admin accounts cannot be suspended here.', code: 'FORBIDDEN' });
+    return null;
+  }
+  return rows[0];
+}
+
+// POST /api/admin/users/:id/suspend   body: { reason }
+// Blocks login and ends every active session of the user immediately.
+router.post('/users/:id/suspend', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const reason = req.body && req.body.reason;
+    if (typeof reason !== 'string' || !reason.trim() || reason.trim().length > 255) {
+      return res.status(400).json({ error: 'Please give a reason (at most 255 characters).', code: 'VALIDATION_ERROR' });
+    }
+    const user = await loadManageableUser(req, res);
+    if (!user) return;
+    if (user.suspended_at) return res.status(409).json({ error: 'This account is already suspended.', code: 'CONFLICT' });
+
+    await db.query('UPDATE users SET suspended_at = NOW(), suspended_reason = ? WHERE id = ? AND suspended_at IS NULL', [reason.trim(), user.id]);
+    await sessions.revokeAllUserSessions(db, user.id, 'suspended');
+    console.log(`[admin] user ${user.id} suspended by admin ${req.user.id}`);
+    res.json({ message: `${user.name} has been suspended.` });
+  } catch (err) {
+    console.error('Suspend user error:', err);
+    res.status(500).json({ error: 'Could not suspend user.' });
+  }
+});
+
+// POST /api/admin/users/:id/reactivate
+router.post('/users/:id/reactivate', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const user = await loadManageableUser(req, res);
+    if (!user) return;
+    if (!user.suspended_at) return res.status(409).json({ error: 'This account is not suspended.', code: 'CONFLICT' });
+    await db.query('UPDATE users SET suspended_at = NULL, suspended_reason = NULL WHERE id = ?', [user.id]);
+    console.log(`[admin] user ${user.id} reactivated by admin ${req.user.id}`);
+    res.json({ message: `${user.name} has been reactivated.` });
+  } catch (err) {
+    console.error('Reactivate user error:', err);
+    res.status(500).json({ error: 'Could not reactivate user.' });
+  }
+});
+
 // ---------- CSV EXPORTS ----------
 function toCsv(rows, columns) {
   const header = columns.join(',');
   const body = rows.map(row =>
     columns.map(col => {
-      const val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+      let val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+      // A leading = + - @ (or tab/CR) makes Excel/Sheets run the cell as a formula: neutralise it.
+      if (/^[=+\-@\t\r]/.test(val)) val = `'${val}`;
       // Escape quotes/commas per standard CSV rules
       return `"${val.replace(/"/g, '""')}"`;
     }).join(',')
@@ -252,7 +369,7 @@ router.post('/payments/:id/refund', verifyToken, requireRole('admin'), async (re
     }
     if (p.status === 'paid') {
       // Atomic claim: only one admin click can move paid -> refund_pending.
-      const [claim] = await db.query("UPDATE payments SET status = 'refund_pending' WHERE id = ?", [id]);
+      const [claim] = await db.query("UPDATE payments SET status = 'refund_pending' WHERE id = ? AND status = 'paid'", [id]);
       if (claim.affectedRows === 0) return res.status(409).json({ error: 'This payment was just changed. Reload and try again.', code: 'INVALID_STATE' });
     }
     const result = await refundAndNotify(id, 'admin_refund');
@@ -268,4 +385,4 @@ router.post('/payments/:id/refund', verifyToken, requireRole('admin'), async (re
   }
 });
 
-module.exports = router;
+module.exports = router;module.exports.toCsv = toCsv;

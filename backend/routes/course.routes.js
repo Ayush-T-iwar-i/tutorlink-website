@@ -1,6 +1,24 @@
 const express = require('express');
 const router = express.Router();
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Throws ValidationError for a non-text/blank/too-long title or a malformed/out-of-order date.
+function validateTextAndDates({ title, start_date, end_date }) {
+  if (title !== undefined && (typeof title !== 'string' || !title.trim() || title.trim().length > 255)) {
+    throw new ValidationError('Title must be non-empty text of at most 255 characters.');
+  }
+  for (const [label, d] of [['start_date', start_date], ['end_date', end_date]]) {
+    if (d !== undefined && d !== null && d !== '' && (typeof d !== 'string' || !DATE_RE.test(d) || Number.isNaN(Date.parse(d)))) {
+      throw new ValidationError(`${label} must be a date in YYYY-MM-DD format.`);
+    }
+  }
+  if (start_date && end_date && end_date < start_date) {
+    throw new ValidationError('end_date cannot be before start_date.');
+  }
+}
 const db = require('../config/db');
+const { ValidationError, optionalText, sendValidationError } = require('../lib/validate');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const { verifyEnrollmentParticipant } = require('./enrollment.routes');
 
@@ -156,11 +174,15 @@ router.get('/:id', verifyToken, async (req, res) => {
 // body: { enrollment_id, title, description, subject, start_date, end_date }
 router.post('/', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
-    const { enrollment_id, title, description, subject, start_date, end_date } = req.body;
+    const { enrollment_id, start_date, end_date } = req.body || {};
+    const title = typeof req.body?.title === 'string' ? req.body.title : '';
 
-    if (!enrollment_id || !title || !title.trim()) {
+    if (!enrollment_id || !title.trim()) {
       return res.status(400).json({ error: 'enrollment_id and title are required.' });
     }
+    const description = optionalText(req.body.description, 5000, 'Description');
+    const subject = optionalText(req.body.subject, 255, 'Subject');
+    validateTextAndDates({ title, start_date, end_date });
 
     // Verify teacher owns this enrollment
     const enrollment = await verifyEnrollmentParticipant(enrollment_id, req.user.id, 'teacher');
@@ -175,7 +197,7 @@ router.post('/', verifyToken, requireRole('teacher'), async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO courses (enrollment_id, title, description, subject, start_date, end_date)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [enrollment_id, title.trim(), description || null, subject || enrollment.subject || null,
+      [enrollment_id, title.trim(), description, subject || enrollment.subject || null,
        start_date || null, end_date || null]
     );
 
@@ -199,6 +221,7 @@ router.post('/', verifyToken, requireRole('teacher'), async (req, res) => {
     });
   } catch (err) {
     console.error('Create course error:', err);
+    if (sendValidationError(res, err)) return;
     res.status(500).json({ error: 'Could not create course.' });
   }
 });
@@ -213,14 +236,15 @@ router.put('/:id', verifyToken, requireRole('teacher'), async (req, res) => {
       return res.status(403).json({ error: 'You can only update your own courses.' });
     }
 
-    const { title, description, subject, status, start_date, end_date } = req.body;
+    const { title, description, subject, status, start_date, end_date } = req.body || {};
+    validateTextAndDates({ title, start_date, end_date });
 
     const updates = [];
     const params = [];
 
     if (title !== undefined) { updates.push('title = ?'); params.push(title.trim()); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
-    if (subject !== undefined) { updates.push('subject = ?'); params.push(subject); }
+    if (description !== undefined) { updates.push('description = ?'); params.push(optionalText(description, 5000, 'Description')); }
+    if (subject !== undefined) { updates.push('subject = ?'); params.push(optionalText(subject, 255, 'Subject')); }
     if (start_date !== undefined) { updates.push('start_date = ?'); params.push(start_date || null); }
     if (end_date !== undefined) { updates.push('end_date = ?'); params.push(end_date || null); }
     if (status && ['active', 'paused', 'completed'].includes(status)) {
@@ -236,6 +260,7 @@ router.put('/:id', verifyToken, requireRole('teacher'), async (req, res) => {
 
     res.json({ message: 'Course updated successfully.' });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Update course error:', err);
     res.status(500).json({ error: 'Could not update course.' });
   }
@@ -272,10 +297,12 @@ router.post('/:id/modules', verifyToken, requireRole('teacher'), async (req, res
       return res.status(403).json({ error: 'You can only add modules to your own courses.' });
     }
 
-    const { title, description, sort_order } = req.body;
-    if (!title || !title.trim()) {
+    const { title, sort_order } = req.body || {};
+    if (typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ error: 'Module title is required.' });
     }
+    validateTextAndDates({ title });
+    const description = optionalText(req.body.description, 5000, 'Description');
 
     // Auto-calculate sort order if not provided
     let order = parseInt(sort_order, 10);
@@ -289,7 +316,7 @@ router.post('/:id/modules', verifyToken, requireRole('teacher'), async (req, res
 
     const [result] = await db.query(
       'INSERT INTO course_modules (course_id, title, description, sort_order) VALUES (?, ?, ?, ?)',
-      [req.params.id, title.trim(), description || null, order]
+      [req.params.id, title.trim(), description, order]
     );
 
     res.status(201).json({
@@ -297,6 +324,7 @@ router.post('/:id/modules', verifyToken, requireRole('teacher'), async (req, res
       module_id: result.insertId,
     });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Create module error:', err);
     res.status(500).json({ error: 'Could not create module.' });
   }
@@ -311,12 +339,13 @@ router.put('/:courseId/modules/:moduleId', verifyToken, requireRole('teacher'), 
       return res.status(403).json({ error: 'You can only update modules in your own courses.' });
     }
 
-    const { title, description, sort_order, status } = req.body;
+    const { title, description, sort_order, status } = req.body || {};
+    validateTextAndDates({ title });
     const updates = [];
     const params = [];
 
     if (title !== undefined) { updates.push('title = ?'); params.push(title.trim()); }
-    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
+    if (description !== undefined) { updates.push('description = ?'); params.push(optionalText(description, 5000, 'Description')); }
     if (sort_order !== undefined) { updates.push('sort_order = ?'); params.push(parseInt(sort_order, 10) || 0); }
     if (status && ['active', 'completed'].includes(status)) { updates.push('status = ?'); params.push(status); }
 
@@ -329,6 +358,7 @@ router.put('/:courseId/modules/:moduleId', verifyToken, requireRole('teacher'), 
 
     res.json({ message: 'Module updated.' });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Update module error:', err);
     res.status(500).json({ error: 'Could not update module.' });
   }

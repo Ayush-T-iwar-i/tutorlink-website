@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const { optionalText, optionalCoordinates, sendValidationError } = require('../lib/validate');
 
 // ---------- UPDATE STUDENT LOCATION (protected: own account only) ----------
 // PUT /api/students/:userId/location
@@ -10,65 +11,49 @@ const upload = require('../middleware/upload.middleware');
 // body: { address, latitude, longitude }
 router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('student'), async (req, res) => {
   try {
-    const { userId } = req.params;
-    const {
-  address,
-  city,
-  area,
-  district,
-  pincode,
-  latitude,
-  longitude
-} = req.body;
+    const body = req.body || {};
+    const { lat, lng } = optionalCoordinates(body.latitude, body.longitude);
+    const pincode = optionalText(body.pincode == null ? body.pincode : String(body.pincode), 10, 'Pincode');
+    const values = [
+      optionalText(body.address, 255, 'Address'),
+      optionalText(body.city, 100, 'City'),
+      optionalText(body.area, 150, 'Area'),
+      optionalText(body.district, 150, 'District'),
+      pincode,
+      lat,
+      lng,
+    ];
 
-// Safety net: truncate to the actual column sizes so a bad/unexpected
-// value from the client (or a future bug) can never crash the query with
-// "Data too long for column ..." — it just gets stored trimmed instead.
-const safe = (val, max) => (typeof val === 'string' ? val.slice(0, max) : val);
-
-   await db.query(
-  `UPDATE students
-   SET
-     address = ?,
-     city = ?,
-     area = ?,
-     district = ?,
-     pincode = ?,
-     latitude = ?,
-     longitude = ?
-   WHERE user_id = ?`,
-  [
-    address,
-    city,
-    area,
-    district,
-    pincode,
-    latitude,
-    longitude,
-    userId
-  ]
-);
+    await db.query(
+      `UPDATE students
+       SET address = ?, city = ?, area = ?, district = ?, pincode = ?, latitude = ?, longitude = ?
+       WHERE user_id = ?`,
+      [...values, req.params.userId]
+    );
 
     res.json({ message: 'Location updated successfully.' });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Update student location error:', err);
     res.status(500).json({ error: 'Could not update location.' });
   }
 });
 
-
 router.put('/:userId/preferences', verifyToken, requireOwnUser, requireRole('student'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const { preferred_subjects, preferred_grade } = req.body;
+    const body = req.body || {};
+    const preferredSubjects = optionalText(body.preferred_subjects, 255, 'Preferred subjects');
+    const preferredGrade = optionalText(body.preferred_grade, 50, 'Preferred grade');
 
     await db.query(
       'UPDATE students SET preferred_subjects = ?, preferred_grade = ? WHERE user_id = ?',
-      [preferred_subjects, preferred_grade, userId]
+      [preferredSubjects, preferredGrade, userId]
     );
 
     res.json({ message: 'Preferences updated successfully.' });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Update preferences error:', err);
     res.status(500).json({ error: 'Could not update preferences.' });
   }
@@ -94,14 +79,14 @@ router.get('/by-user/:userId', verifyToken, requireOwnUser, async (req, res) => 
 
 // ---------- UPLOAD PROFILE PHOTO ----------
 // POST /api/students/:userId/photo   multipart/form-data field: "photo"
-router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), async (req, res) => {
+router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), upload.verifyRealFileType('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
     await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
     res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
   } catch (err) {
     console.error('Upload student photo error:', err);
-    res.status(500).json({ error: err.message || 'Could not upload photo.' });
+    res.status(500).json({ error: 'Could not upload photo.' });
   }
 });
 

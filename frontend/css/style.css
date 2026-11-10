@@ -6879,3 +6879,17 @@ table.data-table tr:hover td {
   .lg-ring, .lg-glow, .lg-pin { animation: none; }
   .lg-oauth { transition: none; }
 }
+/* Responsive fixes: the off-canvas mobile menu (translateX(100%)) widened every page on phones,
+   and dashboard rows/headers overflowed at 390px. */
+html { overflow-x: hidden; }
+@supports (overflow: clip) { html { overflow-x: clip; } }
+@media (max-width: 640px) {
+  .request-row { flex-wrap: wrap; align-items: flex-start; }
+  .request-row > :last-child { flex-wrap: wrap; }
+  .dashboard-header .container { gap: 10px; }
+}
+@media (max-width: 480px) {
+  .dashboard-header #welcomeText { display: none; }
+  .dashboard-header .user-chip { padding: 4px; }
+  .dash-hero:not(.dash-hero-brand) .dash-stat-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

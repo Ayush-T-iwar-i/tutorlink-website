@@ -100,6 +100,9 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts. Please try again in a few minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
+  // Every page calls GET /me on load and logout is harmless; counting them throttled ordinary users
+  // behind a shared IP. They still fall under the general API limiter.
+  skip: (req) => (req.method === 'GET' && req.path === '/me') || req.path === '/logout',
 });
 app.use('/api/auth', authLimiter);
 
@@ -122,9 +125,10 @@ app.use(express.static(path.join(__dirname, '..', 'frontend'), {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
-    // CSS/JS with content hash: long-term cache
+    // CSS/JS are not fingerprinted, so a long max-age would pair new HTML with stale scripts after a
+    // deploy. Revalidate every time instead; unchanged files come back as a cheap 304 via the ETag.
     else if (/\.(css|js)$/.test(filePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+      res.setHeader('Cache-Control', 'no-cache');
     }
     // Images/fonts: very long cache
     else if (/\.(woff2?|ttf|otf|eot|svg|png|jpg|jpeg|webp|ico)$/.test(filePath)) {

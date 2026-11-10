@@ -13,6 +13,7 @@ const throttle = require('../lib/login-throttle');
 const { withTransaction } = require('../lib/tx');
 const { runAfterResponse } = require('../lib/after-response');
 
+const SUSPENDED = 'This account has been suspended. Please contact TutorLink support.';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // The same text for every failed login, whatever the reason (no such account, wrong password,
@@ -129,7 +130,7 @@ router.post('/login', [
       return res.status(423).json({ error: `Too many failed attempts. Please try again in ${minutes} minute(s).`, code: 'LOCKED' });
     }
 
-    const [rows] = await db.query('SELECT id, name, email, role, password_hash FROM users WHERE email = ?', [email]);
+    const [rows] = await db.query('SELECT id, name, email, role, password_hash, suspended_at FROM users WHERE email = ?', [email]);
     const user = rows[0];
 
     // Always runs a bcrypt comparison (against a dummy hash when there is no usable account),
@@ -145,6 +146,8 @@ router.post('/login', [
     }
 
     await throttle.clearPair(db, email, ip);
+    // Only revealed after a correct password, so it does not leak which emails are suspended.
+    if (user.suspended_at) return res.status(403).json({ error: SUSPENDED, code: 'ACCOUNT_SUSPENDED' });
     await startSession(res, user, req);
 
     res.json({
@@ -354,7 +357,7 @@ router.post('/google', async (req, res) => {
     }
 
     const [existing] = await db.query(
-      'SELECT id, name, email, role, google_id FROM users WHERE google_id = ? OR email = ? ORDER BY (google_id = ?) DESC LIMIT 1',
+      'SELECT id, name, email, role, google_id, suspended_at FROM users WHERE google_id = ? OR email = ? ORDER BY (google_id = ?) DESC LIMIT 1',
       [googleId, email, googleId]
     );
 
@@ -365,6 +368,7 @@ router.post('/google', async (req, res) => {
         // This email belongs to an account already linked to a different Google identity.
         return res.status(409).json({ error: 'This email is already linked to a different Google account.' });
       }
+      if (user.suspended_at) return res.status(403).json({ error: SUSPENDED, code: 'ACCOUNT_SUSPENDED' });
       await db.query('UPDATE users SET google_id = ?, email_verified = 1 WHERE id = ?', [googleId, user.id]);
     } else {
       if (!role || !['student', 'teacher'].includes(role)) {

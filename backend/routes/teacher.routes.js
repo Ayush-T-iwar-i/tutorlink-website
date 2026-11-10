@@ -4,6 +4,7 @@ const path = require('path');
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const { optionalText, sendValidationError } = require('../lib/validate');
 
 // ---------- UPLOAD VERIFICATION DOCUMENTS (protected: own account, teacher only) ----------
 // POST /api/teachers/:userId/documents
@@ -43,7 +44,7 @@ router.post(
       res.json({ message: 'Documents uploaded. Your profile will be reviewed shortly.' });
     } catch (err) {
       console.error('Upload documents error:', err);
-      res.status(500).json({ error: err.message || 'Could not upload documents.' });
+      res.status(500).json({ error: 'Could not upload documents.' });
     }
   }
 );
@@ -54,13 +55,11 @@ router.post(
 router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const {
-      qualification, subjects, grades, experience_years,
-      fee_per_hour, languages, bio, address, city, available_slots,
-    } = req.body;
-
-    const exp = Math.max(0, parseInt(experience_years, 10) || 0);
-    const fee = Math.max(0, parseFloat(fee_per_hour) || 0);
+    const body = req.body || {};
+    const exp = Math.max(0, parseInt(body.experience_years, 10) || 0);
+    const fee = Math.max(0, parseFloat(body.fee_per_hour) || 0);
+    if (exp > 60) return res.status(400).json({ error: 'Experience must be between 0 and 60 years.', code: 'VALIDATION_ERROR' });
+    if (fee > 100000) return res.status(400).json({ error: 'Fee per hour must be at most 100000.', code: 'VALIDATION_ERROR' });
 
     await db.query(
       `UPDATE teachers SET
@@ -68,22 +67,23 @@ router.put('/:userId/profile', verifyToken, requireOwnUser, requireRole('teacher
         fee_per_hour = ?, languages = ?, bio = ?, address = ?, city = ?, available_slots = ?
        WHERE user_id = ?`,
       [
-        qualification || null,
-        subjects || '',
-        grades || null,
+        optionalText(body.qualification, 255, 'Qualification'),
+        optionalText(body.subjects, 255, 'Subjects') || '',
+        optionalText(body.grades, 100, 'Grades'),
         exp,
         fee,
-        languages || null,
-        bio || null,
-        address || null,
-        city || null,
-        available_slots || null,
+        optionalText(body.languages, 255, 'Languages'),
+        optionalText(body.bio, 2000, 'Bio'),
+        optionalText(body.address, 255, 'Address'),
+        optionalText(body.city, 100, 'City'),
+        optionalText(body.available_slots, 500, 'Available slots'),
         userId,
       ]
     );
 
     res.json({ message: 'Profile updated successfully.' });
   } catch (err) {
+    if (sendValidationError(res, err)) return;
     console.error('Update profile error:', err);
     res.status(500).json({ error: 'Could not update profile.' });
   }
@@ -130,6 +130,7 @@ router.get('/browse', async (req, res) => {
     const params = [];
     if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject.trim()}%`); }
     if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city.trim()}%`); }
+    conditions.push('u.suspended_at IS NULL');
     const whereClause = conditions.join(' AND ');
 
     const sortMap = {
@@ -151,7 +152,7 @@ router.get('/browse', async (req, res) => {
     );
 
     const [[{ total }]] = await db.query(
-      `SELECT COUNT(*) AS total FROM teachers t WHERE ${whereClause}`,
+      `SELECT COUNT(*) AS total FROM teachers t JOIN users u ON u.id = t.user_id WHERE ${whereClause}`,
       params
     );
 
@@ -203,6 +204,7 @@ router.get('/nearby', async (req, res) => {
       FROM teachers t
       JOIN users u ON u.id = t.user_id
       WHERE t.verification_status = 'approved'
+        AND u.suspended_at IS NULL
         AND t.latitude IS NOT NULL
         AND t.longitude IS NOT NULL
     `;
@@ -264,7 +266,7 @@ router.get('/:id', async (req, res) => {
               t.fee_per_hour, t.languages, t.bio, t.address, t.city, t.available_slots,
               t.rating_avg, t.total_reviews, u.name, u.profile_photo
        FROM teachers t JOIN users u ON u.id = t.user_id
-       WHERE t.id = ? AND t.verification_status = 'approved'`,
+       WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL`,
       [id]
     );
 
@@ -324,7 +326,7 @@ router.post('/:userId/photo', verifyToken, requireOwnUser,
       res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
     } catch (err) {
       console.error('Upload teacher photo error:', err);
-      res.status(500).json({ error: err.message || 'Could not upload photo.' });
+      res.status(500).json({ error: 'Could not upload photo.' });
     }
   }
 );
