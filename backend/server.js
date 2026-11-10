@@ -100,6 +100,9 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts. Please try again in a few minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
+  // Every page calls GET /me on load and logout is harmless; counting them throttled ordinary users
+  // behind a shared IP. They still fall under the general API limiter.
+  skip: (req) => (req.method === 'GET' && req.path === '/me') || req.path === '/logout',
 });
 app.use('/api/auth', authLimiter);
 
