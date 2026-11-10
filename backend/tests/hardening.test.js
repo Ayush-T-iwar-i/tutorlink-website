@@ -94,3 +94,51 @@ describe('reminder job claims a session before sending', () => {
     expect(db.query.mock.calls[2][0]).toBe('UPDATE class_sessions SET reminder_sent = 0 WHERE id = ?');
   });
 });
+
+describe('upload content sniffing', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { sniffFileType, verifyRealFileType } = require('../middleware/upload.middleware');
+  const pad = (bytes) => Buffer.concat([Buffer.from(bytes), Buffer.alloc(16)]);
+
+  it('recognises only the accepted formats', () => {
+    expect(sniffFileType(pad([0xff, 0xd8, 0xff, 0xe0]))).toEqual({ mime: 'image/jpeg', ext: '.jpg' });
+    expect(sniffFileType(pad([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))).toEqual({ mime: 'image/png', ext: '.png' });
+    expect(sniffFileType(Buffer.from('RIFF\0\0\0\0WEBPVP8 '))).toEqual({ mime: 'image/webp', ext: '.webp' });
+    expect(sniffFileType(Buffer.from('%PDF-1.7\n%\xe2\xe3'))).toEqual({ mime: 'application/pdf', ext: '.pdf' });
+    expect(sniffFileType(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg">'))).toBeNull();
+    expect(sniffFileType(Buffer.from('RIFF\0\0\0\0AVI LIST'))).toBeNull();
+    expect(sniffFileType(Buffer.from([0xff, 0xd8]))).toBeNull();
+  });
+
+  function runMiddleware(kind, file) {
+    return new Promise((resolve) => {
+      const res = { status(code) { this.code = code; return this; }, json(body) { resolve({ code: this.code, body }); } };
+      verifyRealFileType(kind)({ file }, res, () => resolve({ next: true }));
+    });
+  }
+
+  it('renames a file to the extension of its real content', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tl-upload-'));
+    const filePath = path.join(dir, '7_photo_1.webp');
+    fs.writeFileSync(filePath, pad([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    const file = { fieldname: 'photo', path: filePath, filename: '7_photo_1.webp' };
+
+    await expect(runMiddleware('photo', file)).resolves.toEqual({ next: true });
+    expect(file.filename).toBe('7_photo_1.png');
+    expect(fs.existsSync(path.join(dir, '7_photo_1.png'))).toBe(true);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('rejects and deletes a PDF sent as a profile photo', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tl-upload-'));
+    const filePath = path.join(dir, '7_photo_1.jpg');
+    fs.writeFileSync(filePath, Buffer.from('%PDF-1.4 not an image'));
+
+    const result = await runMiddleware('photo', { fieldname: 'photo', path: filePath, filename: '7_photo_1.jpg' });
+    expect(result.code).toBe(400);
+    expect(fs.existsSync(filePath)).toBe(false);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+});

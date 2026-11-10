@@ -88,6 +88,44 @@
       </div>
     </div>
 
+    <div class="panel reveal reveal-delay-1" id="usersPanel">
+      <div class="panel-title reveal reveal-delay-2">Users</div>
+      <p class="panel-hint">Search every account. Suspending blocks login and signs the person out everywhere; suspended teachers disappear from search.</p>
+      <form class="filter-bar" id="userFilters" role="search" aria-label="Filter users">
+        <div class="form-group">
+          <label for="userSearch">Search</label>
+          <input type="search" id="userSearch" placeholder="Name, email or phone" maxlength="100" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="userRole">Role</label>
+          <select id="userRole">
+            <option value="">All roles</option>
+            <option value="student">Students</option>
+            <option value="teacher">Teachers</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="userStatus">Status</label>
+          <select id="userStatus">
+            <option value="">Any status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end;">
+          <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        </div>
+      </form>
+      <div id="usersArea" aria-live="polite">
+        <div class="skeleton-card"><div class="skel-line w-60"></div></div>
+      </div>
+      <div id="usersPager" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;" hidden>
+        <button type="button" class="btn btn-outline btn-sm" id="usersPrev">&larr; Previous</button>
+        <span id="usersPageInfo" class="panel-hint" style="margin:0;"></span>
+        <button type="button" class="btn btn-outline btn-sm" id="usersNext">Next &rarr;</button>
+      </div>
+    </div>
     <div class="panel reveal reveal-delay-4">
       <div class="panel-title reveal reveal-delay-0">Pending teachers</div>
       <p class="panel-hint">Approve teachers whose details look genuine — this makes them visible to students immediately.</p>
@@ -155,7 +193,7 @@
         </div>
       `).join('')}</div>`;
     } catch (err) {
-      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
+      area.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -220,7 +258,7 @@
         </div>
       `).join('')}</div>`;
     } catch (err) {
-      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
+      area.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -237,6 +275,101 @@
     }
   }
   loadReports();
+
+  // ---------- Users ----------
+  const userState = { page: 1, totalPages: 1 };
+
+  function fmtDay(value) {
+    return value ? new Date(value).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  }
+
+  async function loadUsers(page = userState.page) {
+    const area = document.getElementById('usersArea');
+    const params = new URLSearchParams({ page: String(page) });
+    const q = document.getElementById('userSearch').value.trim();
+    const role = document.getElementById('userRole').value;
+    const status = document.getElementById('userStatus').value;
+    if (q) params.set('q', q);
+    if (role) params.set('role', role);
+    if (status) params.set('status', status);
+    area.setAttribute('aria-busy', 'true');
+    try {
+      const data = await apiRequest(`/api/admin/users?${params}`);
+      userState.page = data.page;
+      userState.totalPages = data.totalPages;
+      const pager = document.getElementById('usersPager');
+      pager.hidden = data.total <= data.pageSize;
+      document.getElementById('usersPageInfo').textContent = `Page ${data.page} of ${data.totalPages} · ${data.total} user${data.total === 1 ? '' : 's'}`;
+      document.getElementById('usersPrev').disabled = data.page <= 1;
+      document.getElementById('usersNext').disabled = data.page >= data.totalPages;
+
+      if (data.users.length === 0) {
+        area.innerHTML = '<div class="empty-state">No users match these filters.</div>';
+        return;
+      }
+      area.innerHTML = `<div class="fade-in">${data.users.map(u => {
+        const suspended = Boolean(u.suspended_at);
+        const self = session && session.user.id === u.id;
+        const action = u.role === 'admin' || self ? '' : suspended
+          ? `<button class="btn btn-outline btn-sm" onclick="reactivateUser(${u.id}, this)">Reactivate</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="suspendUser(${u.id}, this)">Suspend</button>`;
+        return `
+        <div class="request-row">
+          <div class="request-info">
+            <strong>${escapeHtml(u.name)}</strong> · ${escapeHtml(u.role)}${u.verification_status ? ' (' + escapeHtml(u.verification_status) + ')' : ''}
+            <div class="request-meta">
+              ${escapeHtml(u.email)} · ${escapeHtml(u.phone) || 'no phone'} · joined ${fmtDay(u.created_at)}${u.email_verified ? '' : ' · email not verified'}
+            </div>
+            ${suspended ? `<div class="request-meta">Suspended ${fmtDay(u.suspended_at)}: ${escapeHtml(u.suspended_reason)}</div>` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="status-tag ${suspended ? 'rejected' : 'approved'}">${suspended ? 'suspended' : 'active'}</span>
+            ${action}
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    } catch (err) {
+      area.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+    } finally {
+      area.removeAttribute('aria-busy');
+    }
+  }
+
+  async function suspendUser(userId, btn) {
+    const reason = window.prompt('Why are you suspending this account? (visible to admins only)');
+    if (reason === null) return;
+    if (!reason.trim()) { toast('A reason is required.', true); return; }
+    btn.disabled = true;
+    try {
+      const res = await apiRequest(`/api/admin/users/${userId}/suspend`, 'POST', { reason: reason.trim().slice(0, 255) });
+      toast(res.message);
+      loadUsers();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message, true);
+    }
+  }
+
+  async function reactivateUser(userId, btn) {
+    btn.disabled = true;
+    try {
+      const res = await apiRequest(`/api/admin/users/${userId}/reactivate`, 'POST');
+      toast(res.message);
+      loadUsers();
+    } catch (err) {
+      btn.disabled = false;
+      toast(err.message, true);
+    }
+  }
+
+  document.getElementById('userFilters').addEventListener('submit', (e) => {
+    e.preventDefault();
+    loadUsers(1);
+  });
+  ['userRole', 'userStatus'].forEach(id => document.getElementById(id).addEventListener('change', () => loadUsers(1)));
+  document.getElementById('usersPrev').addEventListener('click', () => loadUsers(Math.max(1, userState.page - 1)));
+  document.getElementById('usersNext').addEventListener('click', () => loadUsers(Math.min(userState.totalPages, userState.page + 1)));
+  loadUsers(1);
 
   async function loadSignupChart() {
     try {
