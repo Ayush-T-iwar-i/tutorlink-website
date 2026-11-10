@@ -25,6 +25,7 @@ const NO_REFRESH_PATHS = [
   '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/verify-email',
 ];
 let refreshInFlight = null;
+let pageRequiresLogin = false; // set by requireLogin(); a dead session on such a page goes straight to login
 
 function refreshSession() {
   if (!refreshInFlight) {
@@ -49,6 +50,7 @@ async function apiFetch(path, init = {}) {
       res = await fetch(`${API_BASE}${path}`, options); // repeat exactly once
     } else {
       localStorage.removeItem(SESSION_USER_KEY); // the login is really gone; pages will send the user to log in
+      if (pageRequiresLogin) window.location.replace('login.html');
     }
   }
   return res;
@@ -410,6 +412,7 @@ async function submitReport() {
 }
 
 function requireLogin(requiredRole = null) {
+  pageRequiresLogin = true;
   const user = getSession();
 
   if (!user) {

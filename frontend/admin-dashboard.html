@@ -120,7 +120,7 @@
       <div id="usersArea" aria-live="polite">
         <div class="skeleton-card"><div class="skel-line w-60"></div></div>
       </div>
-      <div id="usersPager" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;" hidden>
+      <div id="usersPager" style="display:none; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;">
         <button type="button" class="btn btn-outline btn-sm" id="usersPrev">&larr; Previous</button>
         <span id="usersPageInfo" class="panel-hint" style="margin:0;"></span>
         <button type="button" class="btn btn-outline btn-sm" id="usersNext">Next &rarr;</button>
@@ -298,7 +298,7 @@
       userState.page = data.page;
       userState.totalPages = data.totalPages;
       const pager = document.getElementById('usersPager');
-      pager.hidden = data.total <= data.pageSize;
+      pager.style.display = data.total > data.pageSize ? 'flex' : 'none';
       document.getElementById('usersPageInfo').textContent = `Page ${data.page} of ${data.totalPages} · ${data.total} user${data.total === 1 ? '' : 's'}`;
       document.getElementById('usersPrev').disabled = data.page <= 1;
       document.getElementById('usersNext').disabled = data.page >= data.totalPages;

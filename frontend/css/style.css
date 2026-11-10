@@ -6362,7 +6362,11 @@ table.data-table tr:hover td {
 
 /* Mobile menu: the closed menu must not widen the page or take keyboard focus */
 @media (max-width: 768px) {
+  /* .navbar's backdrop-filter makes it the containing block of this fixed menu, so size it from the viewport */
   .nav-links {
+    bottom: auto;
+    height: calc(100vh - 65px);
+    height: calc(100dvh - 65px);
     visibility: hidden;
     transition: transform var(--transition-normal), visibility 0s linear 0.28s;
   }
