@@ -187,8 +187,9 @@ describe('login', () => {
     const unknown = await post('/api/auth/login', { email: `nobody${uid()}@example.test`, password: STRONG });
     const google = await post('/api/auth/login', { email: googleOnly.email, password: STRONG });
     for (const r of [wrong.res, unknown, google]) expect(r.status).toBe(401);
-    expect(unknown.body).toEqual(wrong.res.body);
-    expect(google.body).toEqual(wrong.res.body);
+    const stripRequestId = ({ requestId, ...rest }) => rest;
+    expect(stripRequestId(unknown.body)).toEqual(stripRequestId(wrong.res.body));
+    expect(stripRequestId(google.body)).toEqual(stripRequestId(wrong.res.body));
   });
 
   it('locks a (email, IP) pair after 5 failures — even for the correct password — and unknown emails lock identically', async () => {
