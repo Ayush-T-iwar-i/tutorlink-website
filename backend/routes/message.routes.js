@@ -53,8 +53,8 @@ router.get('/:bookingId', verifyToken, async (req, res) => {
 // body: { message }
 router.post('/:bookingId', verifyToken, async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message || !message.trim()) {
+    const { message } = req.body || {};
+    if (typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'Message cannot be empty.' });
     }
     if (message.length > 1000) {
@@ -69,6 +69,9 @@ router.post('/:bookingId', verifyToken, async (req, res) => {
 
     if (participants.status === 'requested') {
       return res.status(400).json({ error: 'Chat opens once the teacher accepts this booking.' });
+    }
+    if (participants.status === 'declined' || participants.status === 'cancelled') {
+      return res.status(400).json({ error: 'This booking is closed, so new messages cannot be sent.' });
     }
 
     const [result] = await db.query(

@@ -4,6 +4,8 @@ const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const { refundAndNotify } = require('../lib/payment-jobs');
 
+const REPORT_STATUSES = ['open', 'reviewed', 'resolved'];
+
 // ---------- LIST TEACHERS AWAITING APPROVAL ----------
 // GET /api/admin/teachers/pending
 router.get('/teachers/pending', verifyToken, requireRole('admin'), async (req, res) => {
@@ -80,6 +82,9 @@ router.get('/stats', verifyToken, requireRole('admin'), async (req, res) => {
 router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
   try {
     const { status } = req.query;
+    if (status !== undefined && !REPORT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${REPORT_STATUSES.join(', ')}`, code: 'VALIDATION_ERROR' });
+    }
     let query = `
       SELECT r.*, ru.name AS reporter_name, tu.name AS reported_name
       FROM reports r
@@ -87,7 +92,7 @@ router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
       JOIN users tu ON tu.id = r.reported_user_id`;
     const params = [];
     if (status) { query += ' WHERE r.status = ?'; params.push(status); }
-    query += ' ORDER BY r.created_at DESC';
+    query += ' ORDER BY r.created_at DESC LIMIT 200';
 
     const [rows] = await db.query(query, params);
     res.json(rows);
@@ -102,12 +107,15 @@ router.get('/reports', verifyToken, requireRole('admin'), async (req, res) => {
 // body: { status: "reviewed" | "resolved", admin_notes }
 router.put('/reports/:id', verifyToken, requireRole('admin'), async (req, res) => {
   try {
-    const { status, admin_notes } = req.body;
-    const allowed = ['open', 'reviewed', 'resolved'];
-    if (!allowed.includes(status)) {
-      return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+    const { status, admin_notes } = req.body || {};
+    if (!REPORT_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${REPORT_STATUSES.join(', ')}`, code: 'VALIDATION_ERROR' });
     }
-    await db.query('UPDATE reports SET status = ?, admin_notes = ? WHERE id = ?', [status, admin_notes || null, req.params.id]);
+    if (admin_notes != null && (typeof admin_notes !== 'string' || admin_notes.length > 2000)) {
+      return res.status(400).json({ error: 'admin_notes must be text of at most 2000 characters.', code: 'VALIDATION_ERROR' });
+    }
+    const [result] = await db.query('UPDATE reports SET status = ?, admin_notes = ? WHERE id = ?', [status, admin_notes || null, req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Report not found.', code: 'NOT_FOUND' });
     res.json({ message: `Report marked as ${status}.` });
   } catch (err) {
     console.error('Update report error:', err);
@@ -156,7 +164,9 @@ function toCsv(rows, columns) {
   const header = columns.join(',');
   const body = rows.map(row =>
     columns.map(col => {
-      const val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+      let val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+      // A leading = + - @ (or tab/CR) makes Excel/Sheets run the cell as a formula: neutralise it.
+      if (/^[=+\-@\t\r]/.test(val)) val = `'${val}`;
       // Escape quotes/commas per standard CSV rules
       return `"${val.replace(/"/g, '""')}"`;
     }).join(',')
@@ -252,7 +262,7 @@ router.post('/payments/:id/refund', verifyToken, requireRole('admin'), async (re
     }
     if (p.status === 'paid') {
       // Atomic claim: only one admin click can move paid -> refund_pending.
-      const [claim] = await db.query("UPDATE payments SET status = 'refund_pending' WHERE id = ?", [id]);
+      const [claim] = await db.query("UPDATE payments SET status = 'refund_pending' WHERE id = ? AND status = 'paid'", [id]);
       if (claim.affectedRows === 0) return res.status(409).json({ error: 'This payment was just changed. Reload and try again.', code: 'INVALID_STATE' });
     }
     const result = await refundAndNotify(id, 'admin_refund');
@@ -268,4 +278,4 @@ router.post('/payments/:id/refund', verifyToken, requireRole('admin'), async (re
   }
 });
 
-module.exports = router;
+module.exports = router;module.exports.toCsv = toCsv;

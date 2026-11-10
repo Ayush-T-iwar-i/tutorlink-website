@@ -99,4 +99,26 @@ const templates = {
   }),
 };
 
-module.exports = templates;
+// Every value passed to a template can contain user-typed text (names, subjects), so HTML-escape all
+// string arguments before they are interpolated. Links stay valid: '&' -> '&amp;' is correct in href.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeArgs(args) {
+  if (!args || typeof args !== 'object') return args;
+  const out = {};
+  for (const [key, value] of Object.entries(args)) out[key] = typeof value === 'string' ? escapeHtml(value) : value;
+  return out;
+}
+
+const safeTemplates = {};
+for (const [name, fn] of Object.entries(templates)) safeTemplates[name] = (args) => fn(escapeArgs(args));
+safeTemplates.escapeHtml = escapeHtml;
+
+module.exports = safeTemplates;

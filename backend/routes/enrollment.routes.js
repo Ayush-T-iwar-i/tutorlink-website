@@ -115,10 +115,13 @@ router.get('/:id', verifyToken, async (req, res) => {
 // body: { status: "active" | "paused" | "completed" | "cancelled", notes }
 router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) => {
   try {
-    const { status, notes } = req.body;
+    const { status, notes } = req.body || {};
     const allowed = ['active', 'paused', 'completed', 'cancelled'];
     if (!allowed.includes(status)) {
       return res.status(400).json({ error: `Status must be one of: ${allowed.join(', ')}` });
+    }
+    if (notes != null && (typeof notes !== 'string' || notes.length > 5000)) {
+      return res.status(400).json({ error: 'notes must be text of at most 5000 characters.' });
     }
 
     const enrollment = await verifyEnrollmentParticipant(req.params.id, req.user.id, req.user.role);
@@ -131,7 +134,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
 
     if (notes !== undefined) {
       updates.push('notes = ?');
-      params.push(notes);
+      params.push(notes || null);
     }
 
     if (status === 'completed' && !enrollment.end_date) {
