@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Log In — TutorLink</title>
-<meta name="description" content="Log in to your TutorLink account to manage bookings, chat with tutors, and access your dashboard.">
+<title>Log in — TutorLink</title>
+<meta name="description" content="Log in to TutorLink to manage your bookings, chat with your tutor and see your upcoming classes.">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -13,149 +15,270 @@
 </head>
 <body>
 
-<nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
+<a class="skip-link" href="#email">Skip to the log in form</a>
+
+<nav class="navbar lg-nav" aria-label="Main navigation">
   <div class="container">
     <a href="index.html" class="brand" aria-label="TutorLink home">
       <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
-    <div class="nav-links" id="navLinks">
-      <a href="signup.html">Need an account?</a>
+    <div class="lg-nav-actions">
+      <span>New to TutorLink?</span>
+      <a href="signup.html" class="btn btn-outline btn-sm">Create account</a>
     </div>
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
-      <span></span><span></span><span></span>
-    </button>
   </div>
 </nav>
 
-<div class="auth-page">
-  <div class="auth-side">
-    <div class="side-top">
-      <div class="eyebrow">Welcome back</div>
-      <h2>Pick up right where your last class left off.</h2>
-      <p>Manage your bookings, chat with your tutor, and keep track of every upcoming class from one dashboard.</p>
+<main class="lg-shell" id="main">
+
+  <!-- Left: what you get. Facts only, taken from how the product actually works. -->
+  <aside class="lg-aside" aria-label="About TutorLink">
+    <div class="lg-aside-top">
+      <span class="eyebrow">Welcome back</span>
+      <p class="lg-aside-title">Pick up right where your <em>last class</em> left off.</p>
+      <p class="lg-aside-lead">Your bookings, your chats and your next class, all in one place.</p>
     </div>
 
-    <div class="radius-visual" aria-hidden="true">
-      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-        <circle class="ring" cx="150" cy="150" r="50"/>
-        <circle class="ring" cx="150" cy="150" r="90"/>
-        <circle class="ring" cx="150" cy="150" r="130"/>
-        <text class="ring-label" x="156" y="104">1 km</text>
-        <text class="ring-label" x="156" y="64">3 km</text>
-        <text class="ring-label" x="156" y="24">5 km</text>
-        <circle class="tutor-pin" cx="185" cy="120" r="5"/>
-        <circle class="tutor-pin" cx="118" cy="178" r="5"/>
-        <circle class="tutor-pin" cx="197" cy="192" r="5"/>
-        <circle class="tutor-pin out" cx="258" cy="78" r="5"/>
-        <circle class="tutor-pin out" cx="55" cy="252" r="5"/>
-        <circle class="center-pin" cx="150" cy="150" r="7"/>
+    <div class="lg-radar" aria-hidden="true">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <defs>
+          <radialGradient id="lgGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#7C5CFC" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#7C5CFC" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="lg-glow" cx="150" cy="150" r="140" fill="url(#lgGlow)"/>
+        <circle class="lg-ring" cx="150" cy="150" r="50"/>
+        <circle class="lg-ring" cx="150" cy="150" r="90"/>
+        <circle class="lg-ring" cx="150" cy="150" r="130"/>
+        <text class="lg-ring-label" x="156" y="104">3 km</text>
+        <text class="lg-ring-label" x="156" y="64">5 km</text>
+        <text class="lg-ring-label" x="156" y="24">10 km</text>
+        <circle class="lg-pin" cx="185" cy="120" r="5"/>
+        <circle class="lg-pin" cx="118" cy="178" r="5"/>
+        <circle class="lg-pin" cx="197" cy="192" r="5"/>
+        <circle class="lg-pin out" cx="262" cy="70" r="5"/>
+        <circle class="lg-pin out" cx="55" cy="252" r="5"/>
+        <circle class="lg-you" cx="150" cy="150" r="7"/>
+        <text class="lg-you-label" x="150" y="174" text-anchor="middle">You</text>
       </svg>
     </div>
-    <div class="radar-caption">Your classes, close by</div>
 
-    <div class="quote">"Found a Maths tutor 900 metres from home within a day."</div>
-  </div>
+    <ul class="lg-facts">
+      <li>
+        <span class="lg-fact-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <span><strong>Teachers are ID-checked</strong><br>ID proof, address proof and a certificate are reviewed before a teacher is listed.</span>
+      </li>
+      <li>
+        <span class="lg-fact-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        </span>
+        <span><strong>Search by distance</strong><br>Pick a 3, 5, 10 or 15 km radius around your home.</span>
+      </li>
+      <li>
+        <span class="lg-fact-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg>
+        </span>
+        <span><strong>Chat once a booking is accepted</strong><br>Talk to your teacher about timing and topics before class.</span>
+      </li>
+    </ul>
+  </aside>
 
-  <div class="auth-form-wrap">
-    <div class="auth-card">
-      <h2>Log in</h2>
-      <p class="subtitle">Enter your details to access your account</p>
+  <!-- Right: the form -->
+  <section class="lg-formside" aria-labelledby="loginTitle">
+    <div class="lg-formcol">
+      <div class="lg-card">
+        <h1 id="loginTitle">Log in</h1>
+        <p class="lg-sub">Students and teachers use the same form. We will take you to the right dashboard.</p>
 
-      <div id="msgBox" class="msg-box" role="alert"></div>
+        <div id="msgBox" class="lg-msg" role="alert" aria-live="assertive"></div>
+        <noscript><div class="lg-msg is-error">Please turn on JavaScript to log in.</div></noscript>
 
-      <form id="loginForm" novalidate>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="form-group password-field">
-          <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="Your password" autocomplete="current-password">
-          <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">👁️</button>
-        </div>
-
-        <div class="form-meta-row">
-          <div class="check-row">
-            <input type="checkbox" id="rememberMe">
-            <label for="rememberMe">Remember me</label>
+        <form id="loginForm" novalidate>
+          <div class="lg-field">
+            <label for="email">Email</label>
+            <div class="lg-input">
+              <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>
+              <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" required aria-describedby="emailErr">
+            </div>
+            <p class="lg-err" id="emailErr"></p>
           </div>
-          <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+
+          <div class="lg-field">
+            <div class="lg-label-row">
+              <label for="password">Password</label>
+              <a class="lg-link" href="forgot-password.html">Forgot password?</a>
+            </div>
+            <div class="lg-input has-action">
+              <svg class="lg-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+              <input type="password" id="password" name="password" placeholder="Your password" autocomplete="current-password" required aria-describedby="passwordErr capsHint">
+              <button type="button" class="lg-eye" id="togglePassword" aria-label="Show password" aria-pressed="false" aria-controls="password">
+                <svg class="on" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="off" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1"/><path d="M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+              </button>
+            </div>
+            <p class="lg-err" id="passwordErr"></p>
+            <p class="lg-caps" id="capsHint" hidden>Caps Lock is on.</p>
+          </div>
+
+          <label class="lg-check" for="rememberMe">
+            <input type="checkbox" id="rememberMe" name="remember">
+            <span>Remember me</span>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="submitBtn">
+            <span class="btn-label">Log in</span>
+          </button>
+        </form>
+
+        <!-- Stays collapsed until the Google button has really rendered, so there is never a lonely "or" line. -->
+        <div class="lg-oauth" id="oauthBlock">
+          <div class="lg-divider"><span>or continue with</span></div>
+          <div id="googleButtonContainer"></div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-          <span class="btn-label">Log in</span>
-        </button>
-      </form>
-
-      <div class="auth-divider">or continue with</div>
-      <div id="googleButtonContainer"></div>
-
-      <div class="auth-footer">
-        Don't have an account? <a href="signup.html">Sign up</a>
+        <p class="lg-switch">New here? <a href="signup.html">Create an account</a></p>
       </div>
+
+      <p class="lg-legal">By logging in you agree to our <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a>.</p>
     </div>
-  </div>
-</div>
+  </section>
+</main>
 
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/google-auth.js"></script>
 <script>
+(function () {
+  'use strict';
+
   const form = document.getElementById('loginForm');
   const msgBox = document.getElementById('msgBox');
   const submitBtn = document.getElementById('submitBtn');
-
-  // ---- password show/hide ----
+  const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
-  document.getElementById('togglePassword').addEventListener('click', function () {
-    const isHidden = passwordInput.type === 'password';
-    passwordInput.type = isHidden ? 'text' : 'password';
-    this.textContent = isHidden ? '🙈' : '👁️';
-    this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+  const rememberInput = document.getElementById('rememberMe');
+  const emailErr = document.getElementById('emailErr');
+  const passwordErr = document.getElementById('passwordErr');
+  const capsHint = document.getElementById('capsHint');
+  const toggleBtn = document.getElementById('togglePassword');
+  const oauthBlock = document.getElementById('oauthBlock');
+  const googleContainer = document.getElementById('googleButtonContainer');
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // ---------- helpers ----------
+  function setMessage(kind, text) {
+    msgBox.className = kind ? 'lg-msg is-' + kind : 'lg-msg';
+    msgBox.textContent = text || '';
+  }
+
+  function setFieldError(input, errEl, text) {
+    errEl.textContent = text || '';
+    if (text) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+  }
+
+  function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
+    submitBtn.classList.toggle('btn-loading', isLoading);
+    form.setAttribute('aria-busy', String(isLoading));
+  }
+
+  function dashboardFor(role) {
+    if (role === 'teacher') return 'teacher-dashboard.html';
+    if (role === 'admin') return 'admin-dashboard.html';
+    return 'student-dashboard.html';
+  }
+
+  // ---------- show / hide password ----------
+  toggleBtn.addEventListener('click', function () {
+    const reveal = passwordInput.type === 'password';
+    passwordInput.type = reveal ? 'text' : 'password';
+    toggleBtn.setAttribute('aria-pressed', String(reveal));
+    toggleBtn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
   });
 
-  initGoogleSignIn(
-    document.getElementById('googleButtonContainer'),
-    null,
-    (message) => { msgBox.className = 'msg-box error'; msgBox.textContent = message; }
-  );
+  // ---------- Caps Lock hint ----------
+  function syncCaps(e) {
+    const on = !!(e.getModifierState && e.getModifierState('CapsLock'));
+    capsHint.hidden = !on;
+  }
+  passwordInput.addEventListener('keydown', syncCaps);
+  passwordInput.addEventListener('keyup', syncCaps);
+  passwordInput.addEventListener('blur', function () { capsHint.hidden = true; });
 
-  form.addEventListener('submit', async (e) => {
+  // ---------- clear errors while typing ----------
+  emailInput.addEventListener('input', function () { setFieldError(emailInput, emailErr, ''); });
+  passwordInput.addEventListener('input', function () { setFieldError(passwordInput, passwordErr, ''); });
+
+  // ---------- Google sign-in ----------
+  // Reveal the divider + button only once Google has actually drawn the button.
+  function syncOauth() {
+    const hidden = googleContainer.style.display === 'none';
+    oauthBlock.classList.toggle('is-ready', !hidden && googleContainer.childElementCount > 0);
+  }
+  new MutationObserver(syncOauth).observe(googleContainer, {
+    childList: true,
+    attributes: true,
+    attributeFilter: ['style']
+  });
+
+  initGoogleSignIn(googleContainer, null, function (message) {
+    setMessage('error', message);
+  });
+
+  // ---------- submit ----------
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
-    msgBox.className = 'msg-box';
-    msgBox.textContent = '';
+    if (submitBtn.disabled) return;
 
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
+    setMessage('', '');
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    let firstInvalid = null;
+    if (!email) {
+      setFieldError(emailInput, emailErr, 'Enter your email address.');
+      firstInvalid = emailInput;
+    } else if (!EMAIL_RE.test(email)) {
+      setFieldError(emailInput, emailErr, 'That email address does not look right.');
+      firstInvalid = emailInput;
+    } else {
+      setFieldError(emailInput, emailErr, '');
     }
 
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const rememberMe = document.getElementById('rememberMe').checked;
+    if (!password) {
+      setFieldError(passwordInput, passwordErr, 'Enter your password.');
+      if (!firstInvalid) firstInvalid = passwordInput;
+    } else {
+      setFieldError(passwordInput, passwordErr, '');
+    }
 
-    submitBtn.disabled = true;
-    submitBtn.classList.add('btn-loading');
+    if (firstInvalid) { firstInvalid.focus(); return; }
 
+    setLoading(true);
     try {
-      const data = await apiRequest('/api/auth/login', 'POST', { email, password, remember: rememberMe });
+      const data = await apiRequest('/api/auth/login', 'POST', {
+        email: email,
+        password: password,
+        remember: rememberInput.checked
+      });
       saveSession(data.user);
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = 'Login successful! Redirecting...';
-
-      setTimeout(() => {
-        window.location.href =
-          data.user.role === 'teacher' ? 'teacher-dashboard.html' :
-          data.user.role === 'admin' ? 'admin-dashboard.html' :
-          'student-dashboard.html';
-      }, 600);
+      setMessage('success', 'Logged in. Taking you to your dashboard…');
+      setTimeout(function () {
+        window.location.href = dashboardFor(data.user.role);
+      }, 500);
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
-      submitBtn.disabled = false;
-      submitBtn.classList.remove('btn-loading');
+      setMessage('error', (err && err.message) || 'Something went wrong. Please try again.');
+      setLoading(false);
+      passwordInput.focus();
+      passwordInput.select();
     }
   });
+})();
 </script>
 
 </body>

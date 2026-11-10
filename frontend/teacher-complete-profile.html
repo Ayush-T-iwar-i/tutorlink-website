@@ -3,16 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Complete Your Profile — TutorLink</title>
+<title>Complete your teaching profile — TutorLink</title>
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/pages.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
-<body class="page-profile">
+<body class="pg pg-tprofile">
+
+<a class="skip-link" href="#mainContent">Skip to the form</a>
 
 <header class="dashboard-header">
   <div class="container">
-    <a href="teacher-dashboard.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="teacher-dashboard.html" class="brand" aria-label="TutorLink dashboard">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
     <div class="header-actions">
       <a href="teacher-dashboard.html" class="btn btn-outline btn-sm">← Back to dashboard</a>
@@ -20,345 +26,354 @@
   </div>
 </header>
 
-<main class="dashboard-body">
-  <div class="container form-page">
+<main class="dashboard-body" id="mainContent" tabindex="-1">
+  <div class="container pg-wrap">
 
-    <div class="dash-hero dash-hero-brand reveal" style="margin-bottom:26px;">
-      <div class="eyebrow">Teacher profile</div>
-      <h1 style="font-size:24px;">Complete your teaching profile</h1>
-      <p>This is exactly what students will see before booking a demo class with you.</p>
-      <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
-      <span class="progress-label" id="progressLabel" style="color:rgba(255,255,255,0.7);">0% complete</span>
-    </div>
+    <section class="pg-hero" aria-labelledby="pageTitle">
+      <div class="pg-hero-glow" aria-hidden="true"></div>
+      <div class="pg-hero-body">
+        <span class="eyebrow">Teacher profile</span>
+        <h1 id="pageTitle">Complete your teaching profile</h1>
+        <p>This is exactly what students see before they book a demo class with you.</p>
+      </div>
+      <div class="pg-meter" role="img" id="progressMeter" aria-label="Profile completeness 0 percent">
+        <div class="pg-ring" id="progressRing"><span id="progressLabel">0%</span></div>
+        <span class="pg-meter-cap">complete</span>
+      </div>
+    </section>
 
-    <div id="msgBox" class="msg-box"></div>
+    <ul class="pg-checks" id="checkList" aria-label="What is left to fill in">
+      <li data-check="photo">Photo</li>
+      <li data-check="qualification">Qualification</li>
+      <li data-check="subjects">Subjects</li>
+      <li data-check="experience">Experience</li>
+      <li data-check="fee">Fee</li>
+      <li data-check="bio">About you</li>
+      <li data-check="slots">Time slots</li>
+      <li data-check="location">Location</li>
+    </ul>
+
+    <div id="msgBox" class="msg-box" role="alert"></div>
 
     <form id="profileForm" novalidate>
 
-      <div class="form-section reveal">
-        <div class="form-section-head reveal reveal-delay-1">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <!-- ---------- Photo ---------- -->
+      <section class="pg-card" aria-labelledby="h-photo">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </span>
           <div>
-            <h3>Profile photo</h3>
-            <p>Students see this on your public profile — a clear headshot builds trust.</p>
+            <h2 id="h-photo">Profile photo</h2>
+            <p>Students see this on your public profile. A clear headshot builds trust.</p>
+          </div>
+        </header>
+        <div class="pg-photo">
+          <div class="pg-avatar" id="photoPreview" aria-hidden="true">—</div>
+          <div class="pg-photo-ctrl">
+            <input type="file" id="photoInput" class="pg-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+            <label class="pg-file" for="photoInput">
+              <span class="btn btn-outline btn-sm">Choose a photo</span>
+              <span class="pg-file-name" id="photoName">JPG, PNG or WebP, up to 2 MB</span>
+            </label>
+            <button type="button" class="btn btn-primary btn-sm" id="uploadPhotoBtn" disabled>Upload photo</button>
           </div>
         </div>
-        <div class="photo-upload-row">
-          <div class="photo-preview" id="photoPreview">—</div>
-          <div>
-            <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;">
-            <button type="button" class="btn btn-outline btn-sm" id="uploadPhotoBtn">Upload photo</button>
-          </div>
-        </div>
-        <div id="photoMsgBox" class="msg-box"></div>
-      </div>
+        <div id="photoMsgBox" class="msg-box" role="status"></div>
+      </section>
 
-      <div class="form-section reveal reveal-delay-2">
-        <div class="form-section-head reveal reveal-delay-3">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
+      <!-- ---------- Qualifications ---------- -->
+      <section class="pg-card" aria-labelledby="h-qual">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
           </span>
           <div>
-            <h3>Qualifications & subjects</h3>
+            <h2 id="h-qual">Qualifications &amp; subjects</h2>
             <p>Your academic background and what you teach.</p>
           </div>
+        </header>
+
+        <div class="pg-field" data-field="qualification">
+          <label for="qualification">Highest qualification <span class="pg-req" aria-hidden="true">*</span></label>
+          <input type="text" id="qualification" placeholder="e.g. B.Sc Mathematics, B.Ed" maxlength="255" autocomplete="off" aria-describedby="err-qualification">
+          <p class="pg-error" id="err-qualification" role="alert"></p>
         </div>
 
-        <div class="form-group">
-          <label for="qualification">Highest qualification</label>
-          <input type="text" id="qualification" placeholder="e.g. B.Sc Mathematics, B.Ed">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="subjects">Subjects you teach</label>
-            <input type="text" id="subjects" placeholder="e.g. Maths, Physics">
+        <div class="pg-row">
+          <div class="pg-field" data-field="subjects">
+            <label for="subjects">Subjects you teach <span class="pg-req" aria-hidden="true">*</span></label>
+            <input type="text" id="subjects" placeholder="e.g. Maths, Physics" maxlength="255" autocomplete="off" aria-describedby="err-subjects">
+            <p class="pg-hint">Separate subjects with commas.</p>
+            <p class="pg-error" id="err-subjects" role="alert"></p>
           </div>
-          <div class="form-group">
+          <div class="pg-field">
             <label for="grades">Classes / grades</label>
-            <input type="text" id="grades" placeholder="e.g. Class 6-10">
+            <input type="text" id="grades" placeholder="e.g. Class 6-10" maxlength="100" autocomplete="off">
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
+        <div class="pg-row">
+          <div class="pg-field" data-field="experience">
             <label for="experience">Experience (years)</label>
-            <input type="number" id="experience" min="0" placeholder="e.g. 5">
+            <input type="number" id="experience" min="0" max="60" step="1" inputmode="numeric" placeholder="e.g. 5" aria-describedby="err-experience">
+            <p class="pg-error" id="err-experience" role="alert"></p>
           </div>
-          <div class="form-group">
+          <div class="pg-field" data-field="fee">
             <label for="fee">Fee per hour (₹)</label>
-            <input type="number" id="fee" min="0" placeholder="e.g. 400">
+            <input type="number" id="fee" min="0" max="100000" step="1" inputmode="numeric" placeholder="e.g. 400" aria-describedby="err-fee">
+            <p class="pg-error" id="err-fee" role="alert"></p>
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="pg-field">
           <label for="languages">Languages you teach in</label>
-          <input type="text" id="languages" placeholder="e.g. English, Hindi">
+          <input type="text" id="languages" placeholder="e.g. English, Hindi" maxlength="255" autocomplete="off">
         </div>
 
-        <div class="form-group">
+        <div class="pg-field">
           <label for="bio">About you</label>
-          <textarea id="bio" rows="4" placeholder="Tell students about your teaching style and experience"></textarea>
+          <textarea id="bio" rows="4" maxlength="1500" placeholder="Tell students about your teaching style and experience"></textarea>
+          <p class="pg-hint pg-counter" id="bioCount" aria-live="off">0 / 1500</p>
         </div>
 
-        <div class="form-group">
-          <label>Time slots you're available for classes</label>
-          <p class="section-hint" style="margin-bottom:10px;">Students will only be able to pick from these when booking you.</p>
-          <div class="slot-grid" id="slotsGrid" style="grid-template-columns:repeat(3,1fr);"></div>
+        <div class="pg-field">
+          <span class="pg-label" id="slotsLabel">Time slots you are available for classes</span>
+          <p class="pg-hint">Students can only book the slots you pick here. If you pick none, they will see 9 AM, 11 AM, 1 PM, 3 PM, 5 PM and 7 PM.</p>
+          <div class="pg-slots" id="slotsGrid" role="group" aria-labelledby="slotsLabel"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="form-section reveal reveal-delay-4">
-        <div class="form-section-head reveal reveal-delay-0">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <!-- ---------- Location ---------- -->
+      <section class="pg-card" aria-labelledby="h-loc">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
           </span>
           <div>
-            <h3>Where you teach</h3>
+            <h2 id="h-loc">Where you teach</h2>
             <p>Students within your travel radius of this location will see you in search results.</p>
           </div>
-        </div>
+        </header>
 
-        <div id="locationNotSet" class="location-panel">
-          <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
-          <button type="button" id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
-          <span id="locationStatus" class="status-pill">Not set yet</span>
-        </div>
-
-        <div id="locationSet" class="location-set" style="display:none; margin-bottom:16px;">
-          <div class="location-trail">
-            <span class="pin-ic">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-            </span>
-            <span class="crumb" id="crumbArea">Area</span>
-            <span class="sep">›</span>
-            <span class="crumb" id="crumbDistrict">District</span>
-            <span class="pincode" id="crumbPincode">000000</span>
+        <div id="locationNotSet" class="pg-loc">
+          <div class="pg-loc-actions">
+            <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Use my current location</button>
+            <button type="button" id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
           </div>
-          <div class="location-actions">
+          <span id="locationStatus" class="pg-status" role="status">Not set yet</span>
+        </div>
+
+        <div id="locationSet" class="pg-loc pg-loc-set" style="display:none;">
+          <div class="pg-trail">
+            <span class="pg-trail-ic" aria-hidden="true">📍</span>
+            <span class="pg-crumb" id="crumbArea">Area</span>
+            <span class="pg-sep" aria-hidden="true">›</span>
+            <span class="pg-crumb" id="crumbDistrict">District</span>
+            <span class="pg-pin" id="crumbPincode">000000</span>
+          </div>
+          <div class="pg-loc-actions">
             <button type="button" id="openMapBtnSet" class="btn btn-outline btn-sm">Change on map</button>
+            <button type="button" id="useLocationBtn2" class="btn btn-outline btn-sm">Re-detect</button>
           </div>
         </div>
 
-        <div class="form-row" style="margin-top:16px;">
-          <div class="form-group">
+        <div class="pg-row pg-row-gap">
+          <div class="pg-field">
             <label for="address">Area / locality name</label>
-            <input type="text" id="address" placeholder="e.g. Sector 14, Near City Hospital">
+            <input type="text" id="address" placeholder="e.g. Sector 14, near City Hospital" maxlength="255" autocomplete="off">
           </div>
-          <div class="form-group">
+          <div class="pg-field">
             <label for="city">City</label>
-            <input type="text" id="city" placeholder="e.g. Gurugram">
+            <input type="text" id="city" placeholder="e.g. Gurugram" maxlength="100" autocomplete="off">
           </div>
         </div>
-        <p class="section-hint" style="margin-top:-6px;">Auto-filled once you set your location above — feel free to edit for accuracy.</p>
+        <p class="pg-hint">Filled in automatically once you set your location. Edit it if you want it more exact.</p>
 
-        <div class="form-group" style="margin-top:20px; max-width:320px;">
+        <div class="pg-field pg-radius">
           <label for="radius">Travel radius</label>
-          <input type="range" id="radius" min="1" max="15" value="5">
-          <div id="radiusValue" style="font-family:var(--font-mono); font-size:13px; color:var(--primary); font-weight:600; margin-top:4px;">5 km</div>
+          <input type="range" id="radius" min="1" max="15" step="1" value="5" aria-describedby="radiusValue">
+          <output id="radiusValue" for="radius">5 km</output>
         </div>
-      </div>
+      </section>
 
-      <div class="form-section reveal reveal-delay-1">
-        <div class="form-section-head reveal reveal-delay-2">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2 3 6v6c0 5 3.8 8.7 9 10 5.2-1.3 9-5 9-10V6l-9-4z"/><path d="m9 12 2 2 4-4"/></svg>
+      <!-- ---------- Verification ---------- -->
+      <section class="pg-card" aria-labelledby="h-docs">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 8.7 9 10 5.2-1.3 9-5 9-10V6l-9-4z"/><path d="m9 12 2 2 4-4"/></svg>
           </span>
           <div>
-            <h3>Verification documents</h3>
-            <p>Upload these once — an admin reviews them before your profile goes live. JPG, PNG, or PDF, up to 5MB each.</p>
+            <h2 id="h-docs">Verification documents</h2>
+            <p>An admin reviews these before your profile goes live. JPG, PNG, WebP or PDF, up to 5 MB each.</p>
           </div>
+        </header>
+
+        <div class="pg-verify" id="verifyBox" aria-live="polite">
+          <span class="pg-vstatus" id="verifyStatus">Not submitted</span>
+          <span class="pg-hint" id="verifyHint">Upload your documents to start verification.</span>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="idProofFile">ID proof (Aadhaar / PAN / etc.)</label>
-            <input type="file" id="idProofFile" accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <div class="pg-row">
+          <div class="pg-field">
+            <label for="idProofFile">ID proof (Aadhaar, PAN, etc.) <span class="pg-have" id="have-id" hidden>✓ Uploaded</span></label>
+            <input type="file" id="idProofFile" class="pg-doc" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf">
           </div>
-          <div class="form-group">
-            <label for="addressProofFile">Address proof</label>
-            <input type="file" id="addressProofFile" accept=".jpg,.jpeg,.png,.webp,.pdf">
+          <div class="pg-field">
+            <label for="addressProofFile">Address proof <span class="pg-have" id="have-address" hidden>✓ Uploaded</span></label>
+            <input type="file" id="addressProofFile" class="pg-doc" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf">
           </div>
         </div>
-        <div class="form-group">
-          <label for="certificateFile">Teaching certificate / degree</label>
-          <input type="file" id="certificateFile" accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <div class="pg-field">
+          <label for="certificateFile">Teaching certificate or degree <span class="pg-have" id="have-cert" hidden>✓ Uploaded</span></label>
+          <input type="file" id="certificateFile" class="pg-doc" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf">
         </div>
+        <p class="pg-hint pg-warn" id="reuploadWarn" hidden>Uploading new documents sends your profile back to "pending" until an admin reviews it again.</p>
         <button type="button" class="btn btn-outline btn-block" id="uploadDocsBtn">Upload documents</button>
-        <div id="uploadMsgBox" class="msg-box" style="margin-top:12px;"></div>
-      </div>
+        <div id="uploadMsgBox" class="msg-box" role="status"></div>
+      </section>
 
-      <button type="submit" class="btn btn-primary btn-block" id="saveBtn">Save profile</button>
+      <div class="pg-savebar">
+        <span class="pg-savebar-note" id="saveNote">Your changes are not saved yet.</span>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save profile</button>
+      </div>
     </form>
 
   </div>
 </main>
 
-<!-- ================= Map picker modal ================= -->
-<div class="modal-backdrop" id="mapModalBackdrop">
-  <div class="modal modal-map">
-    <div class="modal-header">
-      <div>
-        <h3 id="mapModalTitle">Set your location</h3>
-        <p id="mapModalSub">Drag the pin, or click anywhere on the map, to place it exactly.</p>
-      </div>
-      <button class="modal-close" id="mapModalClose" aria-label="Close">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="map-search-row">
-        <input type="text" id="mapSearchInput" placeholder="Search for an area, e.g. Sector 14, Gurugram">
-        <button id="mapSearchBtn" class="btn btn-outline btn-sm">Search</button>
-      </div>
-      <div class="map-wrap">
-        <div id="pickerMap"></div>
-        <span class="map-zoom-hint">Scroll or pinch to zoom</span>
-        <button type="button" id="mapLocateBtn" class="map-locate-btn" title="Use my current location">📍</button>
-      </div>
-      <div id="accuracyNote" class="accuracy-note" style="display:none;"></div>
-      <div class="map-hint">📍 <span>Tip: use the search box or drag the pin to fine-tune your spot.</span></div>
-      <div class="map-picked-address" id="mapPickedAddress">Move the pin to see the address here.</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="mapModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="mapModalConfirm">Confirm this location</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/location-picker.js"></script>
 <script>
-  const session = requireLogin('teacher');
-  const msgBox = document.getElementById('msgBox');
-  let currentLat = null;
-  let currentLng = null;
-  let currentAddress = null;
+(function () {
+  'use strict';
 
-  const DEFAULT_CENTER = [28.9845, 77.7064]; // fallback map center
+  var session = requireLogin('teacher');
+  if (!session) return;
+  var USER = session.user;
+
+  function $(id) { return document.getElementById(id); }
+  var msgBox = $('msgBox');
+
+  // Slot labels must match the 12-hour format the booking service expects ("5:00 PM").
+  var ALL_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM'];
+  var selectedSlots = new Set();
+
+  var currentLat = null;
+  var currentLng = null;
+  var currentAddress = null;
+  var hasPhoto = false;
+  var verificationStatus = null;
+  var dirty = false;
+  var saving = false;
+  var toastTimer = null;
 
   function toast(message, isError) {
-    const el = document.getElementById('toast');
+    var el = $('toast');
     el.textContent = message;
     el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'toast'; }, 2800);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'toast'; }, 3500);
+  }
+  function showMsg(box, type, text) {
+    box.className = 'msg-box' + (type ? ' ' + type : '');
+    box.textContent = text || '';
+  }
+  function initials(name) {
+    return String(name || '').split(/\s+/).filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase() || '?';
+  }
+  function markDirty() {
+    dirty = true;
+    $('saveNote').textContent = 'You have unsaved changes.';
   }
 
-  // ---------------- Profile completeness bar ----------------
+  // ---------------- Completeness ----------------
   function updateProgress() {
-    const fields = [
-      document.getElementById('qualification').value.trim(),
-      document.getElementById('subjects').value.trim(),
-      document.getElementById('experience').value.trim(),
-      document.getElementById('fee').value.trim(),
-      document.getElementById('bio').value.trim(),
-      currentLat !== null ? 'x' : '',
-    ];
-    const filled = fields.filter(Boolean).length;
-    const pct = Math.round((filled / fields.length) * 100);
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent = pct + '% complete';
-  }
-  ['qualification', 'subjects', 'experience', 'fee', 'bio'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateProgress);
-  });
-
-  const ALL_SLOTS = ['9:00 AM','10:00 AM','11:00 AM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM'];
-  let selectedSlots = new Set();
-
-  function buildSlotsGrid() {
-    const grid = document.getElementById('slotsGrid');
-    grid.innerHTML = ALL_SLOTS.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
-    grid.querySelectorAll('.slot-btn').forEach(btn => {
-      btn.classList.toggle('selected', selectedSlots.has(btn.dataset.slot));
-      btn.addEventListener('click', () => {
-        const s = btn.dataset.slot;
-        if (selectedSlots.has(s)) selectedSlots.delete(s); else selectedSlots.add(s);
-        btn.classList.toggle('selected');
-        updateProgress();
-      });
+    var checks = {
+      photo: hasPhoto,
+      qualification: !!$('qualification').value.trim(),
+      subjects: !!$('subjects').value.trim(),
+      experience: $('experience').value.trim() !== '',
+      fee: $('fee').value.trim() !== '',
+      bio: !!$('bio').value.trim(),
+      slots: selectedSlots.size > 0,
+      location: currentLat !== null
+    };
+    var keys = Object.keys(checks);
+    var done = keys.filter(function (k) { return checks[k]; }).length;
+    var pct = Math.round(done / keys.length * 100);
+    $('progressRing').style.setProperty('--pct', pct + '%');
+    $('progressLabel').textContent = pct + '%';
+    $('progressMeter').setAttribute('aria-label', 'Profile completeness ' + pct + ' percent');
+    document.querySelectorAll('#checkList li').forEach(function (li) {
+      li.classList.toggle('is-done', !!checks[li.dataset.check]);
     });
   }
 
-  async function loadExisting() {
-    try {
-      const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
-      document.getElementById('qualification').value = t.qualification || '';
-      document.getElementById('subjects').value = t.subjects || '';
-      document.getElementById('grades').value = t.grades || '';
-      document.getElementById('experience').value = t.experience_years || '';
-      document.getElementById('fee').value = t.fee_per_hour || '';
-      document.getElementById('languages').value = t.languages || '';
-      document.getElementById('bio').value = t.bio || '';
-      selectedSlots = new Set((t.available_slots || '').split(',').map(s => s.trim()).filter(Boolean));
-      buildSlotsGrid();
-      document.getElementById('address').value = t.address || '';
-      document.getElementById('city').value = t.city || '';
-      document.getElementById('radius').value = t.travel_radius_km || 5;
-      document.getElementById('radiusValue').textContent = `${t.travel_radius_km || 5} km`;
-      if (t.latitude && t.longitude) {
-        currentLat = t.latitude;
-        currentLng = t.longitude;
-        currentAddress = { area: t.address || 'Location set', district: t.city || '—', pincode: '------' };
-        renderLocation();
-      }
-    } catch (e) { /* new profile, nothing to pre-fill */ buildSlotsGrid(); }
-    updateProgress();
-  }
-  loadExisting();
-
-  // ---------------- Profile photo ----------------
-  const photoPreview = document.getElementById('photoPreview');
-  photoPreview.textContent = session.user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-  // Load an already-uploaded photo (if any) instead of always showing
-  // initials — session.user doesn't carry profile_photo, so fetch it fresh.
-  (async () => {
-    try {
-      const me = await apiRequest('/api/auth/me');
-      if (me.user && me.user.profile_photo) {
-        photoPreview.innerHTML = `<img src="${photoUrl(me.user.profile_photo)}" alt="Profile photo">`;
-      }
-    } catch (e) { /* keep initials if this fails */ }
-  })();
-
-  document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
-    const file = document.getElementById('photoInput').files[0];
-    const photoMsgBox = document.getElementById('photoMsgBox');
-    if (!file) {
-      photoMsgBox.className = 'msg-box error';
-      photoMsgBox.textContent = 'Please choose a photo first.';
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('photo', file);
-
-    try {
-      const res = await apiFetch(`/api/teachers/${session.user.id}/photo`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed.');
-
-      photoPreview.innerHTML = `<img src="${photoUrl(data.path)}" alt="Profile photo">`;
-      photoMsgBox.className = 'msg-box success';
-      photoMsgBox.textContent = 'Photo updated.';
-      toast('Profile photo updated');
-    } catch (err) {
-      photoMsgBox.className = 'msg-box error';
-      photoMsgBox.textContent = err.message;
-    }
+  ['qualification', 'subjects', 'grades', 'experience', 'fee', 'languages', 'bio', 'address', 'city'].forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      markDirty();
+      updateProgress();
+      clearFieldError(id);
+      if (id === 'bio') updateBioCount();
+    });
   });
 
+  function updateBioCount() {
+    $('bioCount').textContent = $('bio').value.length + ' / 1500';
+  }
+
+  // ---------------- Field errors ----------------
+  function setFieldError(id, text) {
+    var err = $('err-' + id);
+    var input = $(id);
+    if (!err || !input) return;
+    err.textContent = text;
+    input.classList.add('is-invalid');
+    input.setAttribute('aria-invalid', 'true');
+  }
+  function clearFieldError(id) {
+    var err = $('err-' + id);
+    var input = $(id);
+    if (!err || !input) return;
+    err.textContent = '';
+    input.classList.remove('is-invalid');
+    input.removeAttribute('aria-invalid');
+  }
+
+  // ---------------- Slots ----------------
+  function buildSlots() {
+    var grid = $('slotsGrid');
+    grid.innerHTML = '';
+    ALL_SLOTS.forEach(function (s) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pg-slot';
+      btn.dataset.slot = s;
+      btn.textContent = s;
+      var on = selectedSlots.has(s);
+      btn.setAttribute('aria-pressed', String(on));
+      btn.classList.toggle('is-on', on);
+      btn.addEventListener('click', function () {
+        if (selectedSlots.has(s)) selectedSlots.delete(s); else selectedSlots.add(s);
+        var now = selectedSlots.has(s);
+        btn.setAttribute('aria-pressed', String(now));
+        btn.classList.toggle('is-on', now);
+        markDirty();
+        updateProgress();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  // ---------------- Location ----------------
   function renderLocation() {
-    const notSet = document.getElementById('locationNotSet');
-    const set = document.getElementById('locationSet');
+    var notSet = $('locationNotSet');
+    var set = $('locationSet');
     if (currentLat === null || !currentAddress) {
       notSet.style.display = 'flex';
       set.style.display = 'none';
@@ -366,340 +381,298 @@
     }
     notSet.style.display = 'none';
     set.style.display = 'flex';
-    document.getElementById('crumbArea').textContent = currentAddress.area || 'Unknown area';
-    document.getElementById('crumbDistrict').textContent = currentAddress.district || '—';
-    document.getElementById('crumbPincode').textContent = currentAddress.pincode || '------';
-    document.getElementById('locationStatus').textContent = 'Location set';
-    document.getElementById('locationStatus').classList.add('active');
+    $('crumbArea').textContent = currentAddress.area || 'Unknown area';
+    $('crumbDistrict').textContent = currentAddress.district || '—';
+    $('crumbPincode').textContent = currentAddress.pincode || '------';
   }
 
-  async function reverseGeocode(lat, lng) {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    if (!res.ok) throw new Error('Could not look up that address.');
-    const data = await res.json();
-    const a = data.address || {};
-    const displayArea = data.display_name ? data.display_name.split(',')[0].trim() : 'Unknown area';
-    return {
-      area: a.suburb || a.neighbourhood || a.residential || a.hamlet || a.quarter ||
-            a.village || a.town || a.city_district || a.municipality || a.road || a.city || displayArea,
-      district: a.state_district || a.county || a.city || a.state || '—',
-      pincode: a.postcode || '------',
-      display: data.display_name || '',
-    };
-  }
+  var picker = TLLocationPicker.create({
+    getCurrent: function () { return currentLat !== null ? { lat: currentLat, lng: currentLng } : null; },
+    notify: toast,
+    onConfirm: async function (lat, lng) {
+      await applyLocation(lat, lng);
+      toast('Location updated');
+    }
+  });
 
   async function applyLocation(lat, lng) {
+    var addr = null;
+    try { addr = await picker.reverseGeocode(lat, lng); } catch (e) { /* the pin is still usable without an address */ }
     currentLat = lat;
     currentLng = lng;
-    try {
-      currentAddress = await reverseGeocode(lat, lng);
-    } catch (e) {
-      currentAddress = { area: 'Location set', district: '—', pincode: '------', display: '' };
+    currentAddress = addr || { area: 'Location set', district: '—', pincode: '------', display: '' };
+    if (addr) {
+      $('address').value = addr.area;
+      if (addr.district && addr.district !== '—') $('city').value = addr.district;
     }
-    document.getElementById('address').value = currentAddress.area;
-    document.getElementById('city').value = currentAddress.district;
+    markDirty();
     renderLocation();
     updateProgress();
   }
 
-  function useCurrentLocation(btn) {
-    const status = document.getElementById('locationStatus');
-    if (!navigator.geolocation) {
-      status.textContent = 'Geolocation not supported by your browser.';
-      return;
-    }
-    btn.disabled = true;
-    btn.classList.add('btn-loading');
-    status.textContent = 'Getting a precise GPS fix…';
+  $('useLocationBtn').addEventListener('click', function (e) { picker.useGps(e.currentTarget, $('locationStatus')); });
+  $('useLocationBtn2').addEventListener('click', function (e) { picker.useGps(e.currentTarget, $('locationStatus')); });
+  $('openMapBtnEmpty').addEventListener('click', function () { picker.open(); });
+  $('openMapBtnSet').addEventListener('click', function () { picker.open(); });
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        btn.disabled = false;
-        btn.classList.remove('btn-loading');
-        const { latitude, longitude, accuracy } = position.coords;
-        openMapModal({
-          lat: latitude, lng: longitude, accuracy,
-          title: 'Confirm your exact location',
-          sub: 'We centred the pin on your GPS fix. Drag it to your exact doorstep for the best match accuracy.',
-        });
-      },
-      (err) => {
-        btn.disabled = false;
-        btn.classList.remove('btn-loading');
-        const messages = {
-          1: 'Location access denied. Please allow location permission for this site in your browser settings.',
-          2: 'Could not detect your location right now. Please try again, or set it manually on the map.',
-          3: 'Location request timed out. Please try again, ideally outdoors or near a window.',
-        };
-        status.textContent = messages[err.code] || 'Could not get your location. Please set it manually on the map.';
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
-  }
-  document.getElementById('useLocationBtn').addEventListener('click', (e) => useCurrentLocation(e.currentTarget));
-
-  // ---------------- Map picker modal ----------------
-  let map, marker, accuracyCircle, pendingLat, pendingLng, geocodeTimer;
-
-  const pinIcon = L.divIcon({
-    className: 'custom-pin',
-    html: `<svg width="32" height="42" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 0C7.6 0 0 7.6 0 17c0 12.7 17 27 17 27s17-14.3 17-27C34 7.6 26.4 0 17 0z" fill="#7C5CFC"/>
-      <circle cx="17" cy="17" r="7" fill="#fff"/>
-    </svg>`,
-    iconSize: [32, 42],
-    iconAnchor: [16, 42],
+  $('radius').addEventListener('input', function () {
+    $('radiusValue').textContent = $('radius').value + ' km';
+    markDirty();
   });
 
-  function setAccuracyNote(accuracy) {
-    const note = document.getElementById('accuracyNote');
-    if (!accuracy) { note.style.display = 'none'; return; }
-    note.style.display = 'flex';
-    const meters = Math.round(accuracy);
-    if (meters <= 30) {
-      note.className = 'accuracy-note good';
-      note.innerHTML = `✓ GPS accuracy: ~${meters}m — this pin should already be very close.`;
-    } else if (meters <= 100) {
-      note.className = 'accuracy-note fair';
-      note.innerHTML = `⚠ GPS accuracy: ~${meters}m — drag the pin to your exact spot for best results.`;
-    } else {
-      note.className = 'accuracy-note poor';
-      note.innerHTML = `⚠ GPS accuracy: ~${meters}m (weak signal) — please drag the pin precisely onto your location.`;
-    }
+  // ---------------- Verification display ----------------
+  var STATUS_COPY = {
+    pending: ['Pending review', 'Your documents are waiting for an admin to review them.'],
+    under_review: ['Under review', 'An admin is reviewing your documents right now.'],
+    approved: ['Approved', 'Your profile is live and students can find you.'],
+    rejected: ['Not approved', 'Please check your details and upload clearer documents.']
+  };
+  function renderVerification(t) {
+    verificationStatus = t.verification_status || null;
+    var hasAny = !!(t.id_proof_path || t.address_proof_path || t.certificate_path);
+    var copy = hasAny ? (STATUS_COPY[verificationStatus] || STATUS_COPY.pending) : ['Not submitted', 'Upload your documents to start verification.'];
+    var chip = $('verifyStatus');
+    chip.textContent = copy[0];
+    chip.className = 'pg-vstatus' + (hasAny ? ' is-' + (verificationStatus || 'pending') : '');
+    $('verifyHint').textContent = copy[1];
+    $('have-id').hidden = !t.id_proof_path;
+    $('have-address').hidden = !t.address_proof_path;
+    $('have-cert').hidden = !t.certificate_path;
+    $('reuploadWarn').hidden = verificationStatus !== 'approved';
   }
 
-  function openMapModal(opts) {
-    opts = opts || {};
-    document.getElementById('mapModalBackdrop').classList.add('open');
-    document.getElementById('mapModalTitle').textContent = opts.title || 'Set your location';
-    document.getElementById('mapModalSub').textContent = opts.sub || 'Drag the pin, or click anywhere on the map, to place it exactly.';
-
-    const startLat = opts.lat ?? currentLat ?? DEFAULT_CENTER[0];
-    const startLng = opts.lng ?? currentLng ?? DEFAULT_CENTER[1];
-    const zoom = opts.lat ? 17 : 14;
-
-    if (!map) {
-      map = L.map('pickerMap').setView([startLat, startLng], zoom);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors', maxZoom: 19,
-      }).addTo(map);
-      marker = L.marker([startLat, startLng], { draggable: true, icon: pinIcon }).addTo(map);
-      marker.on('dragend', () => {
-        const p = marker.getLatLng();
-        clearAccuracyCircle();
-        previewLocation(p.lat, p.lng);
-      });
-      map.on('click', (e) => {
-        marker.setLatLng(e.latlng);
-        clearAccuracyCircle();
-        previewLocation(e.latlng.lat, e.latlng.lng);
-      });
-    } else {
-      map.setView([startLat, startLng], zoom);
-      marker.setLatLng([startLat, startLng]);
-      setTimeout(() => map.invalidateSize(), 60);
-    }
-
-    clearAccuracyCircle();
-    if (opts.accuracy) {
-      accuracyCircle = L.circle([startLat, startLng], {
-        radius: opts.accuracy, color: '#1F6E4A', fillColor: '#1F6E4A', fillOpacity: 0.12, weight: 1,
-      }).addTo(map);
-      setAccuracyNote(opts.accuracy);
-    } else {
-      setAccuracyNote(null);
-    }
-    previewLocation(startLat, startLng);
-  }
-
-  function clearAccuracyCircle() {
-    if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
-    setAccuracyNote(null);
-  }
-
-  function previewLocation(lat, lng) {
-    pendingLat = lat;
-    pendingLng = lng;
-    const box = document.getElementById('mapPickedAddress');
-    box.textContent = 'Looking up address…';
-    clearTimeout(geocodeTimer);
-    geocodeTimer = setTimeout(async () => {
-      try {
-        const addr = await reverseGeocode(lat, lng);
-        box.textContent = `${addr.area}, ${addr.district} — ${addr.pincode}`;
-      } catch (e) {
-        box.textContent = 'Pin placed — address lookup failed, but the location is still usable.';
+  // ---------------- Load existing data ----------------
+  async function loadExisting() {
+    try {
+      var t = await apiRequest('/api/teachers/by-user/' + encodeURIComponent(USER.id));
+      $('qualification').value = t.qualification || '';
+      $('subjects').value = t.subjects || '';
+      $('grades').value = t.grades || '';
+      $('experience').value = t.experience_years || '';
+      $('fee').value = t.fee_per_hour ? Math.round(Number(t.fee_per_hour)) : '';
+      $('languages').value = t.languages || '';
+      $('bio').value = t.bio || '';
+      selectedSlots = new Set(String(t.available_slots || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean));
+      $('address').value = t.address || '';
+      $('city').value = t.city || '';
+      var radius = Math.min(15, Math.max(1, Math.round(parseFloat(t.travel_radius_km) || 5)));
+      $('radius').value = radius;
+      $('radiusValue').textContent = radius + ' km';
+      var lat = parseFloat(t.latitude), lng = parseFloat(t.longitude);
+      if (isFinite(lat) && isFinite(lng)) {
+        currentLat = lat;
+        currentLng = lng;
+        currentAddress = { area: t.address || 'Location set', district: t.city || '—', pincode: '------', display: '' };
+        renderLocation();
       }
-    }, 450);
+      renderVerification(t);
+    } catch (e) { /* a brand-new profile has nothing to pre-fill */ }
+    // Slots saved with a label outside the list (older data) stay selectable.
+    selectedSlots.forEach(function (s) { if (ALL_SLOTS.indexOf(s) === -1) ALL_SLOTS.push(s); });
+    buildSlots();
+    updateBioCount();
+    updateProgress();
   }
 
-  function closeMapModal() {
-    document.getElementById('mapModalBackdrop').classList.remove('open');
+  // ---------------- Photo ----------------
+  var photoPreview = $('photoPreview');
+  photoPreview.textContent = initials(USER.name);
+  function showPhoto(src) {
+    photoPreview.textContent = '';
+    var img = document.createElement('img');
+    img.alt = '';
+    img.src = src;
+    photoPreview.appendChild(img);
   }
-
-  document.getElementById('openMapBtnEmpty').addEventListener('click', () => openMapModal());
-  document.getElementById('openMapBtnSet').addEventListener('click', () => openMapModal());
-  document.getElementById('mapModalClose').addEventListener('click', closeMapModal);
-  document.getElementById('mapModalCancel').addEventListener('click', closeMapModal);
-
-  document.getElementById('mapModalConfirm').addEventListener('click', async () => {
-    if (pendingLat == null) return;
-    const confirmBtn = document.getElementById('mapModalConfirm');
-    confirmBtn.disabled = true;
-    confirmBtn.classList.add('btn-loading');
-    await applyLocation(pendingLat, pendingLng);
-    confirmBtn.disabled = false;
-    confirmBtn.classList.remove('btn-loading');
-    closeMapModal();
-    toast('Location updated');
-  });
-
-  document.getElementById('mapSearchBtn').addEventListener('click', doMapSearch);
-  document.getElementById('mapSearchInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); doMapSearch(); }
-  });
-
-  async function doMapSearch() {
-    const q = document.getElementById('mapSearchInput').value.trim();
-    if (!q) return;
+  (async function () {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
-      const results = await res.json();
-      if (results.length === 0) { toast('No matching place found.', true); return; }
-      const { lat, lon } = results[0];
-      map.setView([lat, lon], 16);
-      marker.setLatLng([lat, lon]);
-      clearAccuracyCircle();
-      previewLocation(parseFloat(lat), parseFloat(lon));
-    } catch (e) {
-      toast('Search failed. Please try again.', true);
-    }
-  }
+      var me = await apiRequest('/api/auth/me');
+      if (me.user && me.user.profile_photo) {
+        showPhoto(photoUrl(me.user.profile_photo));
+        hasPhoto = true;
+        updateProgress();
+      }
+    } catch (e) { /* keep the initials */ }
+  })();
 
-  document.getElementById('mapLocateBtn').addEventListener('click', function () {
-    const btn = this;
-    if (!navigator.geolocation) { toast('Geolocation not supported by your browser.', true); return; }
-    btn.classList.add('loading');
-    btn.textContent = '…';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        btn.classList.remove('loading');
-        btn.textContent = '📍';
-        const { latitude, longitude, accuracy } = position.coords;
-        map.setView([latitude, longitude], 17);
-        marker.setLatLng([latitude, longitude]);
-        clearAccuracyCircle();
-        accuracyCircle = L.circle([latitude, longitude], {
-          radius: accuracy, color: '#1F6E4A', fillColor: '#1F6E4A', fillOpacity: 0.12, weight: 1,
-        }).addTo(map);
-        setAccuracyNote(accuracy);
-        previewLocation(latitude, longitude);
-      },
-      () => {
-        btn.classList.remove('loading');
-        btn.textContent = '📍';
-        toast('Could not fetch your location. Please drag the pin manually.', true);
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
-  });
+  var MAX_PHOTO = 2 * 1024 * 1024;
+  var PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  var previewUrl = null;
+  var PHOTO_HINT = 'JPG, PNG or WebP, up to 2 MB';
 
-  const radiusSlider = document.getElementById('radius');
-  radiusSlider.addEventListener('input', () => {
-    document.getElementById('radiusValue').textContent = `${radiusSlider.value} km`;
-  });
-
-  document.getElementById('uploadDocsBtn').addEventListener('click', async () => {
-    const msgBox = document.getElementById('uploadMsgBox');
-    const btn = document.getElementById('uploadDocsBtn');
-
-    const idProof = document.getElementById('idProofFile').files[0];
-    const addressProof = document.getElementById('addressProofFile').files[0];
-    const certificate = document.getElementById('certificateFile').files[0];
-
-    if (!idProof && !addressProof && !certificate) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please choose at least one file to upload.';
+  $('photoInput').addEventListener('change', function () {
+    var file = $('photoInput').files[0];
+    var box = $('photoMsgBox');
+    $('uploadPhotoBtn').disabled = true;
+    showMsg(box, '', '');
+    if (!file) { $('photoName').textContent = PHOTO_HINT; return; }
+    if (PHOTO_TYPES.indexOf(file.type) === -1) {
+      showMsg(box, 'error', 'Please choose a JPG, PNG or WebP image.');
+      $('photoInput').value = ''; $('photoName').textContent = PHOTO_HINT;
       return;
     }
+    if (file.size > MAX_PHOTO) {
+      showMsg(box, 'error', 'That photo is larger than 2 MB. Please choose a smaller one.');
+      $('photoInput').value = ''; $('photoName').textContent = PHOTO_HINT;
+      return;
+    }
+    $('photoName').textContent = file.name;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    showPhoto(previewUrl);
+    $('uploadPhotoBtn').disabled = false;
+  });
 
-    const formData = new FormData();
-    if (idProof) formData.append('id_proof', idProof);
-    if (addressProof) formData.append('address_proof', addressProof);
-    if (certificate) formData.append('certificate', certificate);
-
+  $('uploadPhotoBtn').addEventListener('click', async function () {
+    var file = $('photoInput').files[0];
+    var box = $('photoMsgBox');
+    var btn = $('uploadPhotoBtn');
+    if (!file) { showMsg(box, 'error', 'Please choose a photo first.'); return; }
+    var formData = new FormData();
+    formData.append('photo', file);
     btn.disabled = true;
     btn.classList.add('btn-loading');
-    msgBox.className = 'msg-box';
-
     try {
-      // Uses fetch directly (not apiRequest) because file uploads need
-      // multipart/form-data — apiRequest always sends JSON.
-      const res = await apiFetch(`/api/teachers/${session.user.id}/documents`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed.');
-
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = data.message;
-      toast('Documents uploaded');
+      var res = await apiFetch('/api/teachers/' + encodeURIComponent(USER.id) + '/photo', { method: 'POST', body: formData });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* not JSON */ }
+      if (!res.ok) throw new Error((data && (data.error || data.message)) || 'Upload failed.');
+      showPhoto(photoUrl(data.path));
+      hasPhoto = true;
+      updateProgress();
+      showMsg(box, 'success', 'Photo updated.');
+      toast('Profile photo updated');
+      $('photoInput').value = '';
+      $('photoName').textContent = PHOTO_HINT;
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
+      showMsg(box, 'error', err.message);
+      btn.disabled = false;
+    } finally {
+      btn.classList.remove('btn-loading');
+    }
+  });
+
+  // ---------------- Documents ----------------
+  var DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  var MAX_DOC = 5 * 1024 * 1024;
+
+  $('uploadDocsBtn').addEventListener('click', async function () {
+    var box = $('uploadMsgBox');
+    var btn = $('uploadDocsBtn');
+    var files = {
+      id_proof: $('idProofFile').files[0],
+      address_proof: $('addressProofFile').files[0],
+      certificate: $('certificateFile').files[0]
+    };
+    var chosen = Object.keys(files).filter(function (k) { return files[k]; });
+    if (!chosen.length) { showMsg(box, 'error', 'Please choose at least one file to upload.'); return; }
+    for (var i = 0; i < chosen.length; i++) {
+      var f = files[chosen[i]];
+      if (DOC_TYPES.indexOf(f.type) === -1) { showMsg(box, 'error', '"' + f.name + '" is not a JPG, PNG, WebP or PDF file.'); return; }
+      if (f.size > MAX_DOC) { showMsg(box, 'error', '"' + f.name + '" is larger than 5 MB.'); return; }
+    }
+
+    var formData = new FormData();
+    chosen.forEach(function (k) { formData.append(k, files[k]); });
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    showMsg(box, '', '');
+    try {
+      // Multipart upload, so this uses apiFetch directly (apiRequest always sends JSON).
+      var res = await apiFetch('/api/teachers/' + encodeURIComponent(USER.id) + '/documents', { method: 'POST', body: formData });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* not JSON */ }
+      if (!res.ok) throw new Error((data && (data.error || data.message)) || 'Upload failed.');
+      showMsg(box, 'success', (data && data.message) || 'Documents uploaded.');
+      toast('Documents uploaded');
+      ['idProofFile', 'addressProofFile', 'certificateFile'].forEach(function (id) { $(id).value = ''; });
+      try { renderVerification(await apiRequest('/api/teachers/by-user/' + encodeURIComponent(USER.id))); } catch (e) { /* the upload itself worked */ }
+    } catch (err) {
+      showMsg(box, 'error', err.message);
     } finally {
       btn.disabled = false;
       btn.classList.remove('btn-loading');
     }
   });
 
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    msgBox.className = 'msg-box';
-    const saveBtn = document.getElementById('saveBtn');
+  // ---------------- Save ----------------
+  function validate() {
+    var ok = true;
+    ['qualification', 'subjects', 'experience', 'fee'].forEach(clearFieldError);
+    if (!$('qualification').value.trim()) { setFieldError('qualification', 'Please add your highest qualification.'); ok = false; }
+    if (!$('subjects').value.trim()) { setFieldError('subjects', 'Please list at least one subject.'); ok = false; }
+    var exp = $('experience').value.trim();
+    if (exp !== '' && (!/^\d+$/.test(exp) || Number(exp) > 60)) { setFieldError('experience', 'Enter whole years between 0 and 60.'); ok = false; }
+    var fee = $('fee').value.trim();
+    if (fee !== '' && (!isFinite(Number(fee)) || Number(fee) < 0 || Number(fee) > 100000)) { setFieldError('fee', 'Enter a fee between 0 and 100000.'); ok = false; }
+    return ok;
+  }
 
+  $('profileForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (saving) return;
+    showMsg(msgBox, '', '');
+    var saveBtn = $('saveBtn');
+
+    var fieldsOk = validate();
+    if (!fieldsOk) {
+      showMsg(msgBox, 'error', 'Please fix the highlighted fields.');
+      var first = document.querySelector('.is-invalid');
+      if (first) first.focus();
+      return;
+    }
     if (currentLat === null) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please set your live location so students can find you.';
+      showMsg(msgBox, 'error', 'Please set your location so students can find you.');
+      msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
 
+    saving = true;
     saveBtn.disabled = true;
     saveBtn.classList.add('btn-loading');
-
+    var profileSaved = false;
     try {
-      await apiRequest(`/api/teachers/${session.user.id}/profile`, 'PUT', {
-        qualification: document.getElementById('qualification').value.trim(),
-        subjects: document.getElementById('subjects').value.trim(),
-        grades: document.getElementById('grades').value.trim(),
-        experience_years: document.getElementById('experience').value || 0,
-        fee_per_hour: document.getElementById('fee').value || 0,
-        languages: document.getElementById('languages').value.trim(),
-        bio: document.getElementById('bio').value.trim(),
-        available_slots: Array.from(selectedSlots).join(','),
-        address: document.getElementById('address').value.trim(),
-        city: document.getElementById('city').value.trim()
+      await apiRequest('/api/teachers/' + encodeURIComponent(USER.id) + '/profile', 'PUT', {
+        qualification: $('qualification').value.trim(),
+        subjects: $('subjects').value.trim(),
+        grades: $('grades').value.trim(),
+        experience_years: $('experience').value || 0,
+        fee_per_hour: $('fee').value || 0,
+        languages: $('languages').value.trim(),
+        bio: $('bio').value.trim(),
+        available_slots: ALL_SLOTS.filter(function (s) { return selectedSlots.has(s); }).join(','),
+        address: $('address').value.trim(),
+        city: $('city').value.trim()
       });
+      profileSaved = true;
 
-      await apiRequest(`/api/teachers/${session.user.id}/location`, 'PUT', {
+      await apiRequest('/api/teachers/' + encodeURIComponent(USER.id) + '/location', 'PUT', {
         latitude: currentLat,
         longitude: currentLng,
-        travel_radius_km: radiusSlider.value
+        travel_radius_km: $('radius').value
       });
 
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = 'Profile saved! Redirecting to your dashboard...';
-      setTimeout(() => { window.location.href = 'teacher-dashboard.html'; }, 900);
+      dirty = false;
+      showMsg(msgBox, 'success', 'Profile saved! Taking you to your dashboard…');
+      $('saveNote').textContent = 'Saved.';
+      setTimeout(function () { window.location.href = 'teacher-dashboard.html'; }, 900);
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
+      showMsg(msgBox, 'error', profileSaved
+        ? 'Your details were saved, but your location could not be saved: ' + err.message
+        : err.message);
+      msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      saving = false;
       saveBtn.disabled = false;
       saveBtn.classList.remove('btn-loading');
     }
   });
-</script>
 
+  window.addEventListener('beforeunload', function (e) {
+    if (dirty && !saving) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  loadExisting();
+})();
+</script>
 </body>
 </html>

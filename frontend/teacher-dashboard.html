@@ -3,155 +3,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Dashboard — TutorLink</title>
+<title>Teacher dashboard — TutorLink</title>
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/pages.css">
 </head>
-<body class="page-dashboard">
+<body class="pg pg-tdash page-dashboard">
+
+<a class="skip-link" href="#mainContent">Skip to the dashboard</a>
 
 <header class="dashboard-header">
   <div class="container">
-    <a href="index.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
     <div class="header-actions">
+      <button type="button" class="btn btn-outline btn-sm pg-hide-sm" id="cmdBtn" aria-keyshortcuts="Control+K">Quick actions <kbd class="pg-kbd">Ctrl K</kbd></button>
       <div class="notif-wrap">
-        <button class="notif-bell" id="notifBell" aria-label="Notifications">
+        <button type="button" class="notif-bell" id="notifBell" aria-label="Notifications">
           🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
         </button>
         <div class="notif-dropdown" id="notifDropdown">
           <div class="notif-dropdown-header">
             <span>Notifications</span>
-            <button id="markAllReadBtn">Mark all read</button>
+            <button type="button" id="markAllReadBtn">Mark all read</button>
           </div>
-          <div id="notifList"><div class="notif-empty">Loading...</div></div>
+          <div id="notifList"><div class="notif-empty">Loading…</div></div>
         </div>
       </div>
-      <a href="teacher-complete-profile.html" class="user-chip" style="text-decoration:none; cursor:pointer;" title="Edit your profile">
-        <span class="avatar-sm" id="avatarInitials"></span>
+      <a href="teacher-complete-profile.html" class="user-chip" title="Edit your profile">
+        <span class="avatar-sm" id="avatarInitials" aria-hidden="true"></span>
         <span id="welcomeText"></span>
       </a>
-      <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">Profile</a>
-      <a href="account-settings.html" class="btn btn-outline btn-sm">Settings</a>
-      <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+      <a href="account-settings.html" class="btn btn-outline btn-sm pg-hide-sm">Settings</a>
+      <button type="button" id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
   </div>
 </header>
 
-<main class="dashboard-body" id="mainContent">
-  <div class="container">
+<main class="dashboard-body" id="mainContent" tabindex="-1">
+  <div class="container pg-wrap">
 
-    <div class="dash-hero dash-hero-brand">
-      <div class="dash-hero-top">
-        <div>
-          <div class="eyebrow">Teacher dashboard</div>
-          <h1 id="heroGreeting">Welcome back</h1>
-          <p>Here's what's happening with your teaching profile.</p>
-        </div>
+    <div id="emailBanner"></div>
+
+    <section class="pg-hero pg-hero-dash" aria-labelledby="heroGreeting">
+      <div class="pg-hero-glow" aria-hidden="true"></div>
+      <div class="pg-hero-body">
+        <span class="eyebrow">Teacher dashboard</span>
+        <h1 id="heroGreeting">Welcome back</h1>
+        <p>Here is what is happening with your teaching profile.</p>
       </div>
-      <div class="dash-stat-row">
-        <div class="dash-stat">
-          <span class="num" id="statTotal">—</span>
-          <span class="lbl">Total requests</span>
-        </div>
-        <div class="dash-stat">
-          <span class="num" id="statPending">—</span>
-          <span class="lbl">Awaiting reply</span>
-        </div>
-        <div class="dash-stat">
-          <span class="num" id="statRating">—</span>
-          <span class="lbl">Rating</span>
-        </div>
-      </div>
-    </div>
+      <dl class="pg-stats">
+        <div class="pg-stat"><dd id="statTotal">—</dd><dt>Total requests</dt></div>
+        <div class="pg-stat"><dd id="statPending">—</dd><dt>Awaiting reply</dt></div>
+        <div class="pg-stat"><dd id="statRating">—</dd><dt>Rating</dt></div>
+      </dl>
+    </section>
 
     <div id="profileBanner"></div>
+    <div id="attention" aria-live="polite"></div>
+    <div id="nextClass" aria-live="polite"></div>
 
-    <div class="panel reveal" id="profileSummaryPanel">
-      <div class="panel-icon-title reveal reveal-delay-1">
-        <span class="ic">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </span>
-        <div class="panel-title reveal reveal-delay-2" style="margin-bottom:0;">Your profile</div>
-      </div>
-      <div id="profileSummary" style="margin-top:14px;">
-        <div class="skeleton-card">
-          <div class="skel-line w-40"></div>
-          <div class="skel-line w-60"></div>
-        </div>
-      </div>
-    </div>
+    <div class="pg-dgrid">
+      <div class="pg-dcol">
 
-    <div class="panel reveal reveal-delay-3" id="reviewsPanel">
-      <div class="panel-icon-title reveal reveal-delay-4">
-        <span class="ic">★</span>
-        <div class="panel-title reveal reveal-delay-0" style="margin-bottom:0;">My reviews</div>
-      </div>
-      <div id="reviewsArea" style="margin-top:14px;">
-        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
-      </div>
-    </div>
-
-    <div class="panel reveal reveal-delay-1" id="earningsPanel">
-      <div class="panel-icon-title reveal reveal-delay-2">
-        <span class="ic">₹</span>
-        <div>
-          <div class="panel-title reveal reveal-delay-3" style="margin-bottom:0;">Earnings</div>
-          <p class="panel-hint" style="margin-bottom:0;">Based on completed classes marked as paid.</p>
-        </div>
-      </div>
-      <div id="earningsArea" style="margin-top:14px;">
-        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
-      </div>
-    </div>
-
-    <div class="panel reveal reveal-delay-4">
-      <div class="panel-head reveal reveal-delay-0">
-        <div class="panel-icon-title reveal reveal-delay-1">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          </span>
-          <div>
-            <div class="panel-title reveal reveal-delay-2" style="margin-bottom:0;">Your courses</div>
-            <p class="panel-hint" style="margin-bottom:0;">Modules, assignments and student progress for each active enrollment.</p>
+        <section class="pg-card" id="sec-requests" aria-labelledby="h-requests">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">📥</span>
+            <div>
+              <h2 id="h-requests">Booking requests</h2>
+              <p>Accept or decline demo and recurring class requests.</p>
+            </div>
+          </header>
+          <div class="pg-toolbar">
+            <input type="search" id="reqSearch" placeholder="Search student or subject" aria-label="Search booking requests" maxlength="60" autocomplete="off">
+            <select id="reqSort" aria-label="Sort requests">
+              <option value="action">Needs action first</option>
+              <option value="soonest">Soonest class</option>
+              <option value="newest">Newest request</option>
+              <option value="oldest">Oldest request</option>
+            </select>
+            <button type="button" class="btn btn-outline btn-sm" id="refreshBtn" aria-label="Refresh now" title="Refresh now">&#8635;</button>
+            <button type="button" class="btn btn-outline btn-sm" id="exportRequests">Export CSV</button>
           </div>
-        </div>
-        <button class="btn btn-outline btn-sm" id="createCourseBtn">+ New course</button>
-      </div>
-      <div id="coursesArea" style="margin-top:14px;">
-        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
-      </div>
-    </div>
+          <div class="pg-tabs" role="group" aria-label="Filter requests">
+            <button type="button" class="pg-tab is-on" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="pg-tab" data-filter="requested" aria-pressed="false">Awaiting reply</button>
+            <button type="button" class="pg-tab" data-filter="accepted" aria-pressed="false">Accepted</button>
+            <button type="button" class="pg-tab" data-filter="completed" aria-pressed="false">Completed</button>
+          </div>
+          <p class="pg-hint pg-updated" id="updatedAt"></p>
+          <div id="bookingsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
+        </section>
 
-    <div class="panel reveal reveal-delay-3">
-      <div class="panel-icon-title reveal reveal-delay-4">
-        <span class="ic">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-        </span>
-        <div>
-          <div class="panel-title reveal reveal-delay-0" style="margin-bottom:0;">This week's schedule</div>
-          <p class="panel-hint" style="margin-bottom:0;">Your accepted classes, grouped by day.</p>
-        </div>
-      </div>
-      <div id="scheduleArea" style="margin-top:14px;">
-        <div class="skeleton-card"><div class="skel-line w-40"></div></div>
-      </div>
-    </div>
+        <section class="pg-card" id="sec-courses" aria-labelledby="h-courses">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">📚</span>
+            <div>
+              <h2 id="h-courses">Your courses</h2>
+              <p>Modules and progress for each active student.</p>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm pg-head-action" id="createCourseBtn">+ New course</button>
+          </header>
+          <div id="coursesArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
 
-    <div class="panel reveal reveal-delay-1">
-      <div class="panel-icon-title reveal reveal-delay-2">
-        <span class="ic">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-        </span>
-        <div>
-          <div class="panel-title reveal reveal-delay-3" style="margin-bottom:0;">Incoming booking requests</div>
-          <p class="panel-hint" style="margin-bottom:0;">Accept or decline demo and recurring class requests.</p>
-        </div>
+        <section class="pg-card" id="sec-reviews" aria-labelledby="h-reviews">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">★</span>
+            <div>
+              <h2 id="h-reviews">My reviews</h2>
+              <p>Reply publicly to what students say about you.</p>
+            </div>
+          </header>
+          <div id="reviewsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
       </div>
-      <div id="bookingsArea" style="margin-top:14px;">
-        <div class="skeleton-card">
-          <div class="skel-line w-40"></div>
-          <div class="skel-line w-60"></div>
-        </div>
+
+      <div class="pg-dcol">
+        <section class="pg-card" id="sec-profile" aria-labelledby="h-profile">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">👤</span>
+            <div>
+              <h2 id="h-profile">Your profile</h2>
+              <p>What students see about you.</p>
+            </div>
+          </header>
+          <div id="profileSummary"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
+        </section>
+
+        <section class="pg-card" id="sec-schedule" aria-labelledby="h-schedule">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">🗓️</span>
+            <div>
+              <h2 id="h-schedule">Next 7 days</h2>
+              <p>Your accepted classes, grouped by day.</p>
+            </div>
+          </header>
+          <div id="scheduleArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
+
+        <section class="pg-card" id="sec-earnings" aria-labelledby="h-earn">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">₹</span>
+            <div>
+              <h2 id="h-earn">Earnings</h2>
+              <p>Based on completed classes.</p>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm pg-head-action" id="exportEarnings">Export CSV</button>
+          </header>
+          <div id="earningsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
       </div>
     </div>
 
@@ -160,509 +164,113 @@
 
 <!-- ================= Accept-with-fee modal ================= -->
 <div class="modal-backdrop" id="acceptFeeModalBackdrop">
-  <div class="modal modal-booking">
+  <div class="modal modal-booking" role="dialog" aria-modal="true" aria-labelledby="acceptTitle">
     <div class="modal-header">
       <div>
-        <h3>Set your fee</h3>
-        <p>This is what the student will be asked to pay for this class.</p>
+        <h3 id="acceptTitle">Set your fee</h3>
+        <p id="acceptSub">This is what the student will be asked to pay for this class.</p>
       </div>
-      <button class="modal-close" id="acceptFeeModalClose" aria-label="Close">✕</button>
+      <button type="button" class="modal-close" id="acceptFeeModalClose" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label for="acceptFeeInput">Fee (₹) — enter 0 for a free demo</label>
-        <input type="number" id="acceptFeeInput" min="0" placeholder="e.g. 400">
+      <div class="pg-field">
+        <label for="acceptFeeInput">Fee (₹). Enter 0 for a free demo.</label>
+        <input type="number" id="acceptFeeInput" min="0" max="100000" step="1" inputmode="numeric" placeholder="e.g. 400">
       </div>
-      <div id="acceptFeeMsgBox" class="msg-box"></div>
+      <div class="pg-quickfee" id="feeQuick" aria-label="Quick fee options"></div>
+      <div id="acceptFeeMsgBox" class="msg-box" role="alert"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="acceptFeeModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="acceptFeeModalConfirm">Accept booking</button>
+      <button type="button" class="btn btn-outline btn-sm" id="acceptFeeModalCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="acceptFeeModalConfirm">Accept booking</button>
     </div>
   </div>
 </div>
 
+<!-- ================= Create-course modal ================= -->
 <div class="modal-backdrop" id="createCourseModalBackdrop">
-  <div class="modal modal-booking">
+  <div class="modal modal-booking" role="dialog" aria-modal="true" aria-labelledby="ccTitle">
     <div class="modal-header">
       <div>
-        <h3>Create a course</h3>
-        <p>Courses are created for an active enrollment — pick which student this is for.</p>
+        <h3 id="ccTitle">Create a course</h3>
+        <p>Courses belong to an active enrollment. Pick which student this is for.</p>
       </div>
-      <button class="modal-close" id="createCourseModalClose" aria-label="Close">✕</button>
+      <button type="button" class="modal-close" id="createCourseModalClose" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
+      <div class="pg-field">
         <label for="createCourseEnrollment">Student / enrollment</label>
         <select id="createCourseEnrollment"><option value="">Loading…</option></select>
       </div>
-      <div class="form-group">
+      <div class="pg-field">
         <label for="createCourseTitle">Course title</label>
-        <input type="text" id="createCourseTitle" placeholder="e.g. Class 10 Mathematics">
+        <input type="text" id="createCourseTitle" placeholder="e.g. Class 10 Mathematics" maxlength="200" autocomplete="off">
       </div>
-      <div class="form-group">
+      <div class="pg-field">
         <label for="createCourseDescription">Description (optional)</label>
-        <textarea id="createCourseDescription" rows="3" placeholder="What this course covers"></textarea>
+        <textarea id="createCourseDescription" rows="3" maxlength="1000" placeholder="What this course covers"></textarea>
       </div>
-      <div id="createCourseMsgBox" class="msg-box"></div>
+      <div id="createCourseMsgBox" class="msg-box" role="alert"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="createCourseModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="createCourseModalConfirm">Create course</button>
+      <button type="button" class="btn btn-outline btn-sm" id="createCourseModalCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="createCourseModalConfirm">Create course</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ================= Course manager modal ================= -->
+<div class="modal-backdrop" id="courseModalBackdrop">
+  <div class="modal modal-booking pg-modal-wide" role="dialog" aria-modal="true" aria-labelledby="cmTitle">
+    <div class="modal-header">
+      <div>
+        <h3 id="cmTitle">Course</h3>
+        <p id="cmSub"></p>
+      </div>
+      <button type="button" class="modal-close" id="courseModalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pg-field">
+        <label for="cmStatus">Course status</label>
+        <select id="cmStatus">
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div class="pg-progress" id="cmProgress" hidden>
+        <div class="pg-progress-bar"><i></i></div>
+        <span class="pg-hint"></span>
+      </div>
+      <div class="pg-modlist" id="cmModules" aria-live="polite"></div>
+      <form class="pg-modadd" id="cmAddForm" novalidate>
+        <label for="cmNewTitle">Add a module</label>
+        <div class="pg-modadd-row">
+          <input type="text" id="cmNewTitle" placeholder="Module title, e.g. Algebra basics" maxlength="200" autocomplete="off">
+          <button type="submit" class="btn btn-primary btn-sm" id="cmAddBtn">Add</button>
+        </div>
+      </form>
+      <div id="cmMsgBox" class="msg-box" role="alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline btn-sm" id="courseModalDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Quick actions ================= -->
+<div class="modal-backdrop" id="cmdBackdrop">
+  <div class="modal pg-cmd" role="dialog" aria-modal="true" aria-label="Quick actions">
+    <input type="text" id="cmdInput" class="pg-cmd-input" placeholder="Type a command, for example: export, courses, profile" aria-label="Search quick actions" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="cmdList">
+    <div class="pg-cmd-list" id="cmdList" role="listbox" aria-label="Quick actions"></div>
+    <div class="pg-cmd-foot"><span><kbd class="pg-kbd">&uarr;</kbd> <kbd class="pg-kbd">&darr;</kbd> to move</span><span><kbd class="pg-kbd">Enter</kbd> to run</span><span><kbd class="pg-kbd">Esc</kbd> to close</span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
-<script>
-  const session = requireLogin('teacher');
-  if (session) {
-    document.getElementById('welcomeText').textContent = session.user.name;
-    document.getElementById('avatarInitials').textContent =
-      session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('heroGreeting').textContent = `Welcome back, ${session.user.name.split(' ')[0]} 👋`;
-
-    // Show the real profile photo in the header avatar if one has been uploaded,
-    // and remind the teacher to verify their email if they haven't yet.
-    (async () => {
-      try {
-        const me = await apiRequest('/api/auth/me');
-        if (me.user && me.user.profile_photo) {
-          document.getElementById('avatarInitials').innerHTML =
-            `<img src="${photoUrl(me.user.profile_photo)}" alt="">`;
-        }
-        if (me.user && !me.user.email_verified) {
-          showVerifyEmailBanner();
-        }
-      } catch (e) { /* keep initials if this fails */ }
-    })();
-  }
-
-  function showVerifyEmailBanner() {
-    const bar = document.createElement('div');
-    bar.className = 'banner';
-    bar.style.cssText = 'margin-bottom:16px;';
-    bar.innerHTML = `
-      <div class="banner-text">
-        <strong>Please verify your email</strong>
-        <span>Check your inbox for a verification link, or resend it below.</span>
-      </div>
-      <button type="button" class="btn btn-accent btn-sm" id="resendVerifyBtn">Resend email</button>
-    `;
-    const main = document.querySelector('.dashboard-body .container');
-    if (main) main.insertBefore(bar, main.firstChild);
-
-    document.getElementById('resendVerifyBtn').addEventListener('click', async (e) => {
-      e.target.disabled = true;
-      e.target.textContent = 'Sending…';
-      try {
-        await apiRequest('/api/auth/resend-verification', 'POST');
-        e.target.textContent = 'Sent! Check your inbox';
-      } catch (err) {
-        e.target.textContent = 'Could not send — try again';
-        e.target.disabled = false;
-      }
-    });
-  }
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    clearSession();
-    window.location.href = 'login.html';
-  });
-
-  initNotificationBell();
-
-  function toast(message, isError) {
-    const el = document.getElementById('toast');
-    el.textContent = message;
-    el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'toast'; }, 2800);
-  }
-
-  // ---------- Profile summary + completeness banner ----------
-  let myTeacherId = null;
-
-  async function loadProfileSummary() {
-    const banner = document.getElementById('profileBanner');
-    const summary = document.getElementById('profileSummary');
-
-    try {
-      const t = await apiRequest(`/api/teachers/by-user/${session.user.id}`);
-      myTeacherId = t.id;
-      const isComplete = t.subjects && t.qualification && t.address && t.latitude;
-
-      document.getElementById('statRating').textContent = t.rating_avg ? `★ ${t.rating_avg}` : 'New';
-
-      if (isComplete) {
-        const statusCopy = {
-          approved: { cls: 'done', text: `Students within ${t.travel_radius_km || 5} km of ${t.city || 'your area'} can find you.` },
-          pending: { cls: '', text: 'Your profile is complete and waiting for admin verification before it goes live.' },
-          under_review: { cls: '', text: 'Your documents are under review by our team.' },
-          rejected: { cls: '', text: 'Your verification was not approved. Please update your details or contact support.' },
-        };
-        const s = statusCopy[t.verification_status] || statusCopy.pending;
-
-        banner.innerHTML = `
-          <div class="banner ${s.cls}">
-            <div class="banner-text">
-              <strong>${t.verification_status === 'approved' ? 'Your profile is live' : 'Verification pending'}</strong>
-              <span>${s.text}</span>
-            </div>
-            <a href="teacher-complete-profile.html" class="btn btn-outline btn-sm">Edit profile</a>
-          </div>`;
-
-        const location = [t.address, t.city].filter(Boolean).join(', ');
-        summary.innerHTML = `
-          <div class="info-grid fade-in" style="margin-bottom:0;">
-            <div class="info-tile"><div class="label">Qualification</div><div class="value">${t.qualification}</div></div>
-            <div class="info-tile"><div class="label">Subjects</div><div class="value">${t.subjects}</div></div>
-            <div class="info-tile"><div class="label">Fee / hour</div><div class="value">₹${t.fee_per_hour || 0}</div></div>
-            <div class="info-tile"><div class="label">Location</div><div class="value">${location || 'Not set'}</div></div>
-            <div class="info-tile"><div class="label">Travel radius</div><div class="value">${t.travel_radius_km || 5} km</div></div>
-            <div class="info-tile"><div class="label">Rating</div><div class="value">★ ${t.rating_avg || 'New'}</div></div>
-          </div>`;
-      } else {
-        banner.innerHTML = `
-          <div class="banner">
-            <div class="banner-text">
-              <strong>Your profile isn't complete yet</strong>
-              <span>Add your qualifications and location — students can't find you until this is done.</span>
-            </div>
-            <a href="teacher-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
-          </div>`;
-        summary.innerHTML = '<div class="empty-state">Complete your profile to start appearing in student search results.</div>';
-      }
-    } catch (err) {
-      banner.innerHTML = `
-        <div class="banner">
-          <div class="banner-text">
-            <strong>Complete your profile</strong>
-            <span>Add your qualifications and location to start receiving bookings.</span>
-          </div>
-          <a href="teacher-complete-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
-        </div>`;
-      summary.innerHTML = '<div class="empty-state">Complete your profile to start appearing in student search results.</div>';
-    }
-    loadMyReviews();
-  }
-  loadProfileSummary();
-
-  // =====================================================
-  // My reviews (with reply)
-  // =====================================================
-  async function loadMyReviews() {
-    const area = document.getElementById('reviewsArea');
-    if (!myTeacherId) {
-      area.innerHTML = '<div class="empty-state">Complete your profile to start receiving reviews.</div>';
-      return;
-    }
-    try {
-      const reviews = await apiRequest(`/api/reviews/teacher/${myTeacherId}`);
-      if (reviews.length === 0) {
-        area.innerHTML = '<div class="empty-state">No reviews yet.</div>';
-        return;
-      }
-      area.innerHTML = `<div class="fade-in">${reviews.map(r => `
-        <div class="request-row">
-          <div class="request-info">
-            <strong>${escapeHtml(r.student_name)}</strong>
-            <span class="badge badge-rating" style="margin-left:8px;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-            ${r.comment ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--ink-700); margin-top:6px;">${escapeHtml(r.comment)}</div>` : ''}
-            ${r.teacher_reply
-              ? `<div class="request-meta" style="font-family:var(--font-body); color:var(--primary); margin-top:6px; padding-left:10px; border-left:2px solid var(--primary);"><strong>Your reply:</strong> ${escapeHtml(r.teacher_reply)}</div>`
-              : `<div style="margin-top:8px;">
-                   <input type="text" id="replyInput-${r.id}" placeholder="Write a public reply…" style="width:60%; padding:8px 10px; border:1.4px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px;">
-                   <button class="btn btn-outline btn-sm" onclick="replyToReview(${r.id})">Reply</button>
-                 </div>`}
-          </div>
-        </div>
-      `).join('')}</div>`;
-    } catch (err) {
-      area.innerHTML = `<div class="empty-state">${err.message}</div>`;
-    }
-  }
-
-  async function replyToReview(reviewId) {
-    const input = document.getElementById(`replyInput-${reviewId}`);
-    const reply = input.value.trim();
-    if (!reply) { toast('Please write a reply first.', true); return; }
-    try {
-      await apiRequest(`/api/reviews/${reviewId}/reply`, 'PUT', { reply });
-      toast('Reply posted.');
-      loadMyReviews();
-    } catch (err) {
-      toast(err.message, true);
-    }
-  }
-
-  async function loadEarnings() {
-    const area = document.getElementById('earningsArea');
-    try {
-      const e = await apiRequest('/api/bookings/teacher/earnings');
-      area.innerHTML = `
-        <div class="info-grid fade-in" style="margin-bottom:16px;">
-          <div class="info-tile"><div class="label">Total earned</div><div class="value">₹${Number(e.total_earned).toLocaleString('en-IN')}</div></div>
-          <div class="info-tile"><div class="label">This month</div><div class="value">₹${Number(e.this_month).toLocaleString('en-IN')}</div></div>
-          <div class="info-tile"><div class="label">Pending payment</div><div class="value">₹${Number(e.pending_amount).toLocaleString('en-IN')}</div></div>
-        </div>
-        ${e.recent.length === 0 ? '<div class="empty-state">No completed classes yet.</div>' : e.recent.map(r => `
-          <div class="request-row">
-            <div class="request-info">
-              <strong>${escapeHtml(r.student_name)}</strong> — ${escapeHtml(r.subject) || 'Class'}
-              <div class="request-meta">${r.booking_date || ''}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span>₹${r.fee || 0}</span>
-              <span class="status-tag ${r.payment_status === 'paid' ? 'accepted' : 'requested'}">${r.payment_status}</span>
-              ${r.payment_status === 'unpaid' ? `<button class="btn btn-outline btn-sm" onclick="markPaid(${r.id}, this)">Mark paid</button>` : ''}
-            </div>
-          </div>
-        `).join('')}
-      `;
-    } catch (err) {
-      area.innerHTML = '<div class="empty-state">Could not load earnings.</div>';
-    }
-  }
-  loadEarnings();
-
-  async function markPaid(bookingId, btn) {
-    btn.disabled = true;
-    try {
-      await apiRequest(`/api/bookings/${bookingId}/payment`, 'PUT', { payment_status: 'paid' });
-      toast('Marked as paid');
-      loadEarnings();
-    } catch (err) {
-      toast(err.message, true);
-      btn.disabled = false;
-    }
-  }
-
-  // ---------- Incoming bookings ----------
-  async function loadBookings() {
-    const area = document.getElementById('bookingsArea');
-    try {
-      const bookings = await apiRequest('/api/bookings/teacher/me');
-
-      document.getElementById('statTotal').textContent = bookings.length;
-      document.getElementById('statPending').textContent =
-        bookings.filter(b => b.status === 'requested').length;
-
-      loadSchedule();
-
-      if (bookings.length === 0) {
-        area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
-        return;
-      }
-
-      area.innerHTML = `<div class="fade-in">${bookings.map(b => `
-        <div class="request-row">
-          <div class="request-info">
-            <strong>${escapeHtml(b.student_name)}</strong> requested a ${b.type} class${b.subject ? ' for ' + escapeHtml(b.subject) : ''}
-            <div class="request-meta">${b.booking_date || ''} · ${b.booking_time || ''}</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="status-tag ${b.status}">${b.status}</span>
-            ${['accepted','completed'].includes(b.status) ? `
-              <button class="btn btn-outline btn-sm" onclick="openChatModal(${b.id}, '${escapeHtml(b.student_name)}')">💬 Chat</button>
-              <button class="btn btn-outline btn-sm" onclick="openReportModal(${b.student_user_id}, '${escapeHtml(b.student_name)}', ${b.id})" title="Report an issue">🚩</button>` : ''}
-            ${b.status === 'requested' ? `
-              <button class="btn btn-primary btn-sm" onclick="openAcceptFeeModal(${b.id}, this)">Accept</button>
-              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'declined', this)">Decline</button>` : ''}
-            ${b.status === 'accepted' ? `
-              <button class="btn btn-outline btn-sm" onclick="respondToBooking(${b.id}, 'completed', this)">Mark completed</button>` : ''}
-          </div>
-        </div>
-      `).join('')}</div>`;
-    } catch (err) {
-      document.getElementById('statTotal').textContent = '0';
-      document.getElementById('statPending').textContent = '0';
-      loadSchedule();
-      area.innerHTML = '<div class="empty-state">No booking requests yet. They will appear here once a student books a demo class with you.</div>';
-    }
-  }
-
-  // Pulls from class_sessions (via /teacher/schedule) rather than filtering
-  // bookings client-side — this correctly expands recurring bookings into
-  // their real dated occurrences instead of only ever showing the
-  // booking's original start date.
-  async function loadCourses() {
-    const coursesArea = document.getElementById('coursesArea');
-    try {
-      const courses = await apiRequest('/api/courses');
-      if (courses.length === 0) {
-        coursesArea.innerHTML = '<div class="empty-state">No courses yet — click "New course" to set one up for a student you\'re actively teaching.</div>';
-        return;
-      }
-      coursesArea.innerHTML = courses.map(c => `
-        <div class="request-row">
-          <div class="request-info">
-            <strong>${escapeHtml(c.title)}</strong> — ${escapeHtml(c.student_name)}
-            <div class="request-meta">${c.module_count} module${c.module_count === 1 ? '' : 's'} · <span class="status-tag ${c.status}">${escapeHtml(c.status)}</span></div>
-          </div>
-          <a href="course.html?id=${c.id}" class="btn btn-outline btn-sm">Open</a>
-        </div>
-      `).join('');
-    } catch (err) {
-      coursesArea.innerHTML = '<div class="empty-state">Could not load your courses.</div>';
-    }
-  }
-
-  // ---------------- Create course modal ----------------
-  const createCourseBackdrop = document.getElementById('createCourseModalBackdrop');
-  const createCourseEnrollmentSelect = document.getElementById('createCourseEnrollment');
-
-  document.getElementById('createCourseBtn').addEventListener('click', async () => {
-    createCourseBackdrop.classList.add('open');
-    document.getElementById('createCourseMsgBox').className = 'msg-box';
-    createCourseEnrollmentSelect.innerHTML = '<option value="">Loading…</option>';
-    try {
-      const enrollments = await apiRequest('/api/enrollments?status=active');
-      if (enrollments.length === 0) {
-        createCourseEnrollmentSelect.innerHTML = '<option value="">No active enrollments yet</option>';
-        return;
-      }
-      createCourseEnrollmentSelect.innerHTML = enrollments
-        .map(e => `<option value="${e.id}">${escapeHtml(e.student_name)}${e.subject ? ' — ' + escapeHtml(e.subject) : ''}</option>`)
-        .join('');
-    } catch (err) {
-      createCourseEnrollmentSelect.innerHTML = '<option value="">Could not load students</option>';
-    }
-  });
-
-  document.getElementById('createCourseModalClose').addEventListener('click', () => createCourseBackdrop.classList.remove('open'));
-  document.getElementById('createCourseModalCancel').addEventListener('click', () => createCourseBackdrop.classList.remove('open'));
-
-  document.getElementById('createCourseModalConfirm').addEventListener('click', async () => {
-    const enrollment_id = createCourseEnrollmentSelect.value;
-    const title = document.getElementById('createCourseTitle').value.trim();
-    const description = document.getElementById('createCourseDescription').value.trim();
-    const msgBox = document.getElementById('createCourseMsgBox');
-
-    if (!enrollment_id) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please choose a student.';
-      return;
-    }
-    if (!title) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please enter a course title.';
-      return;
-    }
-
-    try {
-      const result = await apiRequest('/api/courses', 'POST', { enrollment_id, title, description });
-      createCourseBackdrop.classList.remove('open');
-      toast('Course created');
-      window.location.href = `course.html?id=${result.course_id}`;
-    } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message || 'Could not create course.';
-    }
-  });
-
-  async function loadSchedule() {
-    const scheduleArea = document.getElementById('scheduleArea');
-    try {
-      const sessions = await apiRequest('/api/bookings/teacher/schedule');
-      renderSchedule(sessions);
-    } catch (err) {
-      scheduleArea.innerHTML = '<div class="empty-state">Could not load your schedule.</div>';
-    }
-  }
-
-  function renderSchedule(sessions) {
-    const scheduleArea = document.getElementById('scheduleArea');
-
-    if (sessions.length === 0) {
-      scheduleArea.innerHTML = '<div class="empty-state">No classes scheduled in the next 7 days.</div>';
-      return;
-    }
-
-    const byDate = {};
-    sessions.forEach(s => {
-      const key = s.session_date;
-      if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(s);
-    });
-
-    scheduleArea.innerHTML = Object.keys(byDate).map(date => `
-      <div style="margin-bottom:16px;">
-        <div class="field-section-label">${new Date(date).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-        ${byDate[date].map(s => `
-          <div class="request-row">
-            <div class="request-info">
-              <strong>${escapeHtml(s.student_name)}</strong> — ${escapeHtml(s.subject) || s.type}
-              <div class="request-meta">${s.session_time || 'Time TBD'}</div>
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="openChatModal(${s.booking_id}, '${escapeHtml(s.student_name)}')">💬 Chat</button>
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
-  }
-
-  let acceptBookingId = null;
-  let acceptBtnRef = null;
-
-  function openAcceptFeeModal(bookingId, btn) {
-    acceptBookingId = bookingId;
-    acceptBtnRef = btn;
-    document.getElementById('acceptFeeInput').value = '';
-    document.getElementById('acceptFeeMsgBox').className = 'msg-box';
-    document.getElementById('acceptFeeMsgBox').textContent = '';
-    document.getElementById('acceptFeeModalBackdrop').classList.add('open');
-  }
-
-  function closeAcceptFeeModal() {
-    document.getElementById('acceptFeeModalBackdrop').classList.remove('open');
-  }
-  document.getElementById('acceptFeeModalClose').addEventListener('click', closeAcceptFeeModal);
-  document.getElementById('acceptFeeModalCancel').addEventListener('click', closeAcceptFeeModal);
-
-  document.getElementById('acceptFeeModalConfirm').addEventListener('click', async () => {
-    const msgBox = document.getElementById('acceptFeeMsgBox');
-    const fee = document.getElementById('acceptFeeInput').value;
-    if (fee === '' || Number(fee) < 0) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please enter a fee of 0 or more.';
-      return;
-    }
-    const confirmBtn = document.getElementById('acceptFeeModalConfirm');
-    confirmBtn.disabled = true;
-    confirmBtn.classList.add('btn-loading');
-    try {
-      await apiRequest(`/api/bookings/${acceptBookingId}/status`, 'PUT', { status: 'accepted', fee: Number(fee) });
-      closeAcceptFeeModal();
-      toast('Booking accepted');
-      loadBookings();
-    } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
-    } finally {
-      confirmBtn.disabled = false;
-      confirmBtn.classList.remove('btn-loading');
-    }
-  });
-
-  async function respondToBooking(bookingId, status, btn) {
-    const row = btn.closest('.request-row');
-    row.style.opacity = '0.5';
-    try {
-      await apiRequest(`/api/bookings/${bookingId}/status`, 'PUT', { status });
-      toast(status === 'accepted' ? 'Booking accepted' : 'Booking declined');
-      loadBookings();
-    } catch (err) {
-      row.style.opacity = '1';
-      toast('Could not update booking: ' + err.message, true);
-    }
-  }
-
-  loadBookings();
-  loadCourses();
-</script>
-
+<script src="js/teacher-dashboard.js"></script>
 </body>
 </html>

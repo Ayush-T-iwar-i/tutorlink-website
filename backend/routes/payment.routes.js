@@ -21,6 +21,19 @@ function sendError(res, err, fallback, label) {
   if (err instanceof PaymentError) return res.status(err.status).json({ error: err.message, code: err.code });
   console.error(label, err);
   if (res.headersSent) return undefined;
+  // The Razorpay SDK rejects with a plain object: { statusCode, error: { code, description } }.
+  if (err && typeof err === 'object' && err.statusCode && err.error && err.error.description) {
+    if (err.statusCode === 401) {
+      return res.status(502).json({
+        error: 'The payment provider rejected our credentials. Please contact support.',
+        code: 'GATEWAY_AUTH_FAILED'
+      });
+    }
+    return res.status(502).json({
+      error: 'The payment provider could not process this request. Please try again.',
+      code: 'GATEWAY_ERROR'
+    });
+  }
   return res.status(500).json({ error: fallback, code: 'INTERNAL_ERROR' });
 }
 

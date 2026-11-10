@@ -3,36 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Profile — TutorLink</title>
+<title>Teacher profile — TutorLink</title>
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/pages.css">
 </head>
-<body>
+<body class="pg pg-tview">
 
-<!-- ---------------- Header ---------------- -->
+<a class="skip-link" href="#mainContent">Skip to the profile</a>
+
 <header class="dashboard-header">
   <div class="container">
-    <a href="index.html" class="brand">
-      <span class="brand-mark"></span>
-      Tutor<em>Link</em>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
     <div class="header-actions">
-      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to Dashboard</a>
+      <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to dashboard</a>
     </div>
   </div>
 </header>
 
-<main class="dashboard-body">
-  <div class="container">
-    <div id="content">
-      <div class="skeleton-card" style="margin-bottom:24px;">
-        <div style="display:flex; gap:20px; align-items:center;">
-          <div class="skel-avatar" style="width:72px; height:72px;"></div>
-          <div style="flex:1;">
-            <div class="skel-line w-40" style="margin-bottom:8px;"></div>
-            <div class="skel-line w-60"></div>
-          </div>
-        </div>
+<main class="dashboard-body" id="mainContent" tabindex="-1">
+  <div class="container pg-wrap">
+    <div id="content" aria-live="polite" aria-busy="true">
+      <div class="pg-skel" aria-hidden="true">
+        <div class="pg-skel-avatar"></div>
+        <div class="pg-skel-lines"><span></span><span></span></div>
       </div>
     </div>
   </div>
@@ -40,63 +38,64 @@
 
 <!-- ================= Booking modal ================= -->
 <div class="modal-backdrop" id="bookingModalBackdrop">
-  <div class="modal modal-booking">
+  <div class="modal modal-booking" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-header">
       <div>
-        <h3 id="modalTitle">Book a Free Demo Class</h3>
-        <p>Pick a date and convenient time slot to try your first trial lesson.</p>
+        <h3 id="modalTitle">Book a free demo class</h3>
+        <p id="modalSub">Pick a date and a time slot for your trial lesson.</p>
       </div>
-      <button class="modal-close" id="bookingModalClose" aria-label="Close">✕</button>
+      <button type="button" class="modal-close" id="bookingModalClose" aria-label="Close">✕</button>
     </div>
     <div class="modal-body">
-      <div class="role-toggle" style="margin-bottom:18px;">
+      <div class="pg-seg" role="radiogroup" aria-label="Booking type">
         <label>
           <input type="radio" name="bookingType" value="demo" checked>
-          <span>Free Demo Class (₹0)</span>
+          <span>Free demo class</span>
         </label>
         <label>
           <input type="radio" name="bookingType" value="recurring">
-          <span>Recurring Classes</span>
+          <span>Recurring classes</span>
         </label>
       </div>
 
-      <div class="form-group">
+      <div class="pg-field">
         <label for="bookingSubject">Subject</label>
-        <input type="text" id="bookingSubject" placeholder="e.g. Mathematics">
+        <input type="text" id="bookingSubject" placeholder="e.g. Mathematics" maxlength="100" autocomplete="off">
       </div>
 
-      <div class="form-group">
+      <div class="pg-field">
         <label for="bookingDate">Date</label>
         <input type="date" id="bookingDate">
+        <p class="pg-hint">Dates are in Indian Standard Time. You can book up to 180 days ahead.</p>
       </div>
 
-      <div class="form-group">
-        <label>Select Time Slot</label>
-        <div class="slot-grid" id="slotGrid"></div>
+      <div class="pg-field">
+        <span class="pg-label" id="slotLabel">Time slot</span>
+        <div class="pg-slots" id="slotGrid" role="group" aria-labelledby="slotLabel"></div>
       </div>
 
-      <div class="role-fields" id="recurringFields">
-        <div class="field-section-label" style="font-size:13px; font-weight:700; color:var(--ink-800); margin: 16px 0 6px;">Which days each week?</div>
-        <div class="slot-grid" id="daysGrid" style="grid-template-columns:repeat(4,1fr);"></div>
+      <div class="pg-field" id="recurringFields" hidden>
+        <span class="pg-label" id="daysLabel">Which days each week?</span>
+        <div class="pg-days" id="daysGrid" role="group" aria-labelledby="daysLabel"></div>
+        <p class="pg-hint">Recurring classes run weekly for 8 weeks on the days you choose.</p>
       </div>
 
-      <div id="bookingMsgBox" class="msg-box"></div>
+      <div id="bookingMsgBox" class="msg-box" role="alert"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="bookingModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="bookingModalConfirm">Confirm Booking Request</button>
+      <button type="button" class="btn btn-outline btn-sm" id="bookingModalCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="bookingModalConfirm">Send booking request</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ---------------- Footer ---------------- -->
-<footer class="site-footer" style="margin-top:40px;">
+<footer class="site-footer">
   <div class="container">
-    <div class="footer-bottom" style="border:none; padding:0;">
+    <div class="footer-bottom">
       <span>© 2026 TutorLink. All rights reserved.</span>
-      <span style="display:flex; gap:16px;">
+      <span class="pg-foot-links">
         <a href="terms.html">Terms</a>
         <a href="privacy.html">Privacy</a>
       </span>
@@ -105,257 +104,512 @@
 </footer>
 
 <script src="js/api.js"></script>
+<script src="js/ui.js"></script>
 <script>
-  const session = requireLogin('student');
-  const params = new URLSearchParams(window.location.search);
-  const teacherId = params.get('id');
-  const content = document.getElementById('content');
+(function () {
+  'use strict';
 
-  let teacherSubjectsList = '';
-  let selectedSlot = null;
-  let selectedDays = [];
-  const DEFAULT_SLOTS = ['9:00 AM','11:00 AM','1:00 PM','3:00 PM','5:00 PM','7:00 PM'];
-  let teacherSlots = DEFAULT_SLOTS;
-  const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var session = requireLogin('student');
+  if (!session) return;
+
+  function $(id) { return document.getElementById(id); }
+
+  var params = new URLSearchParams(window.location.search);
+  var teacherId = params.get('id');
+  var content = $('content');
+
+  var APP_TZ = 'Asia/Kolkata';               // Must match APP_TIMEZONE on the server.
+  var MAX_DAYS_AHEAD = 180;                  // Must match the booking service.
+  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  var WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  var teacher = null;
+  var isSaved = false;
+  var state = { type: 'demo', slot: null, days: new Set(), slotSeq: 0, busy: false, opener: null };
+  var toastTimer = null;
+
+  function toast(message, isError) {
+    var el = $('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'toast'; }, 3500);
+  }
+
+  function initials(name) {
+    return String(name || '').split(/\s+/).filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase() || '?';
+  }
+
+  // ---------- Dates (always in IST, never the browser's zone) ----------
+  function istDate(offsetDays) {
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: APP_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    var y = 0, m = 0, d = 0;
+    parts.forEach(function (p) {
+      if (p.type === 'year') y = Number(p.value);
+      if (p.type === 'month') m = Number(p.value);
+      if (p.type === 'day') d = Number(p.value);
+    });
+    var dt = new Date(Date.UTC(y, m - 1, d + (offsetDays || 0)));
+    return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' + String(dt.getUTCDate()).padStart(2, '0');
+  }
+  function formatDay(iso) {
+    if (!iso) return '';
+    var dt = new Date(String(iso).slice(0, 10) + 'T00:00:00Z');
+    if (isNaN(dt.getTime())) return '';
+    return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+
+  // ---------- Page states ----------
+  function showMessage(html) {
+    content.setAttribute('aria-busy', 'false');
+    content.innerHTML = '<div class="pg-empty">' + html + '</div>';
+  }
 
   async function loadProfile() {
-    if (!teacherId) {
-      content.innerHTML = '<div class="empty-state">No teacher selected. <a href="teachers.html">Browse teachers</a></div>';
+    if (!teacherId || !/^\d+$/.test(teacherId)) {
+      showMessage('No teacher selected. <a href="student-dashboard.html">Find a teacher</a>');
       return;
     }
-
     try {
-      const t = await apiRequest(`/api/teachers/${teacherId}`);
-      const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      const location = [t.address, t.city].filter(Boolean).join(', ') || 'Location on profile';
-      const subjects = (t.subjects || '').split(',').map(s => `<span class="badge badge-subject">${escapeHtml(s.trim())}</span>`).join(' ') || '<span>Not listed</span>';
-
-      content.innerHTML = `
-        <div class="profile-hero">
-          <div class="avatar-lg">
-            ${t.profile_photo ? `<img class="avatar-photo" src="${photoUrl(t.profile_photo)}" alt="${escapeHtml(t.name)}">` : initials}
-          </div>
-          <div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <h1 style="font-size:28px;">${escapeHtml(t.name)}</h1>
-              <span class="badge badge-verified">✓ ID Verified</span>
-            </div>
-            <div class="qualification">${escapeHtml(t.qualification) || 'Educator'}</div>
-            <div class="location-line">📍 ${escapeHtml(location)}</div>
-            <div class="badge-row" style="margin:0;">
-              <span class="badge badge-rating">★ ${t.rating_avg > 0 ? Number(t.rating_avg).toFixed(1) : 'New'} (${t.total_reviews || 0} reviews)</span>
-              ${t.experience_years ? `<span class="badge badge-distance">${t.experience_years} Years Experience</span>` : ''}
-            </div>
-          </div>
-          <div class="book-col">
-            <div class="fee-big">₹${t.fee_per_hour || 0} <span style="font-size:13px; color:var(--ink-500); font-weight:500;">/ hour</span></div>
-            <button class="btn btn-primary btn-block btn-lg" onclick="openBookingModal()">Book Free Demo</button>
-          </div>
-        </div>
-
-        <div class="info-grid">
-          <div class="info-tile">
-            <div class="label">Subjects Taught</div>
-            <div class="value" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${subjects}</div>
-          </div>
-          <div class="info-tile">
-            <div class="label">Grades / Classes</div>
-            <div class="value">${escapeHtml(t.grades) || 'All Standard Classes'}</div>
-          </div>
-          <div class="info-tile">
-            <div class="label">Teaching Experience</div>
-            <div class="value">${t.experience_years || 0} Years</div>
-          </div>
-          <div class="info-tile">
-            <div class="label">Languages</div>
-            <div class="value">${escapeHtml(t.languages) || 'English, Hindi'}</div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">About the Teacher &amp; Teaching Style</div>
-          <p style="font-size:15px; color:var(--ink-700); margin-top:8px; line-height:1.6;">
-            ${escapeHtml(t.bio) || 'This educator brings comprehensive subject expertise and tailored student-focused learning methodologies.'}
-          </p>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">Available Teaching Time Slots</div>
-          <p class="panel-hint">These are the educator's preferred weekly hours for home tuition.</p>
-          <div class="slot-grid" style="margin-top:12px;">
-            ${(t.available_slots || DEFAULT_SLOTS.join(',')).split(',').map(s => `<div class="slot-btn" style="cursor:default;">🕒 ${escapeHtml(s.trim())}</div>`).join('')}
-          </div>
-        </div>
-
-        <div class="panel" id="reviewsPanel">
-          <div class="panel-title">Student Reviews &amp; Ratings</div>
-          <div class="skeleton-card" style="margin-top:12px;"><div class="skel-line w-60"></div></div>
-        </div>
-      `;
-
-      teacherSubjectsList = t.subjects || '';
-      teacherSlots = (t.available_slots || '').split(',').map(s => s.trim()).filter(Boolean);
-      if (teacherSlots.length === 0) teacherSlots = DEFAULT_SLOTS;
-      loadReviews();
+      teacher = await apiRequest('/api/teachers/' + encodeURIComponent(teacherId));
     } catch (err) {
-      content.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+      showMessage('<p></p><a href="student-dashboard.html">Back to the dashboard</a>');
+      content.querySelector('p').textContent = err.message || 'This teacher could not be loaded.';
+      return;
     }
+    try {
+      var fav = await apiRequest('/api/favorites/me');
+      var list = Array.isArray(fav) ? fav : ((fav && (fav.teachers || fav.favorites)) || []);
+      isSaved = list.some(function (f) { return Number(f.id) === Number(teacherId) || Number(f.teacher_id) === Number(teacherId); });
+    } catch (e) { /* the heart simply starts unsaved */ }
+    renderProfile();
+    loadReviews();
+  }
+
+  function tile(label, valueNode) {
+    var t = el('div', 'pg-tile');
+    t.appendChild(el('div', 'pg-tile-label', label));
+    var v = el('div', 'pg-tile-value');
+    if (typeof valueNode === 'string') v.textContent = valueNode; else v.appendChild(valueNode);
+    t.appendChild(v);
+    return t;
+  }
+
+  function renderProfile() {
+    var t = teacher;
+    document.title = (t.name || 'Teacher') + ' — TutorLink';
+    content.setAttribute('aria-busy', 'false');
+    content.innerHTML = '';
+
+    var location = [t.address, t.city].filter(Boolean).join(', ') || 'Location shown on request';
+    var rating = Number(t.rating_avg) > 0 ? Number(t.rating_avg).toFixed(1) : null;
+    var verified = !t.verification_status || t.verification_status === 'approved';
+
+    // ----- Hero -----
+    var hero = el('section', 'pg-thero');
+    hero.setAttribute('aria-label', 'Teacher summary');
+    hero.appendChild(el('div', 'pg-hero-glow'));
+
+    var av = el('div', 'pg-avatar pg-avatar-xl');
+    if (t.profile_photo) {
+      var img = document.createElement('img');
+      img.alt = t.name || '';
+      img.src = photoUrl(t.profile_photo);
+      av.appendChild(img);
+    } else {
+      av.textContent = initials(t.name);
+    }
+    hero.appendChild(av);
+
+    var info = el('div', 'pg-thero-info');
+    var nameRow = el('div', 'pg-name-row');
+    nameRow.appendChild(el('h1', '', t.name || 'Teacher'));
+    if (verified) nameRow.appendChild(el('span', 'badge badge-verified', '✓ ID verified'));
+    info.appendChild(nameRow);
+    info.appendChild(el('p', 'pg-qual', t.qualification || 'Educator'));
+    info.appendChild(el('p', 'pg-loc-line', '📍 ' + location));
+    var badges = el('div', 'pg-badges');
+    badges.appendChild(el('span', 'badge badge-rating', '★ ' + (rating || 'New') + ' (' + (t.total_reviews || 0) + ' ' + (Number(t.total_reviews) === 1 ? 'review' : 'reviews') + ')'));
+    if (Number(t.experience_years) > 0) badges.appendChild(el('span', 'badge badge-distance', t.experience_years + ' ' + (Number(t.experience_years) === 1 ? 'year' : 'years') + ' experience'));
+    info.appendChild(badges);
+    hero.appendChild(info);
+
+    var book = el('div', 'pg-book');
+    var fee = el('div', 'pg-fee');
+    fee.appendChild(el('strong', '', '₹' + Number(t.fee_per_hour || 0).toLocaleString('en-IN')));
+    fee.appendChild(el('span', '', ' / hour'));
+    book.appendChild(fee);
+    var bookBtn = el('button', 'btn btn-primary btn-lg btn-block', 'Book a free demo');
+    bookBtn.type = 'button';
+    bookBtn.id = 'bookBtn';
+    bookBtn.addEventListener('click', function () { openBookingModal(bookBtn); });
+    book.appendChild(bookBtn);
+    var heart = el('button', 'btn btn-outline btn-block pg-heart');
+    heart.type = 'button';
+    heart.id = 'heartBtn';
+    heart.addEventListener('click', toggleSaved);
+    book.appendChild(heart);
+    hero.appendChild(book);
+    content.appendChild(hero);
+    paintHeart();
+
+    // ----- Tiles -----
+    var tiles = el('div', 'pg-tiles');
+    var subjWrap = el('div', 'pg-chips');
+    var subjects = String(t.subjects || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (subjects.length) subjects.forEach(function (s) { subjWrap.appendChild(el('span', 'badge badge-subject', s)); });
+    else subjWrap.textContent = 'Not listed';
+    tiles.appendChild(tile('Subjects taught', subjWrap));
+    tiles.appendChild(tile('Classes / grades', t.grades || 'All standard classes'));
+    tiles.appendChild(tile('Teaching experience', (t.experience_years || 0) + ' ' + (Number(t.experience_years) === 1 ? 'year' : 'years')));
+    tiles.appendChild(tile('Languages', t.languages || 'English, Hindi'));
+    content.appendChild(tiles);
+
+    // ----- About -----
+    var about = el('section', 'pg-card');
+    about.appendChild(el('h2', 'pg-card-title', 'About the teacher'));
+    about.appendChild(el('p', 'pg-prose', t.bio || 'This teacher has not added a description yet.'));
+    content.appendChild(about);
+
+    // ----- Slots -----
+    var slotsCard = el('section', 'pg-card');
+    slotsCard.appendChild(el('h2', 'pg-card-title', 'Weekly teaching hours'));
+    slotsCard.appendChild(el('p', 'pg-hint', 'These are the times this teacher usually teaches. Live availability for a date is shown when you book.'));
+    var slotList = el('div', 'pg-slots pg-slots-static');
+    var slots = slotsFor(t);
+    slots.forEach(function (s) { slotList.appendChild(el('span', 'pg-slot is-static', '🕒 ' + s)); });
+    slotsCard.appendChild(slotList);
+    content.appendChild(slotsCard);
+
+    // ----- Reviews -----
+    var rev = el('section', 'pg-card');
+    rev.id = 'reviewsPanel';
+    rev.appendChild(el('h2', 'pg-card-title', 'Student reviews'));
+    var sk = el('div', 'pg-skel pg-skel-sm');
+    sk.innerHTML = '<div class="pg-skel-lines"><span></span></div>';
+    rev.appendChild(sk);
+    content.appendChild(rev);
+  }
+
+  var DEFAULT_SLOTS = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '5:00 PM', '7:00 PM'];
+  function slotsFor(t) {
+    var list = String((t && t.available_slots) || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    return list.length ? list : DEFAULT_SLOTS.slice();
+  }
+
+  // ---------- Saved teacher ----------
+  function paintHeart() {
+    var b = $('heartBtn');
+    if (!b) return;
+    b.textContent = isSaved ? '♥ Saved' : '♡ Save teacher';
+    b.setAttribute('aria-pressed', String(isSaved));
+    b.classList.toggle('is-saved', isSaved);
+  }
+  async function toggleSaved() {
+    var b = $('heartBtn');
+    b.disabled = true;
+    try {
+      if (isSaved) {
+        await apiRequest('/api/favorites/' + encodeURIComponent(teacherId), 'DELETE');
+        isSaved = false;
+        toast('Removed from saved teachers');
+      } else {
+        await apiRequest('/api/favorites', 'POST', { teacher_id: Number(teacherId) });
+        isSaved = true;
+        toast('Teacher saved');
+      }
+      paintHeart();
+    } catch (err) {
+      toast(err.message || 'Could not update saved teachers.', true);
+    } finally {
+      b.disabled = false;
+    }
+  }
+
+  // ---------- Reviews ----------
+  function stars(n) {
+    n = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
   }
 
   async function loadReviews() {
-    const panel = document.getElementById('reviewsPanel');
+    var panel = $('reviewsPanel');
+    if (!panel) return;
+    panel.innerHTML = '';
+    var reviews;
     try {
-      const reviews = await apiRequest(`/api/reviews/teacher/${teacherId}`);
-      if (reviews.length === 0) {
-        panel.innerHTML = `
-          <div class="panel-title">Student Reviews &amp; Ratings</div>
-          <div class="empty-state" style="padding:28px; margin-top:12px;">
-            No reviews yet — book a demo class and be the first to leave feedback!
-          </div>`;
-        return;
-      }
-
-      panel.innerHTML = `
-        <div class="panel-title">Student Reviews &amp; Ratings (${reviews.length})</div>
-        <div style="margin-top:14px; display:flex; flex-direction:column; gap:12px;">
-          ${reviews.map(r => `
-            <div class="request-row" style="background:var(--bg-page); border-radius:var(--radius-lg); border:1px solid var(--border);">
-              <div class="request-info" style="width:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <div>
-                    <strong>${escapeHtml(r.student_name)}</strong>
-                    <span class="badge badge-rating" style="margin-left:8px;">★ ${r.rating}.0</span>
-                  </div>
-                  <span style="font-size:12px; color:var(--ink-500);">${new Date(r.created_at).toLocaleDateString()}</span>
-                </div>
-                ${r.comment ? `<p style="margin-top:8px; font-size:14px; color:var(--ink-800);">${escapeHtml(r.comment)}</p>` : ''}
-                ${r.teacher_reply ? `
-                  <div style="margin-top:10px; padding:10px 14px; background:var(--surface); border-left:3px solid var(--primary); border-radius:var(--radius-sm); font-size:13px;">
-                    <strong style="color:var(--primary);">Teacher's Reply:</strong> ${escapeHtml(r.teacher_reply)}
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-          `).join('')}
-        </div>`;
+      reviews = await apiRequest('/api/reviews/teacher/' + encodeURIComponent(teacherId));
     } catch (err) {
-      panel.innerHTML = '<div class="panel-title">Reviews</div><div class="empty-state">Could not load reviews right now.</div>';
+      panel.appendChild(el('h2', 'pg-card-title', 'Student reviews'));
+      panel.appendChild(el('div', 'pg-empty pg-empty-sm', 'Could not load reviews right now.'));
+      return;
+    }
+    if (!Array.isArray(reviews)) reviews = [];
+    var head = el('h2', 'pg-card-title', reviews.length ? 'Student reviews (' + reviews.length + ')' : 'Student reviews');
+    panel.appendChild(head);
+
+    if (!reviews.length) {
+      panel.appendChild(el('div', 'pg-empty pg-empty-sm', 'No reviews yet. Book a demo class and be the first to leave feedback.'));
+      return;
+    }
+
+    // Rating summary with a distribution bar for each star level.
+    var counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    var sum = 0;
+    reviews.forEach(function (r) {
+      var n = Math.max(1, Math.min(5, Math.round(Number(r.rating) || 0)));
+      counts[n]++;
+      sum += n;
+    });
+    var summary = el('div', 'pg-rsum');
+    var big = el('div', 'pg-rbig');
+    big.appendChild(el('strong', '', (sum / reviews.length).toFixed(1)));
+    big.appendChild(el('span', 'pg-stars', stars(sum / reviews.length)));
+    big.appendChild(el('small', '', reviews.length + (reviews.length === 1 ? ' review' : ' reviews')));
+    summary.appendChild(big);
+    var bars = el('div', 'pg-rbars');
+    [5, 4, 3, 2, 1].forEach(function (n) {
+      var row = el('div', 'pg-rbar');
+      row.appendChild(el('span', '', n + '★'));
+      var track = el('div', 'pg-rtrack');
+      var fill = el('i');
+      fill.style.width = Math.round(counts[n] / reviews.length * 100) + '%';
+      track.appendChild(fill);
+      row.appendChild(track);
+      row.appendChild(el('span', 'pg-rcount', String(counts[n])));
+      bars.appendChild(row);
+    });
+    summary.appendChild(bars);
+    panel.appendChild(summary);
+
+    var list = el('div', 'pg-reviews');
+    reviews.forEach(function (r) {
+      var item = el('article', 'pg-review');
+      var top = el('div', 'pg-review-top');
+      var who = el('div');
+      who.appendChild(el('strong', '', r.student_name || 'Student'));
+      var st = el('span', 'badge badge-rating', stars(r.rating));
+      st.setAttribute('aria-label', 'Rated ' + (Number(r.rating) || 0) + ' out of 5');
+      who.appendChild(st);
+      top.appendChild(who);
+      top.appendChild(el('time', 'pg-review-date', formatDay(r.created_at)));
+      item.appendChild(top);
+      if (r.comment) item.appendChild(el('p', 'pg-prose', r.comment));
+      if (r.teacher_reply) {
+        var reply = el('div', 'pg-reply');
+        reply.appendChild(el('strong', '', 'Teacher’s reply: '));
+        reply.appendChild(document.createTextNode(r.teacher_reply));
+        item.appendChild(reply);
+      }
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+  }
+
+  // ---------- Booking modal ----------
+  var backdrop = $('bookingModalBackdrop');
+  var msgBox = $('bookingMsgBox');
+
+  function setMsg(type, text) {
+    msgBox.className = 'msg-box' + (type ? ' ' + type : '');
+    msgBox.textContent = text || '';
+  }
+
+  function focusSoon(node) {
+    var tries = 0;
+    (function attempt() {
+      node.focus();
+      if (document.activeElement !== node && tries++ < 12) setTimeout(attempt, 30);
+    })();
+  }
+
+  function focusables() {
+    return Array.prototype.filter.call(
+      backdrop.querySelectorAll('button, input, select, textarea, a[href]'),
+      function (n) { return !n.disabled && n.offsetParent !== null; }
+    );
+  }
+
+  function slotNote(text) {
+    var grid = $('slotGrid');
+    grid.innerHTML = '';
+    grid.appendChild(el('div', 'pg-slot-note', text));
+  }
+
+  function renderSlots(list) {
+    var grid = $('slotGrid');
+    grid.innerHTML = '';
+    if (!list.some(function (s) { return s.available; })) {
+      slotNote('No free times on this date. Please pick another date.');
+      return;
+    }
+    list.forEach(function (s) {
+      var btn = el('button', 'pg-slot', s.slot);
+      btn.type = 'button';
+      btn.dataset.slot = s.slot;
+      btn.disabled = !s.available;
+      btn.title = s.available ? '' : 'Not available';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', function () {
+        grid.querySelectorAll('.pg-slot').forEach(function (b) { b.classList.remove('is-on'); b.setAttribute('aria-pressed', 'false'); });
+        btn.classList.add('is-on');
+        btn.setAttribute('aria-pressed', 'true');
+        state.slot = s.slot;
+        setMsg('', '');
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  async function loadSlots() {
+    var date = $('bookingDate').value;
+    state.slot = null;
+    if (!DATE_RE.test(date)) { $('slotGrid').innerHTML = ''; return; }
+    var seq = ++state.slotSeq;   // Ignore stale answers when the date changes quickly.
+    slotNote('Loading available times…');
+    try {
+      var data = await apiRequest('/api/bookings/availability/' + encodeURIComponent(teacherId) + '?date=' + encodeURIComponent(date));
+      if (seq !== state.slotSeq) return;
+      var slots = data && Array.isArray(data.slots) ? data.slots : null;
+      if (!slots) throw new Error('empty');
+      renderSlots(slots);
+    } catch (err) {
+      if (seq !== state.slotSeq) return;
+      // Show the server's reason instead of guessing. Only an unexpected response shape falls back to the teacher's own list.
+      if (err && err.message && err.message !== 'empty') { slotNote(err.message); return; }
+      renderSlots(slotsFor(teacher).map(function (s) { return { slot: s, available: true }; }));
     }
   }
 
-  document.querySelectorAll('input[name="bookingType"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      document.getElementById('recurringFields').classList.toggle('open', e.target.value === 'recurring');
-      document.getElementById('modalTitle').textContent = e.target.value === 'recurring'
-        ? 'Book Recurring Classes'
-        : 'Book a Free Demo Class';
-    });
-  });
-
-  function buildDaysGrid() {
-    const grid = document.getElementById('daysGrid');
-    grid.innerHTML = WEEK_DAYS.map(d => `<button type="button" class="slot-btn" data-day="${d}">${d}</button>`).join('');
-    grid.querySelectorAll('.slot-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        btn.classList.toggle('selected');
-        const day = btn.dataset.day;
-        if (selectedDays.includes(day)) selectedDays = selectedDays.filter(d => d !== day);
-        else selectedDays.push(day);
+  function renderDays() {
+    var grid = $('daysGrid');
+    grid.innerHTML = '';
+    WEEK_DAYS.forEach(function (d) {
+      var on = state.days.has(d);
+      var b = el('button', 'pg-day' + (on ? ' is-on' : ''), d);
+      b.type = 'button';
+      b.dataset.day = d;
+      b.setAttribute('aria-pressed', String(on));
+      b.addEventListener('click', function () {
+        if (state.days.has(d)) state.days.delete(d); else state.days.add(d);
+        var now = state.days.has(d);
+        b.classList.toggle('is-on', now);
+        b.setAttribute('aria-pressed', String(now));
+        setMsg('', '');
       });
+      grid.appendChild(b);
     });
   }
 
-  function openBookingModal() {
-    selectedSlot = null;
-    selectedDays = [];
+  function applyType(type) {
+    state.type = type;
+    $('recurringFields').hidden = type !== 'recurring';
+    $('modalTitle').textContent = type === 'recurring' ? 'Book recurring classes' : 'Book a free demo class';
+    $('modalSub').textContent = type === 'recurring'
+      ? 'Choose a start date, a time and the days of the week.'
+      : 'Pick a date and a time slot for your trial lesson.';
+    $('bookingModalConfirm').textContent = 'Send booking request';
+  }
+
+  function openBookingModal(opener) {
+    if (!teacher) return;
+    state.opener = opener || null;
+    state.slot = null;
+    state.days = new Set();
     document.querySelector('input[name="bookingType"][value="demo"]').checked = true;
-    document.getElementById('recurringFields').classList.remove('open');
-    document.getElementById('modalTitle').textContent = 'Book a Free Demo Class';
-    document.getElementById('bookingSubject').value = teacherSubjectsList.split(',')[0]?.trim() || '';
-    
-    const dateInput = document.getElementById('bookingDate');
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.min = today;
-    dateInput.value = today;
-
-    const grid = document.getElementById('slotGrid');
-    grid.innerHTML = teacherSlots.map(s => `<button type="button" class="slot-btn" data-slot="${s}">${s}</button>`).join('');
-    grid.querySelectorAll('.slot-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedSlot = btn.dataset.slot;
-      });
-    });
-    buildDaysGrid();
-
-    document.getElementById('bookingMsgBox').className = 'msg-box';
-    document.getElementById('bookingModalBackdrop').classList.add('open');
+    applyType('demo');
+    $('bookingSubject').value = String(teacher.subjects || '').split(',')[0].trim();
+    var d = $('bookingDate');
+    d.min = istDate(0);
+    d.max = istDate(MAX_DAYS_AHEAD);
+    d.value = istDate(0);
+    renderDays();
+    setMsg('', '');
+    backdrop.classList.add('open');
+    document.body.classList.add('pg-modal-open');
+    loadSlots();
+    focusSoon($('bookingSubject'));
   }
 
   function closeBookingModal() {
-    document.getElementById('bookingModalBackdrop').classList.remove('open');
+    if (state.busy) return;
+    backdrop.classList.remove('open');
+    document.body.classList.remove('pg-modal-open');
+    if (state.opener && document.contains(state.opener)) state.opener.focus();
   }
-  document.getElementById('bookingModalClose').addEventListener('click', closeBookingModal);
-  document.getElementById('bookingModalCancel').addEventListener('click', closeBookingModal);
 
-  document.getElementById('bookingModalConfirm').addEventListener('click', async () => {
-    const msgBox = document.getElementById('bookingMsgBox');
-    const date = document.getElementById('bookingDate').value;
-    const subject = document.getElementById('bookingSubject').value.trim();
-    const type = document.querySelector('input[name="bookingType"]:checked').value;
-    const confirmBtn = document.getElementById('bookingModalConfirm');
+  $('bookingModalClose').addEventListener('click', closeBookingModal);
+  $('bookingModalCancel').addEventListener('click', closeBookingModal);
+  backdrop.addEventListener('mousedown', function (e) { if (e.target === backdrop) closeBookingModal(); });
+  document.querySelectorAll('input[name="bookingType"]').forEach(function (r) {
+    r.addEventListener('change', function (e) { applyType(e.target.value); setMsg('', ''); });
+  });
+  $('bookingDate').addEventListener('change', loadSlots);
 
-    if (!subject) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please enter a subject.';
-      return;
+  document.addEventListener('keydown', function (e) {
+    if (!backdrop.classList.contains('open')) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeBookingModal(); return; }
+    if (e.key === 'Tab') {
+      var f = focusables();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
-    if (!date) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please select a date.';
-      return;
-    }
-    if (!selectedSlot) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please choose an available time slot.';
-      return;
-    }
-    if (type === 'recurring' && selectedDays.length === 0) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please select at least one weekday for recurring classes.';
-      return;
-    }
+  });
 
-    confirmBtn.disabled = true;
-    confirmBtn.classList.add('btn-loading');
-    msgBox.className = 'msg-box';
+  $('bookingModalConfirm').addEventListener('click', async function () {
+    if (state.busy) return;
+    var date = $('bookingDate').value;
+    var subject = $('bookingSubject').value.trim();
+    var type = state.type;
+    var btn = $('bookingModalConfirm');
 
+    if (!subject) { setMsg('error', 'Please enter a subject.'); $('bookingSubject').focus(); return; }
+    if (!DATE_RE.test(date)) { setMsg('error', 'Please select a date.'); return; }
+    if (date < istDate(0)) { setMsg('error', 'That date is in the past. Please pick today or later.'); return; }
+    if (date > istDate(MAX_DAYS_AHEAD)) { setMsg('error', 'Please pick a date within the next ' + MAX_DAYS_AHEAD + ' days.'); return; }
+    if (!state.slot) { setMsg('error', 'Please choose an available time slot.'); return; }
+    if (type === 'recurring' && state.days.size === 0) { setMsg('error', 'Please select at least one weekday for recurring classes.'); return; }
+
+    state.busy = true;
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    setMsg('', '');
     try {
+      // The fee is not sent: the teacher sets it when accepting the request.
       await apiRequest('/api/bookings', 'POST', {
         teacher_id: parseInt(teacherId, 10),
-        type,
-        subject,
+        type: type,
+        subject: subject,
         booking_date: date,
-        booking_time: selectedSlot,
-        days_per_week: type === 'recurring' ? selectedDays.join(',') : null,
-        fee: 0,
+        booking_time: state.slot,
+        days_per_week: type === 'recurring' ? WEEK_DAYS.filter(function (d) { return state.days.has(d); }).join(',') : null
       });
-
-      closeBookingModal();
-      showToast('Booking request sent successfully! You can track it on your dashboard.');
-      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1500);
+      state.busy = false;
+      backdrop.classList.remove('open');
+      document.body.classList.remove('pg-modal-open');
+      toast('Booking request sent! You can track it on your dashboard.');
+      setTimeout(function () { window.location.href = 'student-dashboard.html'; }, 1500);
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
-    } finally {
-      confirmBtn.disabled = false;
-      confirmBtn.classList.remove('btn-loading');
+      state.busy = false;
+      setMsg('error', err.message || 'Could not send the request.');
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      // The chosen slot may just have been taken, so refresh the list.
+      loadSlots();
     }
   });
 
   loadProfile();
+})();
 </script>
-
 </body>
 </html>
