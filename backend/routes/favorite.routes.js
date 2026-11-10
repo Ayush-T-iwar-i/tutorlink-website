@@ -40,7 +40,8 @@ router.post('/', verifyToken, requireRole('student'), async (req, res) => {
   try {
     const teacher_id = positiveId(req.body && req.body.teacher_id);
     if (!teacher_id) return res.status(400).json({ error: 'teacher_id is required.' });
-    const [teacher] = await db.query("SELECT id FROM teachers WHERE id = ? AND verification_status = 'approved'", [teacher_id]);
+    const [teacher] = await db.query(
+      "SELECT t.id FROM teachers t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL", [teacher_id]);
     if (teacher.length === 0) return res.status(404).json({ error: 'Teacher not found.' });
 
     const studentId = await getStudentId(req.user.id);

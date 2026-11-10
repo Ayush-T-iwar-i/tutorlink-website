@@ -3,8 +3,11 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const { refundAndNotify } = require('../lib/payment-jobs');
+const sessions = require('../lib/sessions');
 
 const REPORT_STATUSES = ['open', 'reviewed', 'resolved'];
+const USER_ROLES = ['student', 'teacher', 'admin'];
+const USER_PAGE_SIZE = 25;
 
 // ---------- LIST TEACHERS AWAITING APPROVAL ----------
 // GET /api/admin/teachers/pending
@@ -156,6 +159,110 @@ router.get('/stats/signups-by-day', verifyToken, requireRole('admin'), async (re
   } catch (err) {
     console.error('Get signups-by-day error:', err);
     res.status(500).json({ error: 'Could not fetch signup trend.' });
+  }
+});
+
+
+// ---------- USER MANAGEMENT ----------
+// GET /api/admin/users?role=student|teacher|admin&status=active|suspended&q=<name/email/phone>&page=1
+router.get('/users', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const { role, status } = req.query;
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    const page = Math.min(Math.max(parseInt(req.query.page, 10) || 1, 1), 10000);
+    if (role !== undefined && role !== '' && !USER_ROLES.includes(role)) {
+      return res.status(400).json({ error: `role must be one of: ${USER_ROLES.join(', ')}`, code: 'VALIDATION_ERROR' });
+    }
+    if (status !== undefined && status !== '' && !['active', 'suspended'].includes(status)) {
+      return res.status(400).json({ error: 'status must be active or suspended', code: 'VALIDATION_ERROR' });
+    }
+
+    const where = [];
+    const params = [];
+    if (role) { where.push('u.role = ?'); params.push(role); }
+    if (status === 'active') where.push('u.suspended_at IS NULL');
+    if (status === 'suspended') where.push('u.suspended_at IS NOT NULL');
+    if (q) {
+      const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      where.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)');
+      params.push(like, like, like);
+    }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM users u ${whereSql}`, params);
+    const [users] = await db.query(
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.email_verified, u.created_at,
+              u.suspended_at, u.suspended_reason, t.verification_status
+       FROM users u
+       LEFT JOIN teachers t ON t.user_id = u.id
+       ${whereSql}
+       ORDER BY u.created_at DESC, u.id DESC
+       LIMIT ? OFFSET ?`,
+      [...params, USER_PAGE_SIZE, (page - 1) * USER_PAGE_SIZE]
+    );
+    res.json({ users, page, pageSize: USER_PAGE_SIZE, total, totalPages: Math.max(1, Math.ceil(total / USER_PAGE_SIZE)) });
+  } catch (err) {
+    console.error('List users error:', err);
+    res.status(500).json({ error: 'Could not fetch users.' });
+  }
+});
+
+async function loadManageableUser(req, res) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1) {
+    res.status(400).json({ error: 'Invalid user id.', code: 'VALIDATION_ERROR' });
+    return null;
+  }
+  if (id === req.user.id) {
+    res.status(400).json({ error: 'You cannot change your own account status.', code: 'VALIDATION_ERROR' });
+    return null;
+  }
+  const [rows] = await db.query('SELECT id, name, role, suspended_at FROM users WHERE id = ?', [id]);
+  if (rows.length === 0) {
+    res.status(404).json({ error: 'User not found.', code: 'NOT_FOUND' });
+    return null;
+  }
+  if (rows[0].role === 'admin') {
+    res.status(403).json({ error: 'Admin accounts cannot be suspended here.', code: 'FORBIDDEN' });
+    return null;
+  }
+  return rows[0];
+}
+
+// POST /api/admin/users/:id/suspend   body: { reason }
+// Blocks login and ends every active session of the user immediately.
+router.post('/users/:id/suspend', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const reason = req.body && req.body.reason;
+    if (typeof reason !== 'string' || !reason.trim() || reason.trim().length > 255) {
+      return res.status(400).json({ error: 'Please give a reason (at most 255 characters).', code: 'VALIDATION_ERROR' });
+    }
+    const user = await loadManageableUser(req, res);
+    if (!user) return;
+    if (user.suspended_at) return res.status(409).json({ error: 'This account is already suspended.', code: 'CONFLICT' });
+
+    await db.query('UPDATE users SET suspended_at = NOW(), suspended_reason = ? WHERE id = ? AND suspended_at IS NULL', [reason.trim(), user.id]);
+    await sessions.revokeAllUserSessions(db, user.id, 'suspended');
+    console.log(`[admin] user ${user.id} suspended by admin ${req.user.id}`);
+    res.json({ message: `${user.name} has been suspended.` });
+  } catch (err) {
+    console.error('Suspend user error:', err);
+    res.status(500).json({ error: 'Could not suspend user.' });
+  }
+});
+
+// POST /api/admin/users/:id/reactivate
+router.post('/users/:id/reactivate', verifyToken, requireRole('admin'), async (req, res) => {
+  try {
+    const user = await loadManageableUser(req, res);
+    if (!user) return;
+    if (!user.suspended_at) return res.status(409).json({ error: 'This account is not suspended.', code: 'CONFLICT' });
+    await db.query('UPDATE users SET suspended_at = NULL, suspended_reason = NULL WHERE id = ?', [user.id]);
+    console.log(`[admin] user ${user.id} reactivated by admin ${req.user.id}`);
+    res.json({ message: `${user.name} has been reactivated.` });
+  } catch (err) {
+    console.error('Reactivate user error:', err);
+    res.status(500).json({ error: 'Could not reactivate user.' });
   }
 });
 

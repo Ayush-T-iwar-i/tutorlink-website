@@ -28,7 +28,7 @@ async function authenticateAccessToken(db, decoded) {
   const [rows] = await db.query(
     `SELECT u.id, u.role, u.email_verified
      FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.id = ? AND s.user_id = ? AND s.revoked_at IS NULL AND s.expires_at > NOW()`,
+     WHERE s.id = ? AND s.user_id = ? AND s.revoked_at IS NULL AND s.expires_at > NOW() AND u.suspended_at IS NULL`,
     [decoded.sid, decoded.id]
   );
   return rows[0] || null;
@@ -50,7 +50,7 @@ async function rotateSession(db, rawRefresh, req = {}) {
       `SELECT s.id, s.user_id, s.created_at, s.revoked_at,
               (s.expires_at > NOW() AND DATE_ADD(s.created_at, INTERVAL ${t.REFRESH_ABSOLUTE_DAYS} DAY) > NOW()) AS live,
               TIMESTAMPDIFF(SECOND, s.rotated_at, NOW()) AS seconds_since_rotation,
-              u.role, u.email_verified
+              u.role, u.email_verified, u.suspended_at
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.${column} = ? FOR UPDATE OF s`,
       [hash]
@@ -59,7 +59,7 @@ async function rotateSession(db, rawRefresh, req = {}) {
     let [rows] = await select('refresh_hash');
     if (rows.length > 0) {
       const s = rows[0];
-      if (s.revoked_at || !s.live) return { status: 'invalid' };
+      if (s.revoked_at || !s.live || s.suspended_at) return { status: 'invalid' };
       const refreshToken = t.generateRefreshToken();
       await conn.query(
         `UPDATE sessions SET prev_refresh_hash = refresh_hash, refresh_hash = ?, rotated_at = NOW(), last_used_at = NOW(),
@@ -73,7 +73,7 @@ async function rotateSession(db, rawRefresh, req = {}) {
     [rows] = await select('prev_refresh_hash');
     if (rows.length === 0) return { status: 'invalid' };
     const s = rows[0];
-    if (s.revoked_at || !s.live) return { status: 'invalid' };
+    if (s.revoked_at || !s.live || s.suspended_at) return { status: 'invalid' };
     if (s.seconds_since_rotation !== null && s.seconds_since_rotation <= t.REFRESH_GRACE_SECONDS) {
       return { status: 'grace', user: { id: s.user_id, role: s.role }, sessionId: s.id };
     }

@@ -130,6 +130,7 @@ router.get('/browse', async (req, res) => {
     const params = [];
     if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject.trim()}%`); }
     if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city.trim()}%`); }
+    conditions.push('u.suspended_at IS NULL');
     const whereClause = conditions.join(' AND ');
 
     const sortMap = {
@@ -151,7 +152,7 @@ router.get('/browse', async (req, res) => {
     );
 
     const [[{ total }]] = await db.query(
-      `SELECT COUNT(*) AS total FROM teachers t WHERE ${whereClause}`,
+      `SELECT COUNT(*) AS total FROM teachers t JOIN users u ON u.id = t.user_id WHERE ${whereClause}`,
       params
     );
 
@@ -203,6 +204,7 @@ router.get('/nearby', async (req, res) => {
       FROM teachers t
       JOIN users u ON u.id = t.user_id
       WHERE t.verification_status = 'approved'
+        AND u.suspended_at IS NULL
         AND t.latitude IS NOT NULL
         AND t.longitude IS NOT NULL
     `;
@@ -264,7 +266,7 @@ router.get('/:id', async (req, res) => {
               t.fee_per_hour, t.languages, t.bio, t.address, t.city, t.available_slots,
               t.rating_avg, t.total_reviews, u.name, u.profile_photo
        FROM teachers t JOIN users u ON u.id = t.user_id
-       WHERE t.id = ? AND t.verification_status = 'approved'`,
+       WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL`,
       [id]
     );
 
