@@ -1071,6 +1071,7 @@
 
   function commands() {
     var list = [
+      { label: 'Open My students', run: function () { window.location.href = 'teacher-students.html'; } },
       { label: 'Go to booking requests', run: function () { jumpTo('sec-requests'); } },
       { label: 'Show requests awaiting my reply', run: function () { setFilter('requested'); jumpTo('sec-requests'); } },
       { label: 'Go to my schedule', run: function () { jumpTo('sec-schedule'); } },

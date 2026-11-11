@@ -3,16 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Complete Your Profile — TutorLink</title>
+<title>Complete your profile — TutorLink</title>
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/pages.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
-<body class="page-profile">
+<body class="pg pg-sprofile">
+
+<a class="skip-link" href="#mainContent">Skip to the form</a>
 
 <header class="dashboard-header">
   <div class="container">
-    <a href="student-dashboard.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="student-dashboard.html" class="brand" aria-label="TutorLink dashboard">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
     <div class="header-actions">
       <a href="student-dashboard.html" class="btn btn-outline btn-sm">← Back to dashboard</a>
@@ -20,254 +26,215 @@
   </div>
 </header>
 
-<main class="dashboard-body">
-  <div class="container form-page">
+<main class="dashboard-body" id="mainContent" tabindex="-1">
+  <div class="container pg-wrap">
 
-    <div class="dash-hero dash-hero-brand reveal" style="margin-bottom:26px;">
-      <div class="eyebrow">Student profile</div>
-      <h1 style="font-size:24px;">Complete your profile</h1>
-      <p>Helps us match you with the right nearby teachers — takes under a minute.</p>
-      <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
-      <span class="progress-label" id="progressLabel" style="color:rgba(255,255,255,0.75);">0% complete</span>
-    </div>
+    <section class="pg-hero" aria-labelledby="pageTitle">
+      <div class="pg-hero-glow" aria-hidden="true"></div>
+      <div class="pg-hero-body">
+        <span class="eyebrow">Student profile</span>
+        <h1 id="pageTitle">Complete your profile</h1>
+        <p>This helps us match you with the right nearby teachers. It takes under a minute.</p>
+      </div>
+      <div class="pg-meter" role="img" id="progressMeter" aria-label="Profile completeness 0 percent">
+        <div class="pg-ring" id="progressRing"><span id="progressLabel">0%</span></div>
+        <span class="pg-meter-cap">complete</span>
+      </div>
+    </section>
 
-    <div id="msgBox" class="msg-box"></div>
+    <ul class="pg-checks" id="checkList" aria-label="What is left to fill in">
+      <li data-check="photo">Photo</li>
+      <li data-check="subjects">Subjects</li>
+      <li data-check="grade">Class</li>
+      <li data-check="location">Location</li>
+      <li data-check="address">Locality</li>
+      <li data-check="city">City</li>
+    </ul>
+
+    <div id="msgBox" class="msg-box" role="alert"></div>
 
     <form id="profileForm" novalidate>
 
-      <div class="form-section reveal">
-        <div class="form-section-head reveal reveal-delay-1">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <!-- ---------- Photo ---------- -->
+      <section class="pg-card" aria-labelledby="h-photo">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </span>
           <div>
-            <h3>Profile photo</h3>
-            <p>A friendly photo helps teachers recognize and trust you.</p>
+            <h2 id="h-photo">Profile photo</h2>
+            <p>A friendly photo helps teachers recognise and trust you.</p>
+          </div>
+        </header>
+        <div class="pg-photo">
+          <div class="pg-avatar" id="photoPreview" aria-hidden="true">—</div>
+          <div class="pg-photo-ctrl">
+            <input type="file" id="photoInput" class="pg-file-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+            <label class="pg-file" for="photoInput">
+              <span class="btn btn-outline btn-sm">Choose a photo</span>
+              <span class="pg-file-name" id="photoName">JPG, PNG or WebP, up to 2 MB</span>
+            </label>
+            <button type="button" class="btn btn-primary btn-sm" id="uploadPhotoBtn" disabled>Upload photo</button>
           </div>
         </div>
-        <div class="photo-upload-row">
-          <div class="photo-preview" id="photoPreview">—</div>
-          <div>
-            <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.webp" style="margin-bottom:8px;">
-            <button type="button" class="btn btn-outline btn-sm" id="uploadPhotoBtn">Upload photo</button>
-          </div>
-        </div>
-        <div id="photoMsgBox" class="msg-box"></div>
-      </div>
+        <div id="photoMsgBox" class="msg-box" role="status"></div>
+      </section>
 
-      <div class="form-section reveal reveal-delay-2">
-        <div class="form-section-head reveal reveal-delay-3">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <!-- ---------- Learning needs ---------- -->
+      <section class="pg-card" aria-labelledby="h-needs">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </span>
           <div>
-            <h3>What are you looking for</h3>
-            <p>Tell us the subjects and grade so we only show relevant teachers.</p>
+            <h2 id="h-needs">What are you looking for</h2>
+            <p>Tell us the subjects and class so we only show relevant teachers.</p>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
+        </header>
+        <div class="pg-row">
+          <div class="pg-field">
             <label for="preferredSubjects">Preferred subjects</label>
-            <input type="text" id="preferredSubjects" placeholder="e.g. Maths, Science">
+            <input type="text" id="preferredSubjects" placeholder="e.g. Maths, Science" maxlength="255" autocomplete="off">
+            <p class="pg-hint">Separate subjects with commas.</p>
           </div>
-          <div class="form-group">
+          <div class="pg-field">
             <label for="preferredGrade">Class / grade</label>
-            <input type="text" id="preferredGrade" placeholder="e.g. Class 8">
+            <input type="text" id="preferredGrade" placeholder="e.g. Class 8" maxlength="50" autocomplete="off">
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="form-section reveal reveal-delay-4">
-        <div class="form-section-head reveal reveal-delay-0">
-          <span class="ic">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <!-- ---------- Location ---------- -->
+      <section class="pg-card" aria-labelledby="h-loc">
+        <header class="pg-card-head">
+          <span class="pg-ic" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
           </span>
           <div>
-            <h3>Your location</h3>
+            <h2 id="h-loc">Your location</h2>
             <p>We use this to show only teachers within your chosen radius.</p>
           </div>
-        </div>
+        </header>
 
-        <div id="locationNotSet" class="location-panel">
-          <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Set my exact live location</button>
-          <button type="button" id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
-          <span id="locationStatus" class="status-pill">Not set yet</span>
-        </div>
-
-        <div id="locationSet" class="location-set" style="display:none; margin-bottom:16px;">
-          <div class="location-trail">
-            <span class="pin-ic">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-            </span>
-            <span class="crumb" id="crumbArea">Area</span>
-            <span class="sep">›</span>
-            <span class="crumb" id="crumbDistrict">District</span>
-            <span class="pincode" id="crumbPincode">000000</span>
+        <div id="locationNotSet" class="pg-loc">
+          <div class="pg-loc-actions">
+            <button type="button" id="useLocationBtn" class="btn btn-primary btn-sm">📍 Use my current location</button>
+            <button type="button" id="openMapBtnEmpty" class="btn btn-outline btn-sm">🗺️ Set on map</button>
           </div>
-          <div class="location-actions">
+          <span id="locationStatus" class="pg-status" role="status">Not set yet</span>
+        </div>
+
+        <div id="locationSet" class="pg-loc pg-loc-set" style="display:none;">
+          <div class="pg-trail">
+            <span class="pg-trail-ic" aria-hidden="true">📍</span>
+            <span class="pg-crumb" id="crumbArea">Area</span>
+            <span class="pg-sep" aria-hidden="true">›</span>
+            <span class="pg-crumb" id="crumbDistrict">District</span>
+            <span class="pg-pin" id="crumbPincode">000000</span>
+          </div>
+          <div class="pg-loc-actions">
             <button type="button" id="openMapBtnSet" class="btn btn-outline btn-sm">Change on map</button>
+            <button type="button" id="useLocationBtn2" class="btn btn-outline btn-sm">Re-detect</button>
           </div>
         </div>
 
-        <div class="form-row" style="margin-top:16px;">
-          <div class="form-group">
+        <div class="pg-row pg-row-gap">
+          <div class="pg-field">
             <label for="address">Area / locality name</label>
-            <input type="text" id="address" placeholder="e.g. Sector 21, Near Green Park">
+            <input type="text" id="address" placeholder="e.g. Sector 21, near Green Park" maxlength="255" autocomplete="street-address">
           </div>
-          <div class="form-group">
+          <div class="pg-field">
             <label for="city">City</label>
-            <input type="text" id="city" placeholder="e.g. Gurugram">
+            <input type="text" id="city" placeholder="e.g. Gurugram" maxlength="100" autocomplete="address-level2">
           </div>
         </div>
-        <p class="section-hint" style="margin-top:-6px;">Auto-filled once you set your location above — feel free to edit for accuracy.</p>
-      </div>
+        <p class="pg-hint">Filled in automatically once you set your location. Edit it if you want it more exact.</p>
+      </section>
 
-      <button type="submit" class="btn btn-primary btn-block" id="saveBtn">Save profile</button>
+      <div class="pg-savebar">
+        <span class="pg-savebar-note" id="saveNote">Your changes are not saved yet.</span>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save profile</button>
+      </div>
     </form>
 
   </div>
 </main>
 
-<!-- ================= Map picker modal ================= -->
-<div class="modal-backdrop" id="mapModalBackdrop">
-  <div class="modal modal-map">
-    <div class="modal-header">
-      <div>
-        <h3 id="mapModalTitle">Set your location</h3>
-        <p id="mapModalSub">Drag the pin, or click anywhere on the map, to place it exactly.</p>
-      </div>
-      <button class="modal-close" id="mapModalClose" aria-label="Close">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="map-search-row">
-        <input type="text" id="mapSearchInput" placeholder="Search for an area, e.g. Shastri Nagar, Meerut">
-        <button id="mapSearchBtn" class="btn btn-outline btn-sm">Search</button>
-      </div>
-      <div class="map-wrap">
-        <div id="pickerMap"></div>
-        <span class="map-zoom-hint">Scroll or pinch to zoom</span>
-        <button type="button" id="mapLocateBtn" class="map-locate-btn" title="Use my current location">📍</button>
-      </div>
-      <div id="accuracyNote" class="accuracy-note" style="display:none;"></div>
-      <div class="map-hint">📍 <span id="mapLoadingHint">Tip: use the search box or drag the pin to fine-tune your spot.</span></div>
-      <div class="map-picked-address" id="mapPickedAddress">Move the pin to see the address here.</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" id="mapModalCancel">Cancel</button>
-      <button class="btn btn-primary" id="mapModalConfirm">Confirm this location</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/location-picker.js"></script>
 <script>
-  const session = requireLogin('student');
-  const msgBox = document.getElementById('msgBox');
-  let currentLat = null;
-  let currentLng = null;
-  let currentAddress = null; // { area, district, pincode, display }
+(function () {
+  'use strict';
 
-  const DEFAULT_CENTER = [28.9845, 77.7064]; // Meerut, UP — fallback map center
+  var session = requireLogin('student');
+  if (!session) return;
+  var USER = session.user;
+
+  function $(id) { return document.getElementById(id); }
+  var msgBox = $('msgBox');
+
+  var currentLat = null;
+  var currentLng = null;
+  var currentAddress = null; // { area, district, pincode, display }
+  var hasPhoto = false;
+  var dirty = false;
+  var saving = false;
+  var toastTimer = null;
 
   function toast(message, isError) {
-    const el = document.getElementById('toast');
+    var el = $('toast');
     el.textContent = message;
     el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(() => { el.className = 'toast'; }, 2800);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = 'toast'; }, 3500);
   }
 
-  // ---------------- Profile completeness bar ----------------
+  function showMsg(box, type, text) {
+    box.className = 'msg-box' + (type ? ' ' + type : '');
+    box.textContent = text || '';
+  }
+
+  function initials(name) {
+    return String(name || '').split(/\s+/).filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase() || '?';
+  }
+
+  function markDirty() {
+    dirty = true;
+    $('saveNote').textContent = 'You have unsaved changes.';
+  }
+
+  // ---------------- Profile completeness ----------------
   function updateProgress() {
-    const fields = [
-      document.getElementById('preferredSubjects').value.trim(),
-      document.getElementById('preferredGrade').value.trim(),
-      currentLat !== null ? 'x' : '',
-      document.getElementById('address').value.trim(),
-      document.getElementById('city').value.trim(),
-    ];
-    const filled = fields.filter(Boolean).length;
-    const pct = Math.round((filled / fields.length) * 100);
-    document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent = pct + '% complete';
+    var checks = {
+      photo: hasPhoto,
+      subjects: !!$('preferredSubjects').value.trim(),
+      grade: !!$('preferredGrade').value.trim(),
+      location: currentLat !== null,
+      address: !!$('address').value.trim(),
+      city: !!$('city').value.trim()
+    };
+    var keys = Object.keys(checks);
+    var done = keys.filter(function (k) { return checks[k]; }).length;
+    var pct = Math.round(done / keys.length * 100);
+    $('progressRing').style.setProperty('--pct', pct + '%');
+    $('progressLabel').textContent = pct + '%';
+    $('progressMeter').setAttribute('aria-label', 'Profile completeness ' + pct + ' percent');
+    document.querySelectorAll('#checkList li').forEach(function (li) {
+      li.classList.toggle('is-done', !!checks[li.dataset.check]);
+    });
   }
-  ['preferredSubjects', 'preferredGrade', 'address', 'city'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateProgress);
+  ['preferredSubjects', 'preferredGrade', 'address', 'city'].forEach(function (id) {
+    $(id).addEventListener('input', function () { markDirty(); updateProgress(); });
   });
 
-  async function loadExisting() {
-    try {
-      const s = await apiRequest(`/api/students/by-user/${session.user.id}`);
-      document.getElementById('preferredSubjects').value = s.preferred_subjects || '';
-      document.getElementById('preferredGrade').value = s.preferred_grade || '';
-      document.getElementById('address').value = s.address || '';
-      document.getElementById('city').value = s.city || '';
-      if (s.latitude && s.longitude) {
-        currentLat = s.latitude;
-        currentLng = s.longitude;
-        currentAddress = {
-          area: s.address || 'Location set',
-          district: s.city || '—',
-          pincode: s.pincode || '------',
-        };
-        renderLocation();
-      }
-    } catch (e) { /* new profile, nothing to pre-fill */ }
-    updateProgress();
-  }
-  loadExisting();
-
-  // ---------------- Profile photo ----------------  // ---------------- Profile photo ----------------
-  const photoPreview = document.getElementById('photoPreview');
-  photoPreview.textContent = session.user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-  // Load an already-uploaded photo (if any) instead of always showing
-  // initials — session.user doesn't carry profile_photo, so fetch it fresh.
-  (async () => {
-    try {
-      const me = await apiRequest('/api/auth/me');
-      if (me.user && me.user.profile_photo) {
-        photoPreview.innerHTML = `<img src="${photoUrl(me.user.profile_photo)}" alt="Profile photo">`;
-      }
-    } catch (e) { /* keep initials if this fails */ }
-  })();
-
-  document.getElementById('uploadPhotoBtn').addEventListener('click', async () => {
-    const file = document.getElementById('photoInput').files[0];
-    const photoMsgBox = document.getElementById('photoMsgBox');
-    if (!file) {
-      photoMsgBox.className = 'msg-box error';
-      photoMsgBox.textContent = 'Please choose a photo first.';
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('photo', file);
-
-    try {
-      const res = await apiFetch(`/api/students/${session.user.id}/photo`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed.');
-
-      photoPreview.innerHTML = `<img src="${photoUrl(data.path)}" alt="Profile photo">`;
-      photoMsgBox.className = 'msg-box success';
-      photoMsgBox.textContent = 'Photo updated.';
-      toast('Profile photo updated');
-    } catch (err) {
-      photoMsgBox.className = 'msg-box error';
-      photoMsgBox.textContent = err.message;
-    }
-  });
-
+  // ---------------- Location ----------------
   function renderLocation() {
-    const notSet = document.getElementById('locationNotSet');
-    const set = document.getElementById('locationSet');
+    var notSet = $('locationNotSet');
+    var set = $('locationSet');
     if (currentLat === null || !currentAddress) {
       notSet.style.display = 'flex';
       set.style.display = 'none';
@@ -275,307 +242,203 @@
     }
     notSet.style.display = 'none';
     set.style.display = 'flex';
-    document.getElementById('crumbArea').textContent = currentAddress.area || 'Unknown area';
-    document.getElementById('crumbDistrict').textContent = currentAddress.district || '—';
-    document.getElementById('crumbPincode').textContent = currentAddress.pincode || '------';
-    document.getElementById('locationStatus').textContent = 'Location set';
-    document.getElementById('locationStatus').classList.add('active');
+    $('crumbArea').textContent = currentAddress.area || 'Unknown area';
+    $('crumbDistrict').textContent = currentAddress.district || '—';
+    $('crumbPincode').textContent = currentAddress.pincode || '------';
   }
 
-  async function reverseGeocode(lat, lng) {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-    if (!res.ok) throw new Error('Could not look up that address.');
-    const data = await res.json();
-    const a = data.address || {};
-    const displayArea = data.display_name ? data.display_name.split(',')[0].trim() : 'Unknown area';
-    return {
-      area: a.suburb || a.neighbourhood || a.residential || a.hamlet || a.quarter ||
-            a.village || a.town || a.city_district || a.municipality || a.road || a.city || displayArea,
-      district: a.state_district || a.county || a.city || a.state || '—',
-      pincode: a.postcode || '------',
-      display: data.display_name || '',
-    };
-  }
+  var picker = TLLocationPicker.create({
+    getCurrent: function () { return currentLat !== null ? { lat: currentLat, lng: currentLng } : null; },
+    notify: toast,
+    onConfirm: async function (lat, lng) {
+      await applyLocation(lat, lng);
+      toast('Location updated');
+    }
+  });
 
-  // ---- THE FIX: applyLocation now updates address/city fields and
-  // re-renders the location trail — this was missing before, which is
-  // why confirming a pin didn't visibly do anything. ----
   async function applyLocation(lat, lng) {
+    var addr = null;
+    try { addr = await picker.reverseGeocode(lat, lng); } catch (e) { /* the pin is still usable without an address */ }
     currentLat = lat;
     currentLng = lng;
-    try {
-      currentAddress = await reverseGeocode(lat, lng);
-    } catch (e) {
-      currentAddress = { area: 'Location set', district: '—', pincode: '------', display: '' };
+    currentAddress = addr || { area: 'Location set', district: '—', pincode: '------', display: '' };
+    // Only overwrite what the person typed when the lookup really gave us something.
+    if (addr) {
+      $('address').value = addr.area;
+      if (addr.district && addr.district !== '—') $('city').value = addr.district;
     }
-    document.getElementById('address').value = currentAddress.area;
-    document.getElementById('city').value = currentAddress.district;
+    markDirty();
     renderLocation();
     updateProgress();
   }
 
-  // ---- GPS: high accuracy fetch, confirmed visually on the map ----
-  function useCurrentLocation(btn) {
-    const status = document.getElementById('locationStatus');
-    if (!navigator.geolocation) {
-      status.textContent = 'Geolocation not supported by your browser.';
+  $('useLocationBtn').addEventListener('click', function (e) { picker.useGps(e.currentTarget, $('locationStatus')); });
+  $('useLocationBtn2').addEventListener('click', function (e) { picker.useGps(e.currentTarget, $('locationStatus')); });
+  $('openMapBtnEmpty').addEventListener('click', function () { picker.open(); });
+  $('openMapBtnSet').addEventListener('click', function () { picker.open(); });
+
+  // ---------------- Load existing data ----------------
+  async function loadExisting() {
+    try {
+      var s = await apiRequest('/api/students/by-user/' + encodeURIComponent(USER.id));
+      $('preferredSubjects').value = s.preferred_subjects || '';
+      $('preferredGrade').value = s.preferred_grade || '';
+      $('address').value = s.address || '';
+      $('city').value = s.city || '';
+      var lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
+      if (isFinite(lat) && isFinite(lng)) {
+        currentLat = lat;
+        currentLng = lng;
+        currentAddress = {
+          area: s.area || s.address || 'Location set',
+          district: s.district || s.city || '—',
+          pincode: s.pincode || '------',
+          display: ''
+        };
+        renderLocation();
+      }
+    } catch (e) { /* a brand-new profile has nothing to pre-fill */ }
+    updateProgress();
+  }
+
+  // ---------------- Photo ----------------
+  var photoPreview = $('photoPreview');
+  photoPreview.textContent = initials(USER.name);
+
+  function showPhoto(src) {
+    photoPreview.textContent = '';
+    var img = document.createElement('img');
+    img.alt = '';
+    img.src = src;
+    photoPreview.appendChild(img);
+  }
+
+  (async function () {
+    try {
+      var me = await apiRequest('/api/auth/me');
+      if (me.user && me.user.profile_photo) {
+        showPhoto(photoUrl(me.user.profile_photo));
+        hasPhoto = true;
+        updateProgress();
+      }
+    } catch (e) { /* keep the initials */ }
+  })();
+
+  var MAX_PHOTO = 2 * 1024 * 1024; // the server rejects larger photos
+  var PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  var previewUrl = null;
+
+  $('photoInput').addEventListener('change', function () {
+    var file = $('photoInput').files[0];
+    var box = $('photoMsgBox');
+    $('uploadPhotoBtn').disabled = true;
+    showMsg(box, '', '');
+    if (!file) { $('photoName').textContent = 'JPG, PNG or WebP, up to 2 MB'; return; }
+    if (PHOTO_TYPES.indexOf(file.type) === -1) {
+      showMsg(box, 'error', 'Please choose a JPG, PNG or WebP image.');
+      $('photoInput').value = '';
+      $('photoName').textContent = 'JPG, PNG or WebP, up to 2 MB';
       return;
     }
+    if (file.size > MAX_PHOTO) {
+      showMsg(box, 'error', 'That photo is larger than 2 MB. Please choose a smaller one.');
+      $('photoInput').value = '';
+      $('photoName').textContent = 'JPG, PNG or WebP, up to 2 MB';
+      return;
+    }
+    $('photoName').textContent = file.name;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    showPhoto(previewUrl);
+    $('uploadPhotoBtn').disabled = false;
+  });
+
+  $('uploadPhotoBtn').addEventListener('click', async function () {
+    var file = $('photoInput').files[0];
+    var box = $('photoMsgBox');
+    var btn = $('uploadPhotoBtn');
+    if (!file) { showMsg(box, 'error', 'Please choose a photo first.'); return; }
+
+    var formData = new FormData();
+    formData.append('photo', file);
     btn.disabled = true;
     btn.classList.add('btn-loading');
-    status.textContent = 'Getting a precise GPS fix…';
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        btn.disabled = false;
-        btn.classList.remove('btn-loading');
-        const { latitude, longitude, accuracy } = position.coords;
-        openMapModal({
-          lat: latitude,
-          lng: longitude,
-          accuracy,
-          title: 'Confirm your exact location',
-          sub: 'We centred the pin on your GPS fix. Drag it to your exact doorstep for the best match accuracy.',
-        });
-      },
-      (err) => {
-        btn.disabled = false;
-        btn.classList.remove('btn-loading');
-        const messages = {
-          1: 'Location access denied. Please allow location permission for this site in your browser settings.',
-          2: 'Could not detect your location right now. Please try again, or set it manually on the map.',
-          3: 'Location request timed out. Please try again, ideally outdoors or near a window.',
-        };
-        status.textContent = messages[err.code] || 'Could not get your location. Please set it manually on the map.';
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
-  }
-
-  document.getElementById('useLocationBtn').addEventListener('click', (e) => useCurrentLocation(e.currentTarget));
-
-  // ---------------- Map picker modal ----------------
-  let map, marker, accuracyCircle, pendingLat, pendingLng, geocodeTimer;
-
-  const pinIcon = L.divIcon({
-    className: 'custom-pin',
-    html: `<svg width="32" height="42" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 0C7.6 0 0 7.6 0 17c0 12.7 17 27 17 27s17-14.3 17-27C34 7.6 26.4 0 17 0z" fill="#7C5CFC"/>
-      <circle cx="17" cy="17" r="7" fill="#fff"/>
-    </svg>`,
-    iconSize: [32, 42],
-    iconAnchor: [16, 42],
-  });
-
-  function setAccuracyNote(accuracy) {
-    const note = document.getElementById('accuracyNote');
-    if (!accuracy) { note.style.display = 'none'; return; }
-    note.style.display = 'flex';
-    const meters = Math.round(accuracy);
-    if (meters <= 30) {
-      note.className = 'accuracy-note good';
-      note.innerHTML = `✓ GPS accuracy: ~${meters}m — this pin should already be very close.`;
-    } else if (meters <= 100) {
-      note.className = 'accuracy-note fair';
-      note.innerHTML = `⚠ GPS accuracy: ~${meters}m — drag the pin to your exact spot for best results.`;
-    } else {
-      note.className = 'accuracy-note poor';
-      note.innerHTML = `⚠ GPS accuracy: ~${meters}m (weak signal) — please drag the pin precisely onto your location.`;
-    }
-  }
-
-  function openMapModal(opts) {
-    opts = opts || {};
-    document.getElementById('mapModalBackdrop').classList.add('open');
-    document.getElementById('mapModalTitle').textContent = opts.title || 'Set your location';
-    document.getElementById('mapModalSub').textContent = opts.sub || 'Drag the pin, or click anywhere on the map, to place it exactly.';
-
-    const startLat = opts.lat ?? currentLat ?? DEFAULT_CENTER[0];
-    const startLng = opts.lng ?? currentLng ?? DEFAULT_CENTER[1];
-    const zoom = opts.lat ? 17 : 14;
-
-    if (!map) {
-      map = L.map('pickerMap').setView([startLat, startLng], zoom);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(map);
-      marker = L.marker([startLat, startLng], { draggable: true, icon: pinIcon }).addTo(map);
-      marker.on('dragend', () => {
-        const p = marker.getLatLng();
-        clearAccuracyCircle();
-        previewLocation(p.lat, p.lng);
-      });
-      map.on('click', (e) => {
-        marker.setLatLng(e.latlng);
-        clearAccuracyCircle();
-        previewLocation(e.latlng.lat, e.latlng.lng);
-      });
-    } else {
-      map.setView([startLat, startLng], zoom);
-      marker.setLatLng([startLat, startLng]);
-      setTimeout(() => map.invalidateSize(), 60);
-    }
-
-    clearAccuracyCircle();
-    if (opts.accuracy) {
-      accuracyCircle = L.circle([startLat, startLng], {
-        radius: opts.accuracy,
-        color: '#1F6E4A',
-        fillColor: '#1F6E4A',
-        fillOpacity: 0.12,
-        weight: 1,
-      }).addTo(map);
-      setAccuracyNote(opts.accuracy);
-    } else {
-      setAccuracyNote(null);
-    }
-
-    previewLocation(startLat, startLng);
-  }
-
-  function clearAccuracyCircle() {
-    if (accuracyCircle) { map.removeLayer(accuracyCircle); accuracyCircle = null; }
-    setAccuracyNote(null);
-  }
-
-  function previewLocation(lat, lng) {
-    pendingLat = lat;
-    pendingLng = lng;
-    const box = document.getElementById('mapPickedAddress');
-    box.textContent = 'Looking up address…';
-    clearTimeout(geocodeTimer);
-    geocodeTimer = setTimeout(async () => {
-      try {
-        const addr = await reverseGeocode(lat, lng);
-        box.textContent = `${addr.area}, ${addr.district} — ${addr.pincode}`;
-      } catch (e) {
-        box.textContent = 'Pin placed — address lookup failed, but the location is still usable.';
-      }
-    }, 450);
-  }
-
-  function closeMapModal() {
-    document.getElementById('mapModalBackdrop').classList.remove('open');
-  }
-
-  document.getElementById('openMapBtnEmpty').addEventListener('click', () => openMapModal());
-  document.getElementById('openMapBtnSet').addEventListener('click', () => openMapModal());
-  document.getElementById('mapModalClose').addEventListener('click', closeMapModal);
-  document.getElementById('mapModalCancel').addEventListener('click', closeMapModal);
-
-  document.getElementById('mapModalConfirm').addEventListener('click', async () => {
-    if (pendingLat == null) return;
-    const confirmBtn = document.getElementById('mapModalConfirm');
-    confirmBtn.disabled = true;
-    confirmBtn.classList.add('btn-loading');
-    await applyLocation(pendingLat, pendingLng);
-    confirmBtn.disabled = false;
-    confirmBtn.classList.remove('btn-loading');
-    closeMapModal();
-    toast('Location updated');
-  });
-
-  document.getElementById('mapSearchBtn').addEventListener('click', doMapSearch);
-  document.getElementById('mapSearchInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); doMapSearch(); }
-  });
-
-  async function doMapSearch() {
-    const q = document.getElementById('mapSearchInput').value.trim();
-    if (!q) return;
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
-      const results = await res.json();
-      if (results.length === 0) { toast('No matching place found.', true); return; }
-      const { lat, lon } = results[0];
-      map.setView([lat, lon], 16);
-      marker.setLatLng([lat, lon]);
-      clearAccuracyCircle();
-      previewLocation(parseFloat(lat), parseFloat(lon));
-    } catch (e) {
-      toast('Search failed. Please try again.', true);
+      var res = await apiFetch('/api/students/' + encodeURIComponent(USER.id) + '/photo', { method: 'POST', body: formData });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* not JSON */ }
+      if (!res.ok) throw new Error((data && (data.error || data.message)) || 'Upload failed.');
+      showPhoto(photoUrl(data.path));
+      hasPhoto = true;
+      updateProgress();
+      showMsg(box, 'success', 'Photo updated.');
+      toast('Profile photo updated');
+      $('photoInput').value = '';
+      $('photoName').textContent = 'JPG, PNG or WebP, up to 2 MB';
+    } catch (err) {
+      showMsg(box, 'error', err.message);
+      btn.disabled = false;
+    } finally {
+      btn.classList.remove('btn-loading');
     }
-  }
-
-  document.getElementById('mapLocateBtn').addEventListener('click', function () {
-    const btn = this;
-    if (!navigator.geolocation) { toast('Geolocation not supported by your browser.', true); return; }
-    btn.classList.add('loading');
-    btn.textContent = '…';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        btn.classList.remove('loading');
-        btn.textContent = '📍';
-        const { latitude, longitude, accuracy } = position.coords;
-        map.setView([latitude, longitude], 17);
-        marker.setLatLng([latitude, longitude]);
-        clearAccuracyCircle();
-        accuracyCircle = L.circle([latitude, longitude], {
-          radius: accuracy, color: '#1F6E4A', fillColor: '#1F6E4A', fillOpacity: 0.12, weight: 1,
-        }).addTo(map);
-        setAccuracyNote(accuracy);
-        previewLocation(latitude, longitude);
-      },
-      () => {
-        btn.classList.remove('loading');
-        btn.textContent = '📍';
-        toast('Could not fetch your location. Please drag the pin manually.', true);
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
   });
 
-  // =====================================================
-  // Save profile
-  // =====================================================
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  // ---------------- Save ----------------
+  $('profileForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    msgBox.className = 'msg-box';
-    const saveBtn = document.getElementById('saveBtn');
+    if (saving) return;
+    showMsg(msgBox, '', '');
+    var saveBtn = $('saveBtn');
 
     if (currentLat === null) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'Please set your live location so we can find nearby teachers.';
+      showMsg(msgBox, 'error', 'Please set your location so we can find nearby teachers.');
+      msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
 
+    saving = true;
     saveBtn.disabled = true;
     saveBtn.classList.add('btn-loading');
-
     try {
-      await apiRequest(`/api/students/${session.user.id}/preferences`, 'PUT', {
-        preferred_subjects: document.getElementById('preferredSubjects').value.trim(),
-        preferred_grade: document.getElementById('preferredGrade').value.trim()
+      var addressValue = $('address').value.trim();
+      var cityValue = $('city').value.trim();
+      var pincode = currentAddress && /^\d{4,10}$/.test(String(currentAddress.pincode)) ? String(currentAddress.pincode) : '';
+
+      await apiRequest('/api/students/' + encodeURIComponent(USER.id) + '/preferences', 'PUT', {
+        preferred_subjects: $('preferredSubjects').value.trim(),
+        preferred_grade: $('preferredGrade').value.trim()
       });
 
-      const addressValue = document.getElementById('address').value.trim();
-      const cityValue = document.getElementById('city').value.trim();
-
-      await apiRequest(`/api/students/${session.user.id}/location`, 'PUT', {
+      await apiRequest('/api/students/' + encodeURIComponent(USER.id) + '/location', 'PUT', {
         address: addressValue,
         city: cityValue,
-        // Fall back to a short slice of the address (not the whole thing) —
-        // "area" is a VARCHAR(150) column and a full address can easily be longer.
-        area: currentAddress ? currentAddress.area : addressValue.slice(0, 140),
+        // "area" is a VARCHAR(150) column, so never send the whole address when no pin address exists.
+        area: currentAddress && currentAddress.area ? currentAddress.area : addressValue.slice(0, 140),
         district: cityValue,
-        pincode: currentAddress ? currentAddress.pincode : '',
+        pincode: pincode,
         latitude: currentLat,
         longitude: currentLng
       });
 
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = 'Profile saved! Redirecting to your dashboard...';
-      setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 900);
+      dirty = false;
+      showMsg(msgBox, 'success', 'Profile saved! Taking you to your dashboard…');
+      $('saveNote').textContent = 'Saved.';
+      setTimeout(function () { window.location.href = 'student-dashboard.html'; }, 900);
     } catch (err) {
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message;
+      showMsg(msgBox, 'error', err.message);
+      msgBox.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      saving = false;
       saveBtn.disabled = false;
       saveBtn.classList.remove('btn-loading');
     }
   });
-</script>
 
+  window.addEventListener('beforeunload', function (e) {
+    if (dirty && !saving) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  loadExisting();
+})();
+</script>
 </body>
 </html>
