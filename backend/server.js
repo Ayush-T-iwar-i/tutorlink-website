@@ -34,6 +34,7 @@ const favoriteRoutes = require('./routes/favorite.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const reportRoutes = require('./routes/report.routes');
 const enrollmentRoutes = require('./routes/enrollment.routes');
+const myStudentsRoutes = require('./routes/my-students.routes');
 const courseRoutes = require('./routes/course.routes');
 
 const app = express();
@@ -152,6 +153,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/my-students', myStudentsRoutes);
 app.use('/api/courses', courseRoutes);
 
 app.get('/health', async (req, res) => {
