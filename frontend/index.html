@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TutorLink — Home Tuition, Matched by Real Distance</title>
 <meta name="description" content="Find ID-checked home tutors near you. Search by distance, book a free demo class and chat with your teacher on TutorLink.">
+<meta name="theme-color" content="#0A0A0F">
 <link rel="canonical" href="https://tutorlink.com/">
 
 <!-- Open Graph -->
@@ -21,10 +22,25 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&display=swap">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/index.css">
+
+<!-- Decide the mode before first paint so the page never flashes the wrong layout.
+     js/index.js repeats this check and keeps it up to date on resize. -->
+<script>
+  (function () {
+    try {
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduced && window.innerWidth >= 320 && window.innerHeight >= 520) {
+        document.documentElement.classList.add('ix-book-on');
+      }
+    } catch (e) { /* static mode is the safe default */ }
+  })();
+</script>
 </head>
-<body>
+<body class="ix">
 
 <a class="skip-link" href="#main">Skip to content</a>
 
@@ -55,243 +71,299 @@
 
 <main id="main">
 
-<!-- ---------------- Hero ---------------- -->
-<section class="hero" aria-labelledby="heroHeading">
-  <div class="container">
-    <div>
-      <div class="eyebrow">Home tuition, matched by distance</div>
-      <h1 id="heroHeading">Find a home tutor near you, not across town.</h1>
-      <p class="lead">Search by distance from your home, book a free demo class, and chat with the teacher once they accept. Our team reviews every teacher's ID and qualifications before they appear in search.</p>
+<!-- Shared gradients and filters for the illustrations. Kept outside the chapters because the
+     book copies the chapters and ids must stay unique. Do not use display:none on this element. -->
+<svg class="ix-defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <linearGradient id="ixgSlab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF6EA"/><stop offset="1" stop-color="#E4D9BF"/></linearGradient>
+    <linearGradient id="ixgGrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#DBEDCF"/><stop offset="1" stop-color="#B3D5A3"/></linearGradient>
+    <linearGradient id="ixgWater" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D4E9F2"/><stop offset="1" stop-color="#A5CCDF"/></linearGradient>
+    <linearGradient id="ixgViolet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A18BFF"/><stop offset="1" stop-color="#6D4DF2"/></linearGradient>
+    <linearGradient id="ixgShieldFace" x1="0.1" y1="0" x2="0.9" y2="1"><stop offset="0" stop-color="#B39FFF"/><stop offset="0.5" stop-color="#6D4DF2"/><stop offset="1" stop-color="#3F2AA8"/></linearGradient>
+    <linearGradient id="ixgGoldG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE8AE"/><stop offset="0.55" stop-color="#D9AE4B"/><stop offset="1" stop-color="#9C7220"/></linearGradient>
+    <linearGradient id="ixgGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="ixgPinCoral" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFB8A6"/><stop offset="0.55" stop-color="#E0674F"/><stop offset="1" stop-color="#A63B28"/></radialGradient>
+    <radialGradient id="ixgPinGrey" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#DDD7C8"/><stop offset="0.6" stop-color="#9A9384"/><stop offset="1" stop-color="#6E685B"/></radialGradient>
+    <radialGradient id="ixgGlowGold" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F6DE9B" stop-opacity="0.45"/><stop offset="1" stop-color="#D9AE4B" stop-opacity="0"/></radialGradient>
+    <clipPath id="ixClipShield"><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z"/></clipPath>
+    <filter id="ixShadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="4"/><feOffset dy="6" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+</svg>
 
-      <div class="hero-actions">
-        <a href="signup.html?role=student" class="btn btn-primary btn-lg" id="heroCta1">Find a tutor near me</a>
-        <a href="signup.html?role=teacher" class="btn btn-outline btn-lg" id="heroCta2">Apply as a teacher</a>
-      </div>
-
-      <div class="hero-stats" aria-label="Key facts">
-        <div>
-          <span class="stat-num">3–15 km</span>
-          <span class="stat-label">Search radius you choose</span>
-        </div>
-        <div>
-          <span class="stat-num">ID-checked</span>
-          <span class="stat-label">Documents reviewed before listing</span>
-        </div>
-        <div>
-          <span class="stat-num">₹0</span>
-          <span class="stat-label">Demo class fee</span>
+<!-- ===========================================================
+     THE BOOK (book mode). js/index.js fills #ixLeaves from the chapters below.
+     =========================================================== -->
+<div class="ix-track" id="ixTrack">
+  <div class="ix-stage" id="ixStage">
+    <div class="ix-float is-closed" id="ixFloat">
+      <div class="ix-fit" id="ixFit">
+        <div class="ix-book" id="ixBook" role="group" aria-label="TutorLink guide, a book that opens as you scroll">
+          <div class="ix-base" id="ixBase"></div>
+          <div class="ix-leaves" id="ixLeaves"></div>
         </div>
       </div>
     </div>
 
-    <!-- Radius visual: the student sits at the centre; tutors inside the chosen radius are matched -->
-    <div class="radius-visual" role="img" aria-label="Diagram: a student at the centre, four tutors inside a 5 kilometre radius, and three tutors outside it">
-      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <defs>
-          <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#7C5CFC" stop-opacity="0.32"/>
-            <stop offset="100%" stop-color="#7C5CFC" stop-opacity="0.02"/>
-          </radialGradient>
-        </defs>
-        <circle cx="200" cy="200" r="160" fill="url(#radarGlow)"/>
-        <circle class="ring" cx="200" cy="200" r="90"></circle>
-        <circle class="ring" cx="200" cy="200" r="150"></circle>
-
-        <text class="ring-label" x="200" y="104" text-anchor="middle">5 km</text>
-        <text class="ring-label" x="200" y="44" text-anchor="middle">10 km</text>
-
-        <circle class="center-pin" cx="200" cy="200" r="8"></circle>
-        <circle cx="200" cy="200" r="16" fill="none" stroke="#7C5CFC" stroke-width="1.5" opacity="0.7"/>
-        <text class="ring-label" x="200" y="180" text-anchor="middle" font-weight="700" fill="#ECECF2">You</text>
-
-        <g class="matched-group">
-          <circle class="tutor-pin" cx="240" cy="155" r="6"></circle>
-          <circle class="tutor-pin" cx="145" cy="245" r="6"></circle>
-          <circle class="tutor-pin" cx="225" cy="255" r="6"></circle>
-          <circle class="tutor-pin" cx="155" cy="160" r="6"></circle>
-        </g>
-
-        <circle class="tutor-pin out" cx="330" cy="120" r="5.5"></circle>
-        <circle class="tutor-pin out" cx="70" cy="310" r="5.5"></circle>
-        <circle class="tutor-pin out" cx="340" cy="300" r="5.5"></circle>
-      </svg>
+    <div class="ix-controls" id="ixControls">
+      <button type="button" class="ix-ctl" id="ixPrev" aria-label="Previous page" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <span class="ix-label" id="ixLabel">Scroll to open the book</span>
+      <button type="button" class="ix-ctl" id="ixNext" aria-label="Next page">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <a class="ix-skip" href="#subjects">Skip the book</a>
     </div>
   </div>
-</section>
+</div>
 
-<!-- ---------------- How it works ---------------- -->
-<section class="process" id="how-it-works" aria-labelledby="processHeading">
-  <div class="container">
-    <div class="lp-head">
-      <h2 id="processHeading">From search to your first class in three steps</h2>
-      <p>Students and teachers deal with each other directly. You see the fee, the qualifications and the ratings before you book.</p>
-    </div>
+<!-- ===========================================================
+     CHAPTERS — the real content. Shown as stacked cards in static mode,
+     and copied into the book's pages in book mode.
+     Keep ids out of the .ix-left / .ix-right blocks (they are cloned).
+     =========================================================== -->
+<div class="ix-source" id="ixSource">
 
-    <div class="process-steps">
-      <div class="process-step">
-        <span class="step-num" aria-hidden="true">01</span>
-        <h3>Set your location</h3>
-        <p>Use your device's location or place a pin on the map, then pick a search radius from 3 to 15 km.</p>
+  <!-- Cover -->
+  <div class="ix-cover-src" data-cover>
+    <div class="ix-cover">
+      <div class="ix-cover-gloss"></div>
+      <div class="ix-cover-frame">
+        <svg class="ix-corner ix-c-tl" viewBox="0 0 30 30" aria-hidden="true" focusable="false"><path d="M2 28V9Q2 2 9 2H28" fill="none" stroke="#D9AE4B" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="#D9AE4B"/></svg>
+        <svg class="ix-corner ix-c-tr" viewBox="0 0 30 30" aria-hidden="true" focusable="false"><path d="M2 28V9Q2 2 9 2H28" fill="none" stroke="#D9AE4B" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="#D9AE4B"/></svg>
+        <svg class="ix-corner ix-c-bl" viewBox="0 0 30 30" aria-hidden="true" focusable="false"><path d="M2 28V9Q2 2 9 2H28" fill="none" stroke="#D9AE4B" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="#D9AE4B"/></svg>
+        <svg class="ix-corner ix-c-br" viewBox="0 0 30 30" aria-hidden="true" focusable="false"><path d="M2 28V9Q2 2 9 2H28" fill="none" stroke="#D9AE4B" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="2" fill="#D9AE4B"/></svg>
+
+        <p class="ix-cover-top">A guide to home tuition</p>
+
+        <div class="ix-emblem">
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <circle class="ix-glow" cx="100" cy="100" r="62" fill="url(#ixgGlowGold)"/>
+            <g class="ix-spin-a" fill="none" stroke="#D9AE4B" stroke-linecap="round">
+              <circle cx="100" cy="100" r="92" stroke-dasharray="1 7" stroke-width="2.6"/>
+            </g>
+            <g class="ix-spin-b" fill="none" stroke="#D9AE4B" stroke-linecap="round">
+              <circle cx="100" cy="100" r="68" stroke-dasharray="4 6" stroke-width="1.6"/>
+              <circle cx="100" cy="32" r="4.5" fill="#F6DE9B" stroke="none"/>
+              <circle cx="168" cy="100" r="3.2" fill="#D9AE4B" stroke="none"/>
+              <circle cx="52" cy="148" r="3.6" fill="#F6DE9B" stroke="none"/>
+            </g>
+            <circle cx="100" cy="100" r="44" fill="rgba(217,174,75,0.08)" stroke="#D9AE4B" stroke-width="1.8"/>
+            <g class="ix-bookicon" fill="none" stroke="#F6DE9B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M100 96c-13-8-30-8-44-2v40c14-6 31-6 44 2 13-8 30-8 44-2V94c-14-6-31-6-44 2z" fill="rgba(217,174,75,0.2)"/>
+              <path d="M100 96v40"/>
+              <path d="M66 104c9-2 17-1 26 3M66 114c9-2 17-1 26 3M134 104c-9-2-17-1-26 3M134 114c-9-2-17-1-26 3" stroke-width="1.4" opacity=".8"/>
+            </g>
+            <g fill="#F6DE9B">
+              <path class="ix-twinkle" style="animation-delay:0s" d="M100 14l2.8 6.4 6.4 2.8-6.4 2.8L100 32.4l-2.8-6.4-6.4-2.8 6.4-2.8z"/>
+              <path class="ix-twinkle" style="animation-delay:.9s" d="M172 56l1.8 4 4 1.8-4 1.8-1.8 4-1.8-4-4-1.8 4-1.8z"/>
+              <path class="ix-twinkle" style="animation-delay:1.7s" d="M30 150l1.8 4 4 1.8-4 1.8-1.8 4-1.8-4-4-1.8 4-1.8z"/>
+            </g>
+          </svg>
+        </div>
+
+        <div>
+          <p class="ix-cover-title">Tutor<em>Link</em></p>
+          <p class="ix-cover-sub">Find a tutor near your home</p>
+        </div>
+        <div class="ix-cover-bottom">
+          <p class="ix-cover-foot">Matched by real distance</p>
+          <!-- Gold seal: only states things the product really does -->
+          <div class="ix-seal" aria-hidden="true">
+            <svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <polygon points="30,70 12,124 34,112 46,128 52,76" fill="#A87C25"/>
+              <polygon points="70,70 88,124 66,112 54,128 48,76" fill="#C8962E"/>
+              <polygon points="50.0,6.0 56.6,12.6 65.0,8.7 69.0,17.1 78.3,16.3 79.1,25.6 88.1,28.0 85.7,37.0 93.3,42.4 88.0,50.0 93.3,57.6 85.7,63.0 88.1,72.0 79.1,74.4 78.3,83.7 69.0,82.9 65.0,91.3 56.6,87.4 50.0,94.0 43.4,87.4 35.0,91.3 31.0,82.9 21.7,83.7 20.9,74.4 11.9,72.0 14.3,63.0 6.7,57.6 12.0,50.0 6.7,42.4 14.3,37.0 11.9,28.0 20.9,25.6 21.7,16.3 31.0,17.1 35.0,8.7 43.4,12.6" fill="url(#ixgGoldG)" filter="url(#ixShadow)"/>
+              <circle cx="50" cy="50" r="31" fill="none" stroke="#7A5A12" stroke-opacity=".55" stroke-width="1.4"/>
+              <circle cx="50" cy="50" r="27" fill="none" stroke="#FFF2C2" stroke-opacity=".7" stroke-width="1"/>
+              <path d="M50 22l2.2 5 5.2.5-4 3.4 1.2 5.2-4.6-2.8-4.6 2.8 1.2-5.2-4-3.4 5.2-.5z" fill="#7A5A12"/>
+              <text x="50" y="52" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.4" font-weight="700" fill="#5E440C" letter-spacing=".4">ID-CHECKED</text>
+              <text x="50" y="63" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.4" font-weight="700" fill="#5E440C" letter-spacing=".4">TUTORS</text>
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div class="process-step">
-        <span class="step-num" aria-hidden="true">02</span>
-        <h3>Book a free demo</h3>
-        <p>Compare qualifications, hourly fees and ratings, then request a demo class in one of the teacher's open time slots.</p>
+            
+    </div>
+  </div>
+
+  <!-- Spread 0: Contents | Preface -->
+  <section class="ix-chapter" id="preface" data-title="Preface">
+    <div class="ix-left">
+      <p class="ix-kicker">Contents</p>
+      <h2 class="ix-h">What is inside</h2>
+      <ol class="ix-toc">
+        <li><a href="#how-it-works"><span class="num">I</span>Set your location<span class="dots"></span><span class="pg">3</span></a></li>
+        <li><a href="#demo"><span class="num">II</span>Book a free demo<span class="dots"></span><span class="pg">5</span></a></li>
+        <li><a href="#learn"><span class="num">III</span>Learn with your teacher<span class="dots"></span><span class="pg">7</span></a></li>
+        <li><a href="#safety"><span class="num">IV</span>How we keep it safe<span class="dots"></span><span class="pg">9</span></a></li>
+        <li><a href="#teach"><span class="num">V</span>For teachers<span class="dots"></span><span class="pg">11</span></a></li>
+        <li><a href="#subjects"><span class="num">VI</span>The bookshelf<span class="dots"></span><span class="pg">—</span></a></li>
+        <li><a href="#faq"><span class="num">VII</span>Questions<span class="dots"></span><span class="pg">—</span></a></li>
+      </ol>
+    </div>
+    <div class="ix-right">
+      <span class="ix-ribbon" aria-hidden="true"></span>
+      <p class="ix-kicker">Preface</p>
+      <h1 class="ix-h1">Find a home tutor near you, not across town.</h1>
+      <div class="ix-rule"></div>
+      <p class="ix-lead">Search by distance from your home, book a free demo class, and chat with the teacher once they accept. Our team reviews every teacher's ID and qualifications before they appear in search.</p>
+      <div class="ix-actions">
+        <a href="signup.html?role=student" class="ix-btn ix-btn-primary" id="heroCta1">Find a tutor near me</a>
+        <a href="signup.html?role=teacher" class="ix-btn" id="heroCta2">Apply as a teacher</a>
       </div>
+      <dl class="ix-facts" aria-label="Key facts">
+        <div><dt>3–15 km</dt><dd>Search radius you choose</dd></div>
+        <div><dt>ID-checked</dt><dd>Documents reviewed before listing</dd></div>
+        <div><dt>₹0</dt><dd>Demo class fee</dd></div>
+      </dl>
+    </div>
+  </section>
 
-      <div class="process-step">
-        <span class="step-num" aria-hidden="true">03</span>
-        <h3>Continue with your teacher</h3>
-        <p>If the demo goes well, set up regular classes, pay online or in cash, and follow everything from your dashboard.</p>
+  <!-- Spread 1: Chapter I -->
+  <section class="ix-chapter" id="how-it-works" data-title="I · Set your location">
+    <div class="ix-left">
+      <div class="ix-art" role="img" aria-label="Illustration: a map with a student's home at the centre, four tutors inside a 5 kilometre ring and three outside a 10 kilometre ring">
+        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><ellipse cx="220" cy="310" rx="150" ry="34" fill="#000" opacity=".12"/><polygon points="14.1,226.0 220.0,329.0 220.0,349.8 14.1,246.8" fill="#C9BC9A" /><polygon points="220.0,329.0 425.9,226.0 425.9,246.8 220.0,349.8" fill="#A99B76" /><g transform="matrix(0.9192 0.4596 -0.9192 0.4596 220.0 226.0)"><rect x="-112" y="-112" width="224" height="224" rx="8" fill="url(#ixgSlab)"/><rect x="-104" y="-104" width="62" height="44" rx="8" fill="url(#ixgGrass)"/><rect x="48" y="52" width="54" height="50" rx="8" fill="url(#ixgGrass)"/><path d="M-112 40 C-70 20 -30 62 20 44 S88 14 112 30 V58 C88 42 50 74 20 72 S-70 52 -112 68Z" fill="url(#ixgWater)"/><g stroke="#FFFDF6" stroke-width="9" stroke-linecap="round" fill="none"><path d="M-112 -20H112"/><path d="M-20 -112V112"/><path d="M60 -112V112"/><path d="M-112 -72H112"/></g><circle cx="0" cy="0" r="96" fill="#6D4DF2" fill-opacity=".07" stroke="#6D4DF2" stroke-width="2" stroke-dasharray="7 6"/><circle cx="0" cy="0" r="52" fill="#6D4DF2" fill-opacity=".14" stroke="#6D4DF2" stroke-width="2.4" stroke-dasharray="7 6"/><circle class="ix-ping" cx="0" cy="0" r="16" fill="none" stroke="#6D4DF2" stroke-width="2.4"/></g><ellipse cx="197.9" cy="194.7" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:0.5s"><polygon points="195.7,176.7 200.1,176.7 197.9,194.7" fill="#6b6659" opacity=".85"/><circle cx="197.9" cy="167.7" r="11" fill="url(#ixgPinCoral)"/><circle cx="197.9" cy="167.7" r="4" fill="#fff" opacity=".95"/><circle cx="193.9" cy="162.7" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="78.4" cy="212.2" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:0.2s"><polygon points="76.2,194.2 80.6,194.2 78.4,212.2" fill="#6b6659" opacity=".85"/><circle cx="78.4" cy="185.2" r="11" fill="url(#ixgPinGrey)"/><circle cx="78.4" cy="185.2" r="4" fill="#EDE6D6" opacity=".95"/><circle cx="74.4" cy="180.2" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="284.3" cy="221.4" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:0.0s"><polygon points="282.1,203.4 286.5,203.4 284.3,221.4" fill="#6b6659" opacity=".85"/><circle cx="284.3" cy="194.4" r="11" fill="url(#ixgPinCoral)"/><circle cx="284.3" cy="194.4" r="4" fill="#fff" opacity=".95"/><circle cx="280.3" cy="189.4" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="220" cy="230" rx="26" ry="11" fill="#000" opacity=".22"/><polygon points="194.3,194.8 220.0,207.7 220.0,238.9 194.3,226.0" fill="#EADFC4" /><polygon points="220.0,207.7 245.7,194.8 245.7,226.0 220.0,238.9" fill="#D2C5A6" /><polygon points="220.0,181.9 245.7,194.8 220.0,207.7 194.3,194.8" fill="#FFF8EA" /><polygon points="188.7,194.8 220.0,210.4 220.0,166.2" fill="#7E63FF" /><polygon points="220.0,210.4 251.3,194.8 220.0,166.2" fill="#4F36C4" /><rect x="210.5" y="228.0" width="7" height="11" rx="1.5" fill="#6D4DF2" opacity=".9"/><ellipse cx="365.2" cy="234.3" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:0.0s"><polygon points="363.0,216.3 367.4,216.3 365.2,234.3" fill="#6b6659" opacity=".85"/><circle cx="365.2" cy="207.3" r="11" fill="url(#ixgPinGrey)"/><circle cx="365.2" cy="207.3" r="4" fill="#EDE6D6" opacity=".95"/><circle cx="361.2" cy="202.3" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="152.0" cy="239.8" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:1.0s"><polygon points="149.8,221.8 154.2,221.8 152.0,239.8" fill="#6b6659" opacity=".85"/><circle cx="152.0" cy="212.8" r="11" fill="url(#ixgPinCoral)"/><circle cx="152.0" cy="212.8" r="4" fill="#fff" opacity=".95"/><circle cx="148.0" cy="207.8" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="242.1" cy="268.3" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:1.5s"><polygon points="239.9,250.3 244.3,250.3 242.1,268.3" fill="#6b6659" opacity=".85"/><circle cx="242.1" cy="241.3" r="11" fill="url(#ixgPinCoral)"/><circle cx="242.1" cy="241.3" r="4" fill="#fff" opacity=".95"/><circle cx="238.1" cy="236.3" r="2.6" fill="#fff" opacity=".55"/></g><ellipse cx="190.6" cy="299.5" rx="10" ry="5" fill="#000" opacity=".22"/><g class="ix-bob" style="animation-delay:0.4s"><polygon points="188.4,281.5 192.8,281.5 190.6,299.5" fill="#6b6659" opacity=".85"/><circle cx="190.6" cy="272.5" r="11" fill="url(#ixgPinGrey)"/><circle cx="190.6" cy="272.5" r="4" fill="#EDE6D6" opacity=".95"/><circle cx="186.6" cy="267.5" r="2.6" fill="#fff" opacity=".55"/></g><g><rect x="248.8" y="253.9" width="50" height="20" rx="10" fill="#4A34B8" filter="url(#ixShadow)"/><text x="273.8" y="267.9" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#fff">5 km</text></g><g><rect x="289.2" y="274.1" width="50" height="20" rx="10" fill="#4A34B8" filter="url(#ixShadow)"/><text x="314.2" y="288.1" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#fff">10 km</text></g><g><rect x="178.0" y="327.0" width="84" height="22" rx="11" fill="#23212E" filter="url(#ixShadow)"/><text x="220.0" y="342.1" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#fff">Your home</text></g></svg>
+      </div>
+      <p class="ix-caption">Fig. 1 — Tutors inside your radius are matched. Those outside are not.</p>
+    </div>
+    <div class="ix-right">
+      <p class="ix-kicker">Chapter I</p>
+      <h2 class="ix-h">Set your location</h2>
+      <div class="ix-rule"></div>
+      <p class="ix-lead">Use your device's location or place a pin on the map, then pick how far you are willing to go.</p>
+      <ul class="ix-list">
+        <li>Choose a search radius from <strong>3 to 15 km</strong></li>
+        <li>Filter by subject, city, rating and hourly fee</li>
+        <li class="ix-more">Only teachers approved by an admin appear in search</li>
+      </ul>
+      <p><a class="ix-link" href="teachers.html">Browse teachers →</a></p>
+    </div>
+  </section>
+
+  <!-- Spread 2: Chapter II -->
+  <section class="ix-chapter" id="demo" data-title="II · Book a free demo">
+    <div class="ix-left">
+      <div class="ix-art" role="img" aria-label="Illustration: a teacher's weekly open slots with one slot selected for a free demo class, and a chat message saying the request was accepted">
+        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><ellipse cx="220" cy="314" rx="180" ry="46" fill="#000" opacity=".12"/><polygon points="29.6,211.8 260.4,327.2 260.4,346.2 29.6,230.8" fill="#C9BC9A" /><polygon points="260.4,327.2 410.4,252.2 410.4,271.2 260.4,346.2" fill="#A99B76" /><g transform="matrix(0.9617 0.4808 -0.9617 0.4808 220.0 232.0)"><rect x="-120" y="-78" width="240" height="156" rx="8" fill="url(#ixgSlab)"/></g><polygon points="143.1,157.7 177.7,175.0 177.7,185.8 143.1,168.5" fill="#CFC3FF" /><polygon points="177.7,175.0 212.3,157.7 212.3,168.5 177.7,185.8" fill="#A99BEF" /><polygon points="177.7,140.3 212.3,157.7 177.7,175.0 143.1,157.7" fill="#FFFFFF" /><polygon points="100.8,185.6 135.4,202.9 135.4,207.0 100.8,189.7" fill="#C2B79D" /><polygon points="135.4,202.9 170.0,185.6 170.0,189.7 135.4,207.0" fill="#AFA386" /><polygon points="135.4,168.3 170.0,185.6 135.4,202.9 100.8,185.6" fill="#D9D0BC" /><polygon points="185.4,185.6 220.0,202.9 220.0,207.0 185.4,189.7" fill="#C2B79D" /><polygon points="220.0,202.9 254.6,185.6 254.6,189.7 220.0,207.0" fill="#AFA386" /><polygon points="220.0,168.3 254.6,185.6 220.0,202.9 185.4,185.6" fill="#D9D0BC" /><polygon points="58.4,200.0 93.1,217.3 93.1,228.2 58.4,210.8" fill="#CFC3FF" /><polygon points="93.1,217.3 127.7,200.0 127.7,210.8 93.1,228.2" fill="#A99BEF" /><polygon points="93.1,182.7 127.7,200.0 93.1,217.3 58.4,200.0" fill="#FFFFFF" /><polygon points="143.1,200.0 177.7,217.3 177.7,228.2 143.1,210.8" fill="#CFC3FF" /><polygon points="177.7,217.3 212.3,200.0 212.3,210.8 177.7,228.2" fill="#A99BEF" /><polygon points="177.7,182.7 212.3,200.0 177.7,217.3 143.1,200.0" fill="#FFFFFF" /><polygon points="227.7,200.0 262.3,217.3 262.3,228.2 227.7,210.8" fill="#CFC3FF" /><polygon points="262.3,217.3 296.9,200.0 296.9,210.8 262.3,228.2" fill="#A99BEF" /><polygon points="262.3,182.7 296.9,200.0 262.3,217.3 227.7,200.0" fill="#FFFFFF" /><polygon points="100.8,221.1 135.4,238.4 135.4,249.3 100.8,232.0" fill="#CFC3FF" /><polygon points="135.4,238.4 170.0,221.1 170.0,232.0 135.4,249.3" fill="#A99BEF" /><polygon points="135.4,203.8 170.0,221.1 135.4,238.4 100.8,221.1" fill="#FFFFFF" /><polygon points="185.4,191.2 220.0,208.5 220.0,249.3 185.4,232.0" fill="#5A3FE0" /><polygon points="220.0,208.5 254.6,191.2 254.6,232.0 220.0,249.3" fill="#3B28A8" /><polygon points="220.0,173.9 254.6,191.2 220.0,208.5 185.4,191.2" fill="url(#ixgViolet)" /><polygon points="270.0,221.1 304.6,238.4 304.6,249.3 270.0,232.0" fill="#CFC3FF" /><polygon points="304.6,238.4 339.2,221.1 339.2,232.0 304.6,249.3" fill="#A99BEF" /><polygon points="304.6,203.8 339.2,221.1 304.6,238.4 270.0,221.1" fill="#FFFFFF" /><polygon points="143.1,249.1 177.7,266.4 177.7,270.5 143.1,253.2" fill="#C2B79D" /><polygon points="177.7,266.4 212.3,249.1 212.3,253.2 177.7,270.5" fill="#AFA386" /><polygon points="177.7,231.8 212.3,249.1 177.7,266.4 143.1,249.1" fill="#D9D0BC" /><polygon points="227.7,242.3 262.3,259.6 262.3,270.5 227.7,253.2" fill="#CFC3FF" /><polygon points="262.3,259.6 296.9,242.3 296.9,253.2 262.3,270.5" fill="#A99BEF" /><polygon points="262.3,225.0 296.9,242.3 262.3,259.6 227.7,242.3" fill="#FFFFFF" /><polygon points="312.3,249.1 346.9,266.4 346.9,270.5 312.3,253.2" fill="#C2B79D" /><polygon points="346.9,266.4 381.6,249.1 381.6,253.2 346.9,270.5" fill="#AFA386" /><polygon points="346.9,231.8 381.6,249.1 346.9,266.4 312.3,249.1" fill="#D9D0BC" /><polygon points="185.4,263.4 220.0,280.7 220.0,291.6 185.4,274.3" fill="#CFC3FF" /><polygon points="220.0,280.7 254.6,263.4 254.6,274.3 220.0,291.6" fill="#A99BEF" /><polygon points="220.0,246.1 254.6,263.4 220.0,280.7 185.4,263.4" fill="#FFFFFF" /><polygon points="270.0,263.4 304.6,280.7 304.6,291.6 270.0,274.3" fill="#CFC3FF" /><polygon points="304.6,280.7 339.2,263.4 339.2,274.3 304.6,291.6" fill="#A99BEF" /><polygon points="304.6,246.1 339.2,263.4 304.6,280.7 270.0,263.4" fill="#FFFFFF" /><polygon points="227.7,284.6 262.3,301.9 262.3,312.8 227.7,295.5" fill="#CFC3FF" /><polygon points="262.3,301.9 296.9,284.6 296.9,295.5 262.3,312.8" fill="#A99BEF" /><polygon points="262.3,267.3 296.9,284.6 262.3,301.9 227.7,284.6" fill="#FFFFFF" /><rect x="36" y="384" width="14" height="14" rx="4" fill="#FFFFFF" stroke="#A99BEF" stroke-width="1.5"/><text x="56" y="395.5" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#4A4658">Open slot</text><rect x="150" y="384" width="14" height="14" rx="4" fill="#D9D0BC" stroke="#AFA386" stroke-width="1.5"/><text x="170" y="395.5" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#4A4658">Booked</text><rect x="250" y="384" width="14" height="14" rx="4" fill="#6D4DF2" stroke="#3B28A8" stroke-width="1.5"/><text x="270" y="395.5" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#4A4658">Your demo</text><g class="ix-bob" style="animation-delay:.2s"><line x1="220.0" y1="187.2" x2="220.0" y2="165.2" stroke="#6D4DF2" stroke-width="2" stroke-dasharray="3 3"/><g><rect x="179.0" y="140.2" width="82" height="26" rx="13" fill="#6D4DF2" filter="url(#ixShadow)"/><text x="220.0" y="157.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#fff">Demo · ₹0</text></g></g><g class="ix-bob" style="animation-delay:1.1s"><path d="M262 36h132a14 14 0 0 1 14 14v22a14 14 0 0 1-14 14H292l-20 16 2-16h-12a14 14 0 0 1-14-14V50a14 14 0 0 1 14-14z" fill="#2BA58F" filter="url(#ixShadow)"/><text x="335" y="64" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#fff">Request accepted</text><text x="335" y="82" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#D8F5EC">Chat is now open</text></g></svg>
+      </div>
+      <p class="ix-caption">Fig. 2 — Pick an open slot, request the demo, then chat once it is accepted.</p>
+    </div>
+    <div class="ix-right">
+      <p class="ix-kicker">Chapter II</p>
+      <h2 class="ix-h">Book a free demo</h2>
+      <div class="ix-rule"></div>
+      <p class="ix-lead">Compare qualifications, hourly fees and ratings, then request a demo class in one of the teacher's open time slots.</p>
+      <ul class="ix-list">
+        <li>The demo class costs <strong>₹0</strong></li>
+        <li>The teacher accepts or declines your request</li>
+        <li>When they accept, a private chat opens between the two of you</li>
+        <li class="ix-more">Open any profile to see qualifications, slots and reviews</li>
+      </ul>
+      <p><a class="ix-link" href="teachers.html">See who is nearby →</a></p>
+    </div>
+  </section>
+
+  <!-- Spread 3: Chapter III -->
+  <section class="ix-chapter" id="learn" data-title="III · Learn with your teacher">
+    <div class="ix-left">
+      <div class="ix-art" role="img" aria-label="Illustration: an open notebook with an attendance row, homework check boxes and a test score ring">
+        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><ellipse cx="220" cy="372" rx="130" ry="30" fill="#000" opacity=".2"/><polygon points="145.0,299.6 232.7,343.5 232.7,367.5 145.0,323.6" fill="#6D4DF2" /><polygon points="232.7,343.5 295.0,312.4 295.0,336.4 232.7,367.5" fill="#4A34B8" /><polygon points="207.3,268.5 295.0,312.4 232.7,343.5 145.0,299.6" fill="#8E73FF" /><polygon points="154.9,278.3 231.3,316.5 231.3,338.5 154.9,300.3" fill="#2BA58F" /><polygon points="231.3,316.5 285.1,289.7 285.1,311.7 231.3,338.5" fill="#1E7F6D" /><polygon points="208.7,251.5 285.1,289.7 231.3,316.5 154.9,278.3" fill="#47C0A8" /><polygon points="164.8,259.1 229.9,291.6 229.9,311.6 164.8,279.1" fill="#E0674F" /><polygon points="229.9,291.6 275.2,268.9 275.2,288.9 229.9,311.6" fill="#B84C38" /><polygon points="210.1,236.4 275.2,268.9 229.9,291.6 164.8,259.1" fill="#F08A74" /><g class="ix-bob" style="animation-delay:.6s"><polygon points="191.7,248.0 220.0,262.1 220.0,278.1 191.7,264.0" fill="#2A2638" /><polygon points="220.0,262.1 248.3,248.0 248.3,264.0 220.0,278.1" fill="#1B1826" /><polygon points="220.0,233.9 248.3,248.0 220.0,262.1 191.7,248.0" fill="#3A3648" /><polygon points="187.5,230.7 187.5,263.3 187.5,258.3 187.5,225.7" fill="#1B1826" /><polygon points="187.5,263.3 252.5,263.3 252.5,258.3 187.5,258.3" fill="#14111C" /><polygon points="187.5,225.7 252.5,225.7 252.5,258.3 187.5,258.3" fill="#2F2B3F" /><circle cx="220.0" cy="242.0" r="4" fill="#D9AE4B"/><path d="M220.0 242.0 Q 258.0 248.0 248.3 274.1" stroke="#D9AE4B" stroke-width="2.4" fill="none"/><rect x="247.3" y="272.1" width="5" height="16" rx="2.5" fill="#D9AE4B"/></g><g class="ix-bob" style="animation-delay:0.0s"><rect x="16" y="28" width="150" height="74" rx="14" fill="#FFFFFF" filter="url(#ixShadow)"/><text x="32" y="54" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#23212E">Attendance</text><circle cx="38" cy="84" r="7" fill="#2BA58F"/><circle cx="55" cy="84" r="7" fill="#2BA58F"/><circle cx="72" cy="84" r="7" fill="#2BA58F"/><circle cx="89" cy="84" r="7" fill="#2BA58F"/><circle cx="106" cy="84" r="7" fill="#E8A33D"/><circle cx="123" cy="84" r="7" fill="#2BA58F"/><circle cx="140" cy="84" r="7" fill="#2BA58F"/><circle cx="157" cy="84" r="7" fill="#E0674F"/></g><g class="ix-bob" style="animation-delay:0.9s"><rect x="240" y="48" width="184" height="62" rx="14" fill="#FFFFFF" filter="url(#ixShadow)"/><rect x="256" y="62" width="20" height="20" rx="6" fill="#2BA58F"/><path d="M261 72l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><text x="286" y="77" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#23212E">Homework</text><rect x="256" y="90" width="26" height="12" rx="6" fill="#F3E2B8"/><rect x="288" y="92" width="86" height="8" rx="4" fill="#E8E1D0"/></g><g class="ix-bob" style="animation-delay:1.6s"><rect x="10" y="148" width="130" height="104" rx="14" fill="#FFFFFF" filter="url(#ixShadow)"/><circle cx="52" cy="204" r="26" fill="none" stroke="#E6E0FF" stroke-width="10"/><circle cx="52" cy="204" r="26" fill="none" stroke="#6D4DF2" stroke-width="10" stroke-linecap="round" stroke-dasharray="147 164" transform="rotate(-90 52 204)"/><text x="52" y="209" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="800" fill="#23212E">18/20</text><text x="96" y="196" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#23212E">Test</text><rect x="86" y="206" width="40" height="7" rx="3.5" fill="#E8E1D0"/><rect x="86" y="220" width="30" height="7" rx="3.5" fill="#E8E1D0"/></g><g class="ix-bob" style="animation-delay:2.3s"><rect x="306" y="158" width="120" height="84" rx="14" fill="#FFFFFF" filter="url(#ixShadow)"/><text x="322" y="184" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700" fill="#4A34B8">NEXT CLASS</text><text x="322" y="209" font-family="Inter, sans-serif" font-size="15" font-weight="800" fill="#23212E">Mon · 5 PM</text><rect x="322" y="220" width="70" height="8" rx="4" fill="#B9AEF2"/></g></svg>
+      </div>
+      <p class="ix-caption">Fig. 3 — An example of what you can follow for each tuition.</p>
+    </div>
+    <div class="ix-right">
+      <p class="ix-kicker">Chapter III</p>
+      <h2 class="ix-h">Learn with your teacher</h2>
+      <div class="ix-rule"></div>
+      <p class="ix-lead">If the demo goes well, set up regular classes. Pay online through Razorpay or in cash, and follow everything from your dashboard.</p>
+      <ul class="ix-list">
+        <li>Attendance and a log of what was taught</li>
+        <li>Homework you can hand in online</li>
+        <li>Test marks with your teacher's feedback</li>
+        <li class="ix-more">The payment status of every booking</li>
+      </ul>
+      <p><a class="ix-link" href="signup.html?role=student">Create a student account →</a></p>
+    </div>
+  </section>
+
+  <!-- Spread 4: Chapter IV -->
+  <section class="ix-chapter" id="safety" data-title="IV · How we keep it safe">
+    <div class="ix-left">
+      <div class="ix-art" role="img" aria-label="Illustration: three documents, an ID proof, an address proof and a certificate, with a reviewed stamp above a shield with a check mark">
+        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><ellipse cx="220" cy="384" rx="120" ry="16" fill="#000" opacity=".2"/><g class="ix-bob" style="animation-delay:.3s"><g transform="translate(22 66) rotate(-10 56 70)"><rect x="3" y="4" width="112" height="144" rx="10" fill="#CFC3A6"/><rect width="112" height="144" rx="10" fill="#FFFFFF" filter="url(#ixShadow)"/><text x="12" y="24" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#23212E">ID proof</text><rect x="12" y="38" width="36" height="42" rx="6" fill="#E6E0FF"/><circle cx="30" cy="53" r="7" fill="#6D4DF2"/><path d="M18 76c2-9 7-12 12-12s10 3 12 12z" fill="#6D4DF2"/><rect x="56" y="42" width="44" height="7" rx="3.5" fill="#E8E1D0"/><rect x="56" y="56" width="34" height="7" rx="3.5" fill="#E8E1D0"/><rect x="12" y="96" width="88" height="7" rx="3.5" fill="#E8E1D0"/><rect x="12" y="112" width="66" height="7" rx="3.5" fill="#E8E1D0"/></g></g><g class="ix-bob" style="animation-delay:1.2s"><g transform="translate(306 66) rotate(10 56 70)"><rect x="3" y="4" width="112" height="144" rx="10" fill="#CFC3A6"/><rect width="112" height="144" rx="10" fill="#FFFFFF" filter="url(#ixShadow)"/><text x="12" y="24" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#23212E">Certificate</text><circle cx="56" cy="62" r="24" fill="#E0674F" fill-opacity=".16" stroke="#E0674F" stroke-width="2"/><path d="M56 46l4.6 10 11 1-8.4 7.2 2.6 10.8L56 69l-9.8 6 2.6-10.8-8.4-7.2 11-1z" fill="#E0674F"/><rect x="12" y="104" width="88" height="7" rx="3.5" fill="#E8E1D0"/><rect x="12" y="120" width="62" height="7" rx="3.5" fill="#E8E1D0"/></g></g><g class="ix-bob" style="animation-delay:.8s"><g transform="translate(164 20) rotate(0 56 70)"><rect x="3" y="4" width="112" height="144" rx="10" fill="#CFC3A6"/><rect width="112" height="144" rx="10" fill="#FFFFFF" filter="url(#ixShadow)"/><text x="12" y="24" font-family="Inter, sans-serif" font-size="11.5" font-weight="700" fill="#23212E">Address proof</text><path d="M56 36l28 22v30H28V58z" fill="#F3E2B8"/><rect x="47" y="64" width="18" height="24" fill="#C8962E"/><rect x="12" y="102" width="88" height="7" rx="3.5" fill="#E8E1D0"/><rect x="12" y="118" width="60" height="7" rx="3.5" fill="#E8E1D0"/></g></g><g class="ix-bob" style="animation-delay:0s"><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(9.0 13.0)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(8.1 11.7)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(7.2 10.4)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(6.3 9.1)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(5.4 7.8)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(4.5 6.5)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(3.6 5.2)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(2.7 3.9)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(1.8 2.6)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" transform="translate(0.9 1.3)" fill="#2E2080"/><path d="M220 118 L304 148 V226 C304 288 268 326 220 350 C172 326 136 288 136 226 V148 Z" fill="url(#ixgShieldFace)" stroke="#D9AE4B" stroke-width="4"/><path d="M220 136 L292 162 V226 C292 280 262 313 220 334 C178 313 148 280 148 226 V162 Z" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="2"/><g clip-path="url(#ixClipShield)"><rect class="ix-shine" x="80" y="100" width="60" height="280" fill="url(#ixgGlass)" transform="rotate(18 110 240)"/></g><path d="M188 232 L211 256 L256 204" fill="none" stroke="#2A1C7A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".35" transform="translate(0 4)"/><path d="M188 232 L211 256 L256 204" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></g><g class="ix-bob" style="animation-delay:1.6s"><g transform="translate(350 322) rotate(-14)"><circle r="44" fill="#FFF8EA" stroke="#C8962E" stroke-width="3" filter="url(#ixShadow)"/><circle r="36" fill="none" stroke="#C8962E" stroke-width="1.2"/><text y="-3" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#C8962E" letter-spacing="1.5">ADMIN</text><text y="14" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700" fill="#C8962E" letter-spacing="1.5">REVIEWED</text></g></g><path class="ix-twinkle" style="animation-delay:0.0s" d="M40 42 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#D9AE4B"/><path class="ix-twinkle" style="animation-delay:0.8s" d="M402 46 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#D9AE4B"/><path class="ix-twinkle" style="animation-delay:1.4s" d="M46 320 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#D9AE4B"/><path class="ix-twinkle" style="animation-delay:2.0s" d="M408 228 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#D9AE4B"/></svg>
+      </div>
+      <p class="ix-caption">Fig. 4 — Three documents are reviewed before a teacher is listed.</p>
+    </div>
+    <div class="ix-right">
+      <p class="ix-kicker">Chapter IV</p>
+      <h2 class="ix-h">How we keep it safe</h2>
+      <div class="ix-rule"></div>
+      <ul class="ix-list">
+        <li><strong>Documents are reviewed.</strong> ID proof, address proof and a certificate are checked by an admin before a profile can be found.</li>
+        <li><strong>Ratings come from real classes.</strong> Only students with a completed booking can rate a teacher.</li>
+        <li><strong>Payments are confirmed by our server.</strong> Online payments go through Razorpay; we never see your card details.</li>
+        <li class="ix-more"><strong>Problems get a human review.</strong> Report a teacher from any accepted or completed booking.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Spread 5: Chapter V -->
+  <section class="ix-chapter" id="teach" data-title="V · For teachers">
+    <div class="ix-left">
+      <div class="ix-art" role="img" aria-label="Illustration: a My students panel listing students with attendance bars and paid or due fee labels">
+        <svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><ellipse cx="226" cy="392" rx="190" ry="18" fill="#000" opacity=".18"/><g transform="rotate(-4 170 130)"><rect x="26" y="26" width="330" height="214" rx="16" fill="#1F1C2B" filter="url(#ixShadow)"/><circle cx="46" cy="46" r="5" fill="#EF5C72"/><circle cx="62" cy="46" r="5" fill="#E8A33D"/><circle cx="78" cy="46" r="5" fill="#2FBE85"/><text x="98" y="51" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#ECECF2">My students</text><rect x="42" y="66" width="298" height="46" rx="12" fill="#2A2638"/><circle cx="66" cy="89" r="13" fill="#7C5CFC"/><rect x="88" y="78" width="100" height="9" rx="4.5" fill="#CFCFDB"/><rect x="88" y="93" width="64" height="7" rx="3.5" fill="#5C5C70"/><rect x="206" y="81" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="220" y="81" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="234" y="81" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="248" y="81" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="262" y="81" width="11" height="15" rx="3" fill="#E8A33D"/><rect x="282" y="78" width="46" height="22" rx="11" fill="#2FBE85" fill-opacity=".2"/><text x="305" y="93" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#2FBE85">Paid</text><rect x="42" y="122" width="298" height="46" rx="12" fill="#2A2638"/><circle cx="66" cy="145" r="13" fill="#E8A33D"/><rect x="88" y="134" width="84" height="9" rx="4.5" fill="#CFCFDB"/><rect x="88" y="149" width="72" height="7" rx="3.5" fill="#5C5C70"/><rect x="206" y="137" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="220" y="137" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="234" y="137" width="11" height="15" rx="3" fill="#EF5C72"/><rect x="248" y="137" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="262" y="137" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="282" y="134" width="46" height="22" rx="11" fill="#E8A33D" fill-opacity=".2"/><text x="305" y="149" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#E8A33D">Due</text><rect x="42" y="178" width="298" height="46" rx="12" fill="#2A2638"/><circle cx="66" cy="201" r="13" fill="#2FBE85"/><rect x="88" y="190" width="112" height="9" rx="4.5" fill="#CFCFDB"/><rect x="88" y="205" width="56" height="7" rx="3.5" fill="#5C5C70"/><rect x="206" y="193" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="220" y="193" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="234" y="193" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="248" y="193" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="262" y="193" width="11" height="15" rx="3" fill="#2FBE85"/><rect x="282" y="190" width="46" height="22" rx="11" fill="#2FBE85" fill-opacity=".2"/><text x="305" y="205" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#2FBE85">Paid</text></g><polygon points="199.3,318.6 314.8,376.4 314.8,385.9 199.3,328.1" fill="#3B3652" /><polygon points="314.8,376.4 384.7,341.4 384.7,350.9 314.8,385.9" fill="#2A2638" /><polygon points="269.2,283.6 384.7,341.4 314.8,376.4 199.3,318.6" fill="#4A4466" /><g class="ix-grow" style="animation-delay:0.0s"><polygon points="239.6,272.5 255.7,280.6 255.7,318.6 239.6,310.5" fill="#2BA58F" /><polygon points="255.7,280.6 271.8,272.5 271.8,310.5 255.7,318.6" fill="#1E7F6D" /><polygon points="255.7,264.5 271.8,272.5 255.7,280.6 239.6,272.5" fill="#47C0A8" /></g><g class="ix-grow" style="animation-delay:0.2s"><polygon points="262.4,263.0 278.6,271.1 278.6,330.0 262.4,321.9" fill="#6D4DF2" /><polygon points="278.6,271.1 294.7,263.0 294.7,321.9 278.6,330.0" fill="#4A34B8" /><polygon points="278.6,255.0 294.7,263.0 278.6,271.1 262.4,263.0" fill="#8E73FF" /></g><g class="ix-grow" style="animation-delay:0.3s"><polygon points="285.3,285.9 301.4,293.9 301.4,341.4 285.3,333.4" fill="#2BA58F" /><polygon points="301.4,293.9 317.5,285.9 317.5,333.4 301.4,341.4" fill="#1E7F6D" /><polygon points="301.4,277.8 317.5,285.9 301.4,293.9 285.3,285.9" fill="#47C0A8" /></g><g class="ix-grow" style="animation-delay:0.5s"><polygon points="308.1,268.8 324.2,276.8 324.2,352.8 308.1,344.8" fill="#E8A33D" /><polygon points="324.2,276.8 340.4,268.8 340.4,344.8 324.2,352.8" fill="#B57A1E" /><polygon points="324.2,260.7 340.4,268.8 324.2,276.8 308.1,268.8" fill="#FFD27A" /></g><ellipse cx="82" cy="375" rx="30" ry="11" fill="#B98524"/><rect x="52" y="366" width="60" height="9" fill="#C8962E"/><ellipse cx="82" cy="366" rx="30" ry="11" fill="url(#ixgGoldG)"/><ellipse cx="82" cy="366" rx="30" ry="11" fill="#B98524"/><rect x="52" y="357" width="60" height="9" fill="#C8962E"/><ellipse cx="82" cy="357" rx="30" ry="11" fill="url(#ixgGoldG)"/><ellipse cx="82" cy="357" rx="30" ry="11" fill="#B98524"/><rect x="52" y="348" width="60" height="9" fill="#C8962E"/><ellipse cx="82" cy="348" rx="30" ry="11" fill="url(#ixgGoldG)"/><ellipse cx="82" cy="348" rx="30" ry="11" fill="#B98524"/><rect x="52" y="339" width="60" height="9" fill="#C8962E"/><ellipse cx="82" cy="339" rx="30" ry="11" fill="url(#ixgGoldG)"/><g class="ix-bob" style="animation-delay:.7s"><ellipse cx="82" cy="318" rx="30" ry="11" fill="url(#ixgGoldG)"/><ellipse cx="82" cy="318" rx="20" ry="6.5" fill="none" stroke="#9C7220" stroke-width="1.6"/></g><g><rect x="140.0" y="305.0" width="56" height="26" rx="13" fill="#2FBE85" filter="url(#ixShadow)"/><text x="168.0" y="322.3" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#fff">Paid</text></g></svg>
+      </div>
+      <p class="ix-caption">Fig. 5 — Every monthly student in one place.</p>
+    </div>
+    <div class="ix-right">
+      <p class="ix-kicker">Chapter V</p>
+      <h2 class="ix-h">For teachers</h2>
+      <div class="ix-rule"></div>
+      <p class="ix-lead">Teach students in your own neighbourhood and keep every student's record in one place.</p>
+      <ul class="ix-list">
+        <li>Set your subjects, hourly fee and weekly time slots</li>
+        <li>Get listed after an admin reviews your documents</li>
+        <li><strong>My Students:</strong> attendance, fees, homework, tests and notes</li>
+        <li class="ix-more">Accept or decline each booking, receive online payments or record cash</li>
+      </ul>
+      <div class="ix-actions">
+        <a href="signup.html?role=teacher" class="ix-btn ix-btn-primary" id="ctaTeacherPanel">Apply as a teacher</a>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
-<!-- ---------------- Subjects ---------------- -->
-<section class="subjects-section" id="subjects" aria-labelledby="subjectsHeading">
+<!-- ---------------- Bookshelf (subjects) ---------------- -->
+<section class="ix-shelf-sec" id="subjects" aria-labelledby="subjectsHeading">
   <div class="container">
     <div class="lp-head">
-      <h2 id="subjectsHeading">Browse tutors by subject</h2>
-      <p>Pick a subject to see the teachers who list it. Fees and availability are on each profile.</p>
+      <h2 id="subjectsHeading">The bookshelf: browse tutors by subject</h2>
+      <p>Pick a book to see the teachers who list that subject. Fees and availability are on each profile.</p>
     </div>
 
-    <div class="subject-grid">
-      <a href="teachers.html?subject=Mathematics" class="subject-card" aria-label="Find Mathematics tutors">
-        <span class="sub-ic" aria-hidden="true">📐</span>
-        <div>
-          <h4>Mathematics</h4>
-          <span class="lp-subtle">School maths and beyond</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=Physics" class="subject-card" aria-label="Find Physics tutors">
-        <span class="sub-ic" aria-hidden="true">⚡</span>
-        <div>
-          <h4>Physics</h4>
-          <span class="lp-subtle">Concepts and numericals</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=Chemistry" class="subject-card" aria-label="Find Chemistry tutors">
-        <span class="sub-ic" aria-hidden="true">🧪</span>
-        <div>
-          <h4>Chemistry</h4>
-          <span class="lp-subtle">Organic, inorganic, physical</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=Biology" class="subject-card" aria-label="Find Biology tutors">
-        <span class="sub-ic" aria-hidden="true">🧬</span>
-        <div>
-          <h4>Biology</h4>
-          <span class="lp-subtle">CBSE, ICSE and NEET</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=English" class="subject-card" aria-label="Find English tutors">
-        <span class="sub-ic" aria-hidden="true">📖</span>
-        <div>
-          <h4>English</h4>
-          <span class="lp-subtle">Grammar, writing, speaking</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=Computer+Science" class="subject-card" aria-label="Find Computer Science tutors">
-        <span class="sub-ic" aria-hidden="true">💻</span>
-        <div>
-          <h4>Computer Science</h4>
-          <span class="lp-subtle">Python, Java, coding</span>
-        </div>
-      </a>
-
-      <a href="teachers.html?subject=Commerce" class="subject-card" aria-label="Find Commerce tutors">
-        <span class="sub-ic" aria-hidden="true">📊</span>
-        <div>
-          <h4>Commerce</h4>
-          <span class="lp-subtle">Accounts, business studies</span>
-        </div>
-      </a>
-
-      <a href="teachers.html" class="subject-card" aria-label="Browse all teachers">
-        <span class="sub-ic" aria-hidden="true">✨</span>
-        <div>
-          <h4>All teachers</h4>
-          <span class="lp-subtle">Search by name or city</span>
-        </div>
-      </a>
+    <div class="ix-case">
+      <div class="ix-row">
+        <a href="teachers.html?subject=Mathematics" class="ix-spine" style="--c:#5B3FE0;--h:196px" aria-label="Find Mathematics tutors"><span>Mathematics</span></a>
+        <a href="teachers.html?subject=Physics" class="ix-spine" style="--c:#1F6F8B;--h:172px" aria-label="Find Physics tutors"><span>Physics</span></a>
+        <a href="teachers.html?subject=Chemistry" class="ix-spine" style="--c:#2B7A55;--h:208px" aria-label="Find Chemistry tutors"><span>Chemistry</span></a>
+        <a href="teachers.html?subject=Biology" class="ix-spine" style="--c:#9B3B5A;--h:184px" aria-label="Find Biology tutors"><span>Biology</span></a>
+      </div>
+      <div class="ix-row">
+        <a href="teachers.html?subject=English" class="ix-spine" style="--c:#B5562B;--h:190px" aria-label="Find English tutors"><span>English</span></a>
+        <a href="teachers.html?subject=Computer+Science" class="ix-spine" style="--c:#34318F;--h:222px" aria-label="Find Computer Science tutors"><span>Computer Science</span></a>
+        <a href="teachers.html?subject=Commerce" class="ix-spine" style="--c:#6B4A1E;--h:178px" aria-label="Find Commerce tutors"><span>Commerce</span></a>
+        <a href="teachers.html" class="ix-spine" style="--c:#8A6A1C;--h:204px" aria-label="Browse all teachers"><span>All teachers</span></a>
+      </div>
     </div>
-  </div>
-</section>
-
-<!-- ---------------- Safety ---------------- -->
-<section class="lp-safety" id="safety" aria-labelledby="safetyHeading">
-  <div class="container">
-    <div class="lp-head">
-      <h2 id="safetyHeading">What happens before a teacher is listed</h2>
-      <p>A teacher appears in search only after an admin has approved their profile. Here is how safety works on TutorLink today.</p>
-    </div>
-
-    <ul class="lp-checks">
-      <li>
-        <h3><svg class="lp-tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>Documents are reviewed</h3>
-        <p>Teachers upload an ID proof, an address proof and a teaching certificate or degree. An admin reviews them before the profile can be found in search.</p>
-      </li>
-      <li>
-        <h3><svg class="lp-tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>Ratings come from real classes</h3>
-        <p>Only students with a completed booking can rate a teacher. Students can edit or delete their review for 24 hours, and teachers can reply to it.</p>
-      </li>
-      <li>
-        <h3><svg class="lp-tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>Payments are confirmed by our server</h3>
-        <p>Online payments go through Razorpay, and a booking is marked paid only after our server has confirmed the payment. TutorLink never sees your card details.</p>
-      </li>
-      <li>
-        <h3><svg class="lp-tick" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.6"/></svg>Problems get a human review</h3>
-        <p>You can report a teacher from any accepted or completed booking. An admin looks at the report and can take the teacher out of search.</p>
-      </li>
-    </ul>
-  </div>
-</section>
-
-<!-- ---------------- Who it is for ---------------- -->
-<section class="lp-section" aria-labelledby="forHeading">
-  <div class="container">
-    <div class="lp-head">
-      <h2 id="forHeading">Whether you want to learn or to teach</h2>
-      <p>One account type for each side. Both start free.</p>
-    </div>
-
-    <div class="lp-split">
-      <article class="lp-panel student">
-        <h3>For students and parents</h3>
-        <p class="sub">Find a teacher close to home.</p>
-        <ul>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Search by subject, city or distance from your location</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Try a free demo class before you commit</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Chat with your teacher once they accept your booking</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Pay online or in cash and track every class</li>
-        </ul>
-        <a href="signup.html?role=student" class="btn btn-primary" id="ctaStudentPanel">Create a student account</a>
-      </article>
-
-      <article class="lp-panel teacher">
-        <h3>For teachers</h3>
-        <p class="sub">Teach students in your own neighbourhood.</p>
-        <ul>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Set your subjects, hourly fee and weekly time slots</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Get listed after an admin reviews your documents</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Accept or decline each booking request</li>
-          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Receive online payments or record cash, and reply to reviews</li>
-        </ul>
-        <a href="signup.html?role=teacher" class="btn btn-accent" id="ctaTeacherPanel">Apply as a teacher</a>
-      </article>
-    </div>
+    <p class="ix-shelf-note">Not on the shelf? Search any subject, name or city from the teachers page.</p>
   </div>
 </section>
 
 <!-- ---------------- FAQ ---------------- -->
-<section class="faq-section" aria-labelledby="faqHeading">
+<section class="faq-section" id="faq" aria-labelledby="faqHeading">
   <div class="container">
     <div class="lp-head">
       <h2 id="faqHeading">Questions people ask</h2>
@@ -336,11 +408,11 @@
   </div>
 </section>
 
-<!-- ---------------- CTA ---------------- -->
+<!-- ---------------- The last page ---------------- -->
 <section class="cta-banner" aria-labelledby="ctaHeading">
   <div class="container">
     <div>
-      <h2 id="ctaHeading">Ready to find a tutor nearby?</h2>
+      <h2 id="ctaHeading">Ready to turn the first page?</h2>
       <p>Create a free account, set your location and see the teachers around you.</p>
       <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
         <a href="signup.html?role=student" class="btn btn-accent btn-lg" id="ctaStudentBtn">Find a tutor now</a>
@@ -406,6 +478,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/index.js"></script>
 <script>
   // ---- FAQ accordion: one answer open at a time ----
   document.querySelectorAll('.faq-question').forEach(function (btn) {
