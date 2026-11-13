@@ -14,5 +14,9 @@ Disallow: /teacher-complete-profile.html
 Disallow: /account-settings.html
 Disallow: /reset-password.html
 Disallow: /forgot-password.html
+Disallow: /verify-email.html
+Disallow: /student-tuition.html
+Disallow: /teacher-students.html
+Disallow: /teacher-profile-view.html
 
 Sitemap: https://tutorlink.example.com/sitemap.xml
