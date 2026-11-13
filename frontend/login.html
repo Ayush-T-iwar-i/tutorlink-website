@@ -187,11 +187,7 @@
     form.setAttribute('aria-busy', String(isLoading));
   }
 
-  function dashboardFor(role) {
-    if (role === 'teacher') return 'teacher-dashboard.html';
-    if (role === 'admin') return 'admin-dashboard.html';
-    return 'student-dashboard.html';
-  }
+  carryRedirectToLinks('a[href="signup.html"]');
 
   // ---------- show / hide password ----------
   toggleBtn.addEventListener('click', function () {
@@ -267,9 +263,9 @@
         remember: rememberInput.checked
       });
       saveSession(data.user);
-      setMessage('success', 'Logged in. Taking you to your dashboard…');
+      setMessage('success', 'Logged in. Taking you there…');
       setTimeout(function () {
-        window.location.href = dashboardFor(data.user.role);
+        window.location.href = getPostAuthTarget(data.user.role);
       }, 500);
     } catch (err) {
       setMessage('error', (err && err.message) || 'Something went wrong. Please try again.');

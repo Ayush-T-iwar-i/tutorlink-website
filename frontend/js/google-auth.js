@@ -1,8 +1,41 @@
-// The Client ID lives in one place — the server's .env (GOOGLE_CLIENT_ID) —
-// and is served here via /api/config. This used to be hardcoded in this
-// file too, which meant changing it in .env silently did nothing on the
-// frontend. Cached after the first fetch so we don't re-request it for
-// every button render.
+// they started. Only a short list of our own pages is accepted, so this can never be used as an open redirect.
+const REDIRECT_ALLOWED = ['teacher-profile-view.html', 'teachers.html'];
+
+function dashboardPathFor(role) {
+  if (role === 'teacher') return 'teacher-dashboard.html';
+  if (role === 'admin') return 'admin-dashboard.html';
+  return 'student-dashboard.html';
+}
+
+// Returns the page to open after authentication: the requested one when it is allowed for this role,
+// otherwise the role's dashboard.
+function getPostAuthTarget(role) {
+  const fallback = dashboardPathFor(role);
+  try {
+    const raw = new URLSearchParams(window.location.search).get('redirect');
+    if (!raw || raw.length > 200) return fallback;
+    const m = /^([a-z0-9-]+\.html)(\?[A-Za-z0-9=&._%-]*)?$/.exec(raw);
+    if (!m || REDIRECT_ALLOWED.indexOf(m[1]) === -1) return fallback;
+    // Only students can open a teacher profile to book.
+    if (m[1] === 'teacher-profile-view.html' && role !== 'student') return fallback;
+    return raw;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+// Keeps ?redirect=... on the "log in" / "sign up" switch links so it survives moving between the two pages.
+function carryRedirectToLinks(selector) {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('redirect');
+    if (!raw) return;
+    document.querySelectorAll(selector).forEach(function (a) {
+      const sep = a.getAttribute('href').indexOf('?') === -1 ? '?' : '&';
+      a.setAttribute('href', a.getAttribute('href') + sep + 'redirect=' + encodeURIComponent(raw));
+    });
+  } catch (e) { /* the links simply stay as they are */ }
+}
+
 let _cachedGoogleClientId = null;
 
 async function getGoogleClientId() {
@@ -67,8 +100,7 @@ async function handleGoogleCredential(response, getRole, onError) {
     const data = await apiRequest("/api/auth/google", "POST", payload);
     saveSession(data.user);
 
-    window.location.href =
-      data.user.role === "teacher" ? "teacher-dashboard.html" : "student-dashboard.html";
+    window.location.href = getPostAuthTarget(data.user.role);
   } catch (err) {
     onError(err.message || "Google sign-in didn't go through. Please try again.");
   }
