@@ -4,14 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Find Verified Home Tutors — TutorLink</title>
-<meta name="description" content="Browse verified home tutors on TutorLink — filter by subject, city, rating, and hourly fee.">
+<meta name="description" content="Browse verified home tutors on TutorLink. Filter by subject and city, or search within 3 to 15 km of your home.">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://tutorlink.com/teachers.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/teachers.css">
 </head>
 <body class="page-listing">
+
+<a class="skip-link" href="#subjectFilter">Skip to the search filters</a>
 
 <!-- ---------------- Navbar ---------------- -->
 <nav class="navbar" id="mainNav" role="navigation" aria-label="Main navigation">
@@ -32,46 +37,63 @@
   </div>
 </nav>
 
-<main class="dashboard-body">
+<main class="tl-main" id="main">
   <div class="container">
 
-    <div class="dash-hero" style="margin-bottom:28px;">
-      <div class="eyebrow">Tutor directory</div>
-      <h1 style="font-size:26px; margin-bottom:8px;">Find the perfect home tutor</h1>
-      <p style="max-width:560px; margin:0;">
-        Explore ID-verified tutors near you. Open any profile for qualifications, slots, and a free demo class.
-      </p>
-    </div>
+    <header class="tl-hero">
+      <span class="eyebrow">Tutor directory</span>
+      <h1>Find the right <em>home tutor</em></h1>
+      <p>Every tutor listed here has been reviewed by an admin. Open a profile to see qualifications, weekly slots and to book a free demo class.</p>
+    </header>
 
-    <!-- ---------------- Search & Filter Bar ---------------- -->
-    <div class="filter-bar">
-      <div class="form-group">
-        <label for="subjectFilter">Subject</label>
-        <input type="text" id="subjectFilter" placeholder="e.g. Mathematics, Physics, English">
-      </div>
-      <div class="form-group">
-        <label for="cityFilter">City / Area</label>
-        <input type="text" id="cityFilter" placeholder="e.g. Gurugram, Delhi, Meerut">
-      </div>
-      <div class="form-group">
-        <label for="sortSelect">Sort by</label>
-        <select id="sortSelect">
-          <option value="rating">Highest Rated ★</option>
-          <option value="fee_low">Fee: Low to High</option>
-          <option value="fee_high">Fee: High to Low</option>
-          <option value="experience">Most Experienced</option>
-        </select>
-      </div>
-      <button id="searchBtn" class="btn btn-primary">Search Tutors</button>
-    </div>
+    <!-- ---------------- Search & Filter Panel ---------------- -->
+    <section class="tl-filters" aria-label="Search filters">
+      <form id="filterForm" novalidate>
+        <div class="tl-row">
+          <div class="tl-field">
+            <label for="subjectFilter">Subject</label>
+            <input type="text" id="subjectFilter" placeholder="e.g. Mathematics, Physics" maxlength="100" autocomplete="off">
+          </div>
+          <div class="tl-field">
+            <label for="cityFilter">City / area</label>
+            <input type="text" id="cityFilter" placeholder="e.g. Gurugram, Delhi" maxlength="100" autocomplete="off">
+          </div>
+          <div class="tl-field">
+            <label for="sortSelect">Sort by</label>
+            <select id="sortSelect">
+              <option value="rating">Highest rated</option>
+              <option value="fee_low">Fee: low to high</option>
+              <option value="fee_high">Fee: high to low</option>
+              <option value="experience">Most experienced</option>
+            </select>
+          </div>
+          <div class="tl-submit">
+            <button type="submit" id="searchBtn" class="btn btn-primary">Search tutors</button>
+          </div>
+        </div>
+      </form>
 
-    <!-- ---------------- Results Area ---------------- -->
-    <div id="resultsArea" aria-live="polite" aria-label="Teacher search results">
-      <div class="teacher-grid"></div>
-    </div>
+      <div class="tl-near">
+        <button type="button" class="btn btn-outline btn-sm tl-near-btn" id="nearBtn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          <span id="nearBtnLabel">Near me</span>
+        </button>
+        <fieldset class="tl-radius" id="radiusGroup">
+          <legend>Search radius</legend>
+          <label><input type="radio" name="radius" value="3"><span>3 km</span></label>
+          <label><input type="radio" name="radius" value="5" checked><span>5 km</span></label>
+          <label><input type="radio" name="radius" value="10"><span>10 km</span></label>
+          <label><input type="radio" name="radius" value="15"><span>15 km</span></label>
+        </fieldset>
+        <p class="tl-near-status" id="nearStatus" role="status" aria-live="polite"></p>
+        <button type="button" class="tl-near-clear" id="nearClear" hidden>Stop using my location</button>
+      </div>
+    </section>
 
-    <!-- ---------------- Pagination ---------------- -->
-    <nav style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:36px;" id="paginationArea" aria-label="Pagination"></nav>
+    <!-- ---------------- Results ---------------- -->
+    <p class="tl-summary" id="summary" tabindex="-1" role="status" aria-live="polite"></p>
+    <div id="resultsArea" aria-busy="false"></div>
+    <nav class="tl-pager" id="paginationArea" aria-label="Pagination"></nav>
 
   </div>
 </main>
@@ -93,18 +115,35 @@
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
 <script>
-  let currentPage = 1;
+(function () {
+  'use strict';
 
-  // Check URL query parameters for initial search
+  const PAGE_SIZE = 12;
+
+  const form = document.getElementById('filterForm');
+  const subjectInput = document.getElementById('subjectFilter');
+  const cityInput = document.getElementById('cityFilter');
+  const sortSelect = document.getElementById('sortSelect');
+  const searchBtn = document.getElementById('searchBtn');
+  const nearBtn = document.getElementById('nearBtn');
+  const nearBtnLabel = document.getElementById('nearBtnLabel');
+  const nearStatus = document.getElementById('nearStatus');
+  const nearClear = document.getElementById('nearClear');
+  const radiusInputs = document.querySelectorAll('input[name="radius"]');
+  const resultsArea = document.getElementById('resultsArea');
+  const pager = document.getElementById('paginationArea');
+  const summary = document.getElementById('summary');
+
+  // Where the search is anchored. null = normal directory search, no location involved.
+  let origin = null;
+  let requestId = 0; // lets a slow older response be ignored when a newer search has started
+
+  // ---------- URL parameters (e.g. coming from the home page bookshelf) ----------
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('subject')) {
-    document.getElementById('subjectFilter').value = urlParams.get('subject');
-  }
-  if (urlParams.get('city')) {
-    document.getElementById('cityFilter').value = urlParams.get('city');
-  }
+  if (urlParams.get('subject')) subjectInput.value = urlParams.get('subject').slice(0, 100);
+  if (urlParams.get('city')) cityInput.value = urlParams.get('city').slice(0, 100);
 
-  // Dynamic Navigation state
+  // ---------- Navbar state ----------
   const session = getSession();
   if (session && session.user) {
     const loginBtn = document.getElementById('navLoginBtn');
@@ -112,149 +151,238 @@
     const dashboardLink = session.user.role === 'teacher' ? 'teacher-dashboard.html'
       : session.user.role === 'admin' ? 'admin-dashboard.html'
       : 'student-dashboard.html';
-
     if (loginBtn) loginBtn.remove();
     if (signupBtn) {
       signupBtn.textContent = 'Dashboard';
       signupBtn.href = dashboardLink;
     }
-  }
-
-  // The saved login can be stale (cookie expired or cleared). Ask the server once; if it no longer
-  // recognises us, api.js forgets the saved login and we reload so the page shows "Log in" again.
-  if (session && session.user) {
-    apiRequest('/api/auth/me').catch(() => {
+    // The saved login can be stale (cookie expired or cleared). Ask the server once; if it no longer
+    // recognises us, api.js forgets the saved login and we reload so the page shows "Log in" again.
+    apiRequest('/api/auth/me').catch(function () {
       if (!getSession()) window.location.reload();
     });
   }
 
-  function skeletons(n) {
-    return `<div class="teacher-grid">${Array(n).fill(`
-      <div class="skeleton-card">
-        <div style="display:flex; gap:12px; align-items:center;">
-          <div class="skel-avatar"></div>
-          <div style="flex:1;">
-            <div class="skel-line w-60" style="margin-bottom:6px;"></div>
-            <div class="skel-line w-40"></div>
-          </div>
-        </div>
-        <div class="skel-line w-80" style="margin:12px 0;"></div>
-        <div class="skel-line w-40"></div>
-      </div>`).join('')}</div>`;
+  // ---------- Helpers ----------
+  function selectedRadius() {
+    const checked = document.querySelector('input[name="radius"]:checked');
+    return checked ? checked.value : '5';
   }
 
-  async function loadTeachers(page = 1) {
-    currentPage = page;
-    const resultsArea = document.getElementById('resultsArea');
-    resultsArea.innerHTML = skeletons(6);
-
-    const subject = document.getElementById('subjectFilter').value.trim();
-    const city = document.getElementById('cityFilter').value.trim();
-    const sort = document.getElementById('sortSelect').value;
-
-    try {
-      let url = `/api/teachers/browse?sort=${sort}&page=${page}&limit=12`;
-      if (subject) url += `&subject=${encodeURIComponent(subject)}`;
-      if (city) url += `&city=${encodeURIComponent(city)}`;
-
-      const data = await apiRequest(url);
-
-      if (data.teachers.length === 0) {
-        resultsArea.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size:36px; margin-bottom:12px;">🔍</div>
-            <h3 style="margin-bottom:6px;">No teachers found matching your filters</h3>
-            <p>Try clearing your search terms or expanding your subject criteria.</p>
-            <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="clearFilters()">Reset Filters</button>
-          </div>`;
-        document.getElementById('paginationArea').innerHTML = '';
-        return;
-      }
-
-      resultsArea.innerHTML = `<div class="teacher-grid">${data.teachers.map(renderCard).join('')}</div>`;
-      renderPagination(data.page, data.total_pages);
-    } catch (err) {
-      resultsArea.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
-    }
-  }
-
-  function clearFilters() {
-    document.getElementById('subjectFilter').value = '';
-    document.getElementById('cityFilter').value = '';
-    document.getElementById('sortSelect').value = 'rating';
-    loadTeachers(1);
-  }
-
-  function renderCard(t) {
-    const initials = t.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    const subjectsArray = (t.subjects || '').split(',').map(s => s.trim()).filter(Boolean);
-    const displayedSubjects = subjectsArray.slice(0, 3).join(', ') + (subjectsArray.length > 3 ? ` +${subjectsArray.length - 3} more` : '');
-
-    return `
-      <div class="teacher-card" onclick="viewProfile(${Number(t.id)})" style="cursor:pointer;">
-        <div>
-          <div class="teacher-card-top">
-            <div class="avatar">
-              ${t.profile_photo ? `<img class="avatar-photo" src="${photoUrl(t.profile_photo)}" alt="${escapeHtml(t.name)}">` : initials}
-            </div>
-            <div>
-              <h3>${escapeHtml(t.name)}</h3>
-              <div class="meta">${escapeHtml(t.qualification) || 'Verified Educator'}</div>
-              <div class="meta" style="margin-top:2px;">📍 ${escapeHtml(t.city) || 'Location on profile'}</div>
-            </div>
-          </div>
-
-          <div class="badge-row">
-            <span class="badge badge-rating">★ ${t.rating_avg > 0 ? Number(t.rating_avg).toFixed(1) : 'New'} (${t.total_reviews || 0})</span>
-            <span class="badge badge-verified">✓ ID Verified</span>
-            ${t.experience_years ? `<span class="badge badge-distance">${escapeHtml(t.experience_years)} yrs exp</span>` : ''}
-          </div>
-
-          <div style="font-size:13.5px; color:var(--ink-700); margin-bottom:14px; line-height:1.4;">
-            <strong>Teaches:</strong> ${escapeHtml(displayedSubjects) || 'Subjects listed on profile'}
-          </div>
-        </div>
-
-        <div>
-          <div class="fee">₹${t.fee_per_hour || 0} <span>/ hr</span></div>
-          <button class="btn btn-primary btn-block btn-sm">View Profile &amp; Book Demo</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function viewProfile(teacherId) {
+  function profileHref(id) {
     const current = getSession();
-    if (!current || !current.user) {
-      window.location.href = `signup.html?role=student&redirect=teacher-profile-view.html?id=${teacherId}`;
-      return;
-    }
-    // Only students can view a profile to book. Without this check a teacher or admin who is still
-    // logged in was silently bounced to their own dashboard.
-    if (current.user.role !== 'student') {
-      showToast('Only student accounts can book a teacher. Log out and sign in as a student to continue.', true);
-      return;
-    }
-    window.location.href = `teacher-profile-view.html?id=${teacherId}`;
+    const target = 'teacher-profile-view.html?id=' + id;
+    if (!current || !current.user) return 'signup.html?role=student&redirect=' + encodeURIComponent(target);
+    return target;
+  }
+
+  function skeletons(n) {
+    let html = '<div class="tl-grid" aria-hidden="true">';
+    for (let i = 0; i < n; i++) html += '<div class="tl-skel"></div>';
+    return html + '</div>';
+  }
+
+  function setNearStatus(kind, text) {
+    nearStatus.textContent = text || '';
+    if (kind) nearStatus.dataset.kind = kind;
+    else delete nearStatus.dataset.kind;
+  }
+
+  // The nearby endpoint always sorts by distance and has no city filter, so those controls are switched off in near mode.
+  function applyMode() {
+    const near = origin !== null;
+    cityInput.disabled = near;
+    sortSelect.disabled = near;
+    nearClear.hidden = !near;
+    nearBtnLabel.textContent = near ? 'Update my location' : 'Near me';
+  }
+
+  // ---------- Rendering ----------
+  function renderCard(t) {
+    const name = String(t.name || 'Tutor');
+    const initials = name.split(/\s+/).filter(Boolean).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase() || 'T';
+    const subjects = String(t.subjects || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    const shown = subjects.slice(0, 3).join(', ') + (subjects.length > 3 ? ' +' + (subjects.length - 3) + ' more' : '');
+    const rating = Number(t.rating_avg) > 0 ? Number(t.rating_avg).toFixed(1) : 'New';
+    const years = Number(t.experience_years);
+    const fee = Number(t.fee_per_hour) || 0;
+    const dist = Number(t.distance_km);
+    const id = Number(t.id);
+
+    return '<article class="tl-card">' +
+      '<div class="tl-top">' +
+        '<div class="tl-avatar" aria-hidden="true">' +
+          (t.profile_photo ? '<img src="' + escapeHtml(photoUrl(t.profile_photo)) + '" alt="" loading="lazy">' : escapeHtml(initials)) +
+        '</div>' +
+        '<div>' +
+          '<h2 class="tl-name"><a class="tl-open" href="' + escapeHtml(profileHref(id)) + '">' + escapeHtml(name) + '</a></h2>' +
+          '<p class="tl-meta">' + (escapeHtml(t.qualification) || 'Qualification on profile') + '</p>' +
+          '<p class="tl-meta">' + (escapeHtml(t.city) || 'Location on profile') + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tl-badges">' +
+        '<span class="tl-badge is-rating">★ ' + rating + ' (' + (Number(t.total_reviews) || 0) + ')</span>' +
+        '<span class="tl-badge is-verified">✓ ID verified</span>' +
+        (years > 0 ? '<span class="tl-badge">' + escapeHtml(String(years)) + ' yrs exp</span>' : '') +
+        (isFinite(dist) && t.distance_km !== undefined && t.distance_km !== null ? '<span class="tl-badge is-distance">' + dist.toFixed(1) + ' km away</span>' : '') +
+      '</div>' +
+      '<p class="tl-teaches"><strong>Teaches:</strong> ' + (escapeHtml(shown) || 'Subjects listed on profile') + '</p>' +
+      '<div class="tl-foot">' +
+        '<div class="tl-fee">₹' + fee + ' <span>/ hr</span></div>' +
+        '<span class="tl-cta" aria-hidden="true">View profile &rarr;</span>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function renderEmpty(near) {
+    resultsArea.innerHTML =
+      '<div class="tl-empty">' +
+        '<h2>' + (near ? 'No tutors within ' + escapeHtml(selectedRadius()) + ' km' : 'No tutors match your filters') + '</h2>' +
+        '<p>' + (near ? 'Try a bigger radius or a different subject.' : 'Try clearing a filter or searching for a different subject.') + '</p>' +
+        '<button type="button" class="btn btn-outline btn-sm" id="resetBtn">Reset filters</button>' +
+      '</div>';
+    pager.innerHTML = '';
   }
 
   function renderPagination(page, totalPages) {
-    const area = document.getElementById('paginationArea');
-    if (totalPages <= 1) { area.innerHTML = ''; return; }
+    if (totalPages <= 1) { pager.innerHTML = ''; return; }
     let html = '';
-    if (page > 1) html += `<button class="btn btn-outline btn-sm" onclick="loadTeachers(${page - 1})">← Previous</button>`;
-    html += `<span class="status-pill">Page ${page} of ${totalPages}</span>`;
-    if (page < totalPages) html += `<button class="btn btn-outline btn-sm" onclick="loadTeachers(${page + 1})">Next →</button>`;
-    area.innerHTML = html;
+    if (page > 1) html += '<button type="button" class="btn btn-outline btn-sm" data-page="' + (page - 1) + '">&larr; Previous</button>';
+    html += '<span>Page ' + page + ' of ' + totalPages + '</span>';
+    if (page < totalPages) html += '<button type="button" class="btn btn-outline btn-sm" data-page="' + (page + 1) + '">Next &rarr;</button>';
+    pager.innerHTML = html;
   }
 
-  document.getElementById('searchBtn').addEventListener('click', () => loadTeachers(1));
-  ['subjectFilter', 'cityFilter'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', (e) => { if (e.key === 'Enter') loadTeachers(1); });
-  });
-  document.getElementById('sortSelect').addEventListener('change', () => loadTeachers(1));
+  // ---------- Loading ----------
+  async function loadTeachers(page, moveFocus) {
+    const myRequest = ++requestId;
+    resultsArea.setAttribute('aria-busy', 'true');
+    resultsArea.innerHTML = skeletons(6);
+    summary.textContent = 'Searching...';
+    searchBtn.disabled = true;
 
+    const subject = subjectInput.value.trim();
+    const near = origin !== null;
+
+    try {
+      let url;
+      if (near) {
+        url = '/api/teachers/nearby?lat=' + encodeURIComponent(origin.lat) + '&lng=' + encodeURIComponent(origin.lng) +
+          '&radius=' + encodeURIComponent(selectedRadius()) + '&page=' + page + '&limit=' + PAGE_SIZE;
+      } else {
+        url = '/api/teachers/browse?sort=' + encodeURIComponent(sortSelect.value) + '&page=' + page + '&limit=' + PAGE_SIZE;
+        const city = cityInput.value.trim();
+        if (city) url += '&city=' + encodeURIComponent(city);
+      }
+      if (subject) url += '&subject=' + encodeURIComponent(subject);
+
+      const data = await apiRequest(url);
+      if (myRequest !== requestId) return; // a newer search replaced this one
+
+      const list = Array.isArray(data && data.teachers) ? data.teachers : [];
+      const total = Number(data && data.total) || list.length;
+
+      if (list.length === 0) {
+        summary.textContent = '';
+        renderEmpty(near);
+        return;
+      }
+
+      summary.innerHTML = '<strong>' + total + '</strong> tutor' + (total === 1 ? '' : 's') + ' found' +
+        (near ? ' within ' + escapeHtml(selectedRadius()) + ' km, nearest first' : '');
+      resultsArea.innerHTML = '<div class="tl-grid">' + list.map(renderCard).join('') + '</div>';
+      renderPagination(Number(data.page) || page, Number(data.total_pages) || 1);
+      if (moveFocus) summary.focus({ preventScroll: true });
+    } catch (err) {
+      if (myRequest !== requestId) return;
+      summary.textContent = '';
+      pager.innerHTML = '';
+      resultsArea.innerHTML = '<div class="tl-empty is-error"><h2>Could not load tutors</h2><p>' +
+        escapeHtml((err && err.message) || 'Something went wrong. Please try again.') +
+        '</p><button type="button" class="btn btn-outline btn-sm" id="retryBtn">Try again</button></div>';
+    } finally {
+      if (myRequest === requestId) {
+        resultsArea.setAttribute('aria-busy', 'false');
+        searchBtn.disabled = false;
+      }
+    }
+  }
+
+  function resetFilters() {
+    subjectInput.value = '';
+    cityInput.value = '';
+    sortSelect.value = 'rating';
+    origin = null;
+    setNearStatus('', '');
+    applyMode();
+    loadTeachers(1);
+  }
+
+  // ---------- Location ----------
+  function useMyLocation() {
+    if (!('geolocation' in navigator)) {
+      setNearStatus('error', 'Your browser cannot share its location. Search by city instead.');
+      return;
+    }
+    nearBtn.disabled = true;
+    setNearStatus('', 'Finding your location...');
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      nearBtn.disabled = false;
+      origin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setNearStatus('ok', 'Using your current location.');
+      applyMode();
+      loadTeachers(1);
+    }, function (err) {
+      nearBtn.disabled = false;
+      const msg = err && err.code === 1
+        ? 'Location access was blocked. Allow it in your browser settings, or search by city instead.'
+        : err && err.code === 3
+          ? 'Finding your location took too long. Please try again.'
+          : 'We could not find your location. Search by city instead.';
+      setNearStatus('error', msg);
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  }
+
+  // ---------- Events ----------
+  form.addEventListener('submit', function (e) { e.preventDefault(); loadTeachers(1); });
+  sortSelect.addEventListener('change', function () { loadTeachers(1); });
+  nearBtn.addEventListener('click', useMyLocation);
+  nearClear.addEventListener('click', function () {
+    origin = null;
+    setNearStatus('', '');
+    applyMode();
+    loadTeachers(1);
+  });
+  radiusInputs.forEach(function (r) {
+    r.addEventListener('change', function () { if (origin) loadTeachers(1); });
+  });
+
+  // Buttons rendered later (pagination, reset, retry) are handled in one place.
+  document.addEventListener('click', function (e) {
+    const pageBtn = e.target.closest('[data-page]');
+    if (pageBtn) {
+      loadTeachers(Number(pageBtn.dataset.page), true);
+      document.querySelector('.tl-filters').scrollIntoView({ block: 'start' });
+      return;
+    }
+    if (e.target.closest('#resetBtn')) { resetFilters(); return; }
+    if (e.target.closest('#retryBtn')) { loadTeachers(1); return; }
+
+    // Only students can open a profile to book. A logged-in teacher or admin gets a clear message
+    // instead of being silently bounced to their own dashboard.
+    const open = e.target.closest('a.tl-open');
+    if (open) {
+      const current = getSession();
+      if (current && current.user && current.user.role !== 'student') {
+        e.preventDefault();
+        showToast('Only student accounts can book a teacher. Log out and sign in as a student to continue.', true);
+      }
+    }
+  });
+
+  applyMode();
   loadTeachers(1);
+})();
 </script>
 
 </body>
