@@ -5,39 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Page Not Found — TutorLink</title>
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="css/style.css">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
+<!-- Absolute paths on purpose: the server returns this page for any unknown URL, even a deep one like /a/b/c, where relative links would break. -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/status.css">
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar lg-nav" aria-label="Main navigation">
   <div class="container">
-    <a href="index.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="/index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
+    <div class="lg-nav-actions">
+      <a href="/teachers.html" class="btn btn-outline btn-sm">Browse teachers</a>
+    </div>
   </div>
 </nav>
 
-<main style="min-height:calc(100vh - 73px); display:flex; align-items:center; justify-content:center; padding:40px 20px;">
-  <div style="text-align:center; max-width:420px;">
-    <div class="radius-visual" style="margin:0 auto 24px;">
-      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-        <circle class="ring" cx="150" cy="150" r="50"/>
-        <circle class="ring" cx="150" cy="150" r="90"/>
-        <circle class="ring" cx="150" cy="150" r="130"/>
-        <circle class="tutor-pin out" cx="230" cy="90" r="5"/>
-        <circle class="tutor-pin out" cx="70" cy="230" r="5"/>
-        <circle class="center-pin" cx="150" cy="150" r="7"/>
+<main class="st-main" id="main">
+  <div class="st-card">
+    <div class="st-radar" aria-hidden="true">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <circle class="lg-ring" cx="150" cy="150" r="50"/>
+        <circle class="lg-ring" cx="150" cy="150" r="90"/>
+        <circle class="lg-ring" cx="150" cy="150" r="130"/>
+        <circle class="lg-pin out" cx="236" cy="84" r="5"/>
+        <circle class="lg-pin out" cx="66" cy="232" r="5"/>
+        <circle class="lg-you" cx="150" cy="150" r="7"/>
       </svg>
     </div>
-    <div class="eyebrow" style="justify-content:center;">404</div>
-    <h1 style="font-size:26px; margin-bottom:10px;">This page is outside our search radius</h1>
-    <p style="color:var(--ink-500); margin-bottom:28px;">
-      The page you're looking for doesn't exist, or may have moved.
-    </p>
-    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-      <a href="index.html" class="btn btn-primary">Go to homepage</a>
-      <a href="teachers.html" class="btn btn-outline">Browse teachers</a>
+    <div class="st-big">404</div>
+    <h1>This page is outside our search radius</h1>
+    <p>The page you are looking for does not exist, or it may have moved.</p>
+    <div class="st-actions">
+      <a href="/index.html" class="btn btn-primary btn-lg">Go to the homepage</a>
+      <a href="/teachers.html" class="btn btn-outline btn-lg">Browse teachers</a>
     </div>
   </div>
 </main>

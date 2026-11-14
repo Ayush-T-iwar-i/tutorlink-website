@@ -9,6 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/teacher-nav.css">
 </head>
 <body class="pg pg-tdash page-dashboard">
 
@@ -44,12 +45,64 @@
   </div>
 </header>
 
+
 <main class="dashboard-body" id="mainContent" tabindex="-1">
-  <div class="container pg-wrap">
+  <div class="container pg-wrap tn-shellwrap">
 
     <div id="emailBanner"></div>
 
-    <section class="pg-hero pg-hero-dash" aria-labelledby="heroGreeting">
+    <div class="tn-shell">
+      <aside class="tn-rail-wrap">
+        <nav class="tn-rail" id="tnRail" aria-label="Dashboard sections">
+        <a class="tn-nav" href="#overview" data-route="overview">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          <span>Overview</span>
+        </a>
+        <a class="tn-nav" href="#requests-new" data-route="requests-new">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>
+          <span>New requests</span>
+          <em class="tn-count tn-count-warn" id="cntNew" hidden>0</em>
+        </a>
+        <a class="tn-nav" href="#requests-accepted" data-route="requests-accepted">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <span>Accepted requests</span>
+          <em class="tn-count" id="cntAccepted" hidden>0</em>
+        </a>
+        <a class="tn-nav" href="#running" data-route="running">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+          <span>Running classes</span>
+          <em class="tn-count" id="cntRunning" hidden>0</em>
+        </a>
+        <a class="tn-nav" href="#subjects" data-route="subjects">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 8h8M8 12h6"/></svg>
+          <span>Subjects I teach</span>
+        </a>
+        <a class="tn-nav" href="#schedule" data-route="schedule">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg>
+          <span>Schedule</span>
+        </a>
+        <a class="tn-nav" href="#courses" data-route="courses">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7l10-4 10 4-10 4z"/><path d="M6 9v6c0 1.5 2.7 3 6 3s6-1.5 6-3V9"/></svg>
+          <span>Courses</span>
+        </a>
+        <a class="tn-nav" href="#reviews" data-route="reviews">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>
+          <span>Reviews</span>
+        </a>
+        <a class="tn-nav" href="#earnings" data-route="earnings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12M6 9h12M9 4c5 0 7 2 7 5s-2 5-7 5H6l8 7"/></svg>
+          <span>Earnings</span>
+        </a>
+        <a class="tn-nav" href="#profile" data-route="profile">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span>Your profile</span>
+        </a>
+        </nav>
+      </aside>
+
+      <div class="tn-views">
+      <div class="tn-view" id="view-overview" hidden>
+        <section class="pg-hero pg-hero-dash" aria-labelledby="heroGreeting">
       <div class="pg-hero-glow" aria-hidden="true"></div>
       <div class="pg-hero-body">
         <span class="eyebrow">Teacher dashboard</span>
@@ -62,14 +115,12 @@
         <div class="pg-stat"><dd id="statRating">—</dd><dt>Rating</dt></div>
       </dl>
     </section>
-
-    <div id="profileBanner"></div>
-    <div id="attention" aria-live="polite"></div>
-    <div id="nextClass" aria-live="polite"></div>
-
-    <div class="pg-dgrid">
-      <div class="pg-dcol">
-
+        <div id="profileBanner"></div>
+        <div id="attention" aria-live="polite"></div>
+        <div id="nextClass" aria-live="polite"></div>
+        <div id="tnOverview"></div>
+      </div>
+      <div class="tn-view" id="view-requests" hidden>
         <section class="pg-card" id="sec-requests" aria-labelledby="h-requests">
           <header class="pg-card-head">
             <span class="pg-ic" aria-hidden="true">📥</span>
@@ -98,7 +149,45 @@
           <p class="pg-hint pg-updated" id="updatedAt"></p>
           <div id="bookingsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
         </section>
-
+      </div>
+      <div class="tn-view" id="view-running" hidden>
+        <section class="pg-card" id="sec-running" aria-labelledby="h-running">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">🏃</span>
+            <div>
+              <h2 id="h-running">My running classes</h2>
+              <p>Students you teach every month, with the next class and fees at a glance.</p>
+            </div>
+            <a href="teacher-students.html" class="btn btn-outline btn-sm pg-head-action">Open My students</a>
+          </header>
+          <div id="runningArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
+        </section>
+      </div>
+      <div class="tn-view" id="view-subjects" hidden>
+        <section class="pg-card" id="sec-subjects" aria-labelledby="h-subjects">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">🧠</span>
+            <div>
+              <h2 id="h-subjects">Subjects I teach</h2>
+              <p>Add more subjects so more students can find you. Remove the ones you no longer teach.</p>
+            </div>
+          </header>
+          <div id="subjectsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
+      </div>
+      <div class="tn-view" id="view-schedule" hidden>
+        <section class="pg-card" id="sec-schedule" aria-labelledby="h-schedule">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">🗓️</span>
+            <div>
+              <h2 id="h-schedule">Next 7 days</h2>
+              <p>Your accepted classes, grouped by day.</p>
+            </div>
+          </header>
+          <div id="scheduleArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
+        </section>
+      </div>
+      <div class="tn-view" id="view-courses" hidden>
         <section class="pg-card" id="sec-courses" aria-labelledby="h-courses">
           <header class="pg-card-head">
             <span class="pg-ic" aria-hidden="true">📚</span>
@@ -110,7 +199,8 @@
           </header>
           <div id="coursesArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
         </section>
-
+      </div>
+      <div class="tn-view" id="view-reviews" hidden>
         <section class="pg-card" id="sec-reviews" aria-labelledby="h-reviews">
           <header class="pg-card-head">
             <span class="pg-ic" aria-hidden="true">★</span>
@@ -122,30 +212,7 @@
           <div id="reviewsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
         </section>
       </div>
-
-      <div class="pg-dcol">
-        <section class="pg-card" id="sec-profile" aria-labelledby="h-profile">
-          <header class="pg-card-head">
-            <span class="pg-ic" aria-hidden="true">👤</span>
-            <div>
-              <h2 id="h-profile">Your profile</h2>
-              <p>What students see about you.</p>
-            </div>
-          </header>
-          <div id="profileSummary"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
-        </section>
-
-        <section class="pg-card" id="sec-schedule" aria-labelledby="h-schedule">
-          <header class="pg-card-head">
-            <span class="pg-ic" aria-hidden="true">🗓️</span>
-            <div>
-              <h2 id="h-schedule">Next 7 days</h2>
-              <p>Your accepted classes, grouped by day.</p>
-            </div>
-          </header>
-          <div id="scheduleArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
-        </section>
-
+      <div class="tn-view" id="view-earnings" hidden>
         <section class="pg-card" id="sec-earnings" aria-labelledby="h-earn">
           <header class="pg-card-head">
             <span class="pg-ic" aria-hidden="true">₹</span>
@@ -158,8 +225,20 @@
           <div id="earningsArea" aria-live="polite"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span></div></div></div>
         </section>
       </div>
+      <div class="tn-view" id="view-profile" hidden>
+        <section class="pg-card" id="sec-profile" aria-labelledby="h-profile">
+          <header class="pg-card-head">
+            <span class="pg-ic" aria-hidden="true">👤</span>
+            <div>
+              <h2 id="h-profile">Your profile</h2>
+              <p>What students see about you.</p>
+            </div>
+          </header>
+          <div id="profileSummary"><div class="pg-skel pg-skel-sm"><div class="pg-skel-lines"><span></span><span></span></div></div></div>
+        </section>
+      </div>
+      </div>
     </div>
-
   </div>
 </main>
 
@@ -273,5 +352,6 @@
 <script src="js/api.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/teacher-dashboard.js"></script>
+<script src="js/teacher-nav.js"></script>
 </body>
 </html>

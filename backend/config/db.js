@@ -16,6 +16,9 @@ const pool = mysql.createPool({
   // server's local midnight) shifts the day by one when serialised with toISOString()
   // on any server that is not in UTC.
   dateStrings: ['DATE'],
+  // Aiven (cloud MySQL) requires SSL. Set DB_SSL=true in the environment to enable it.
+  // Leave DB_SSL unset for local MySQL (XAMPP / Docker).
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
 });
 
 // Test the connection once when the server starts (skipped under Jest)
@@ -24,10 +27,10 @@ if (process.env.NODE_ENV !== 'test') {
     if (err) {
       console.error('❌ Database connection failed:', err.message);
       if (err.code === 'ECONNREFUSED') {
-        console.error('   ⚠️ MySQL server is not running on ' + (process.env.DB_HOST || 'localhost') + ':3306.');
+        console.error('   ⚠️ MySQL server is not running on ' + (process.env.DB_HOST || 'localhost') + ':' + (process.env.DB_PORT || 3306) + '.');
         console.error('   👉 Start MySQL (via XAMPP, Windows Service, or `docker compose up -d db`).');
       } else {
-        console.error('   Check your .env file (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)');
+        console.error('   Check your .env file (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL)');
       }
     } else {
       console.log('✅ Connected to MySQL database:', process.env.DB_NAME || 'tutorlink');

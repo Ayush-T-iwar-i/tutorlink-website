@@ -1,0 +1,48 @@
+/* ===========================================================
+   ACCOUNT SETTINGS (account-settings.html)
+   Classes are prefixed ac- so nothing else on the site is affected.
+   Load AFTER style.css and signup.css (the password rules list comes from signup.css).
+   =========================================================== */
+.ac-main { padding: 40px 0 72px; min-height: 70vh; }
+.ac-wrap { max-width: 720px; }
+.ac-hero { margin-bottom: 24px; }
+.ac-hero h1 { margin: 12px 0 8px; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.02em; color: var(--ink-950); }
+.ac-hero p { margin: 0; color: var(--ink-700); }
+
+.ac-card {
+  margin-bottom: 18px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)), var(--surface);
+}
+.ac-card h2 { margin: 0 0 6px; font-size: 18px; color: var(--ink-950); }
+.ac-sub { margin: 0 0 18px; font-size: 14px; color: var(--ink-700); }
+
+.ac-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 0; }
+.ac-detail { padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-subtle); min-width: 0; }
+.ac-detail dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-500); }
+.ac-detail dd { margin: 4px 0 0; font-size: 15px; font-weight: 600; color: var(--ink-950); overflow-wrap: anywhere; }
+
+.ac-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 16px; }
+.ac-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: var(--radius-full);
+  font-size: 13px; font-weight: 600;
+}
+.ac-pill.is-ok { background: var(--success-light); color: #6EE0B0; }
+.ac-pill.is-warn { background: var(--warning-light); color: #F0C778; }
+.ac-pill.is-wait { background: var(--surface-subtle); color: var(--ink-700); }
+.ac-verify-note { margin: 0; font-size: 13.5px; color: var(--ink-700); }
+
+.ac-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.ac-danger-note { margin: 12px 0 0; font-size: 13px; color: var(--ink-500); }
+
+@media (max-width: 560px) {
+  .ac-main { padding: 28px 0 56px; }
+  .ac-card { padding: 18px; }
+  .ac-actions .btn { width: 100%; }
+}
+
+/* Elements with display set by a class (flex, inline-flex) would otherwise ignore the hidden attribute. */
+.ac-wrap [hidden] { display: none !important; }

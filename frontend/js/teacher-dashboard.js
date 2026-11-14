@@ -211,6 +211,8 @@
   function jumpTo(id) {
     var n = $(id);
     if (!n) return;
+    // The dashboard shows one view at a time (see teacher-nav.js); open the view that holds this card first.
+    if (window.tnShow) window.tnShow(id);
     n.scrollIntoView({ behavior: 'smooth', block: 'start' });
     var h = n.querySelector('h2');
     if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }

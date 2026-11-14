@@ -145,11 +145,11 @@
 
   // ---------- Navbar state ----------
   const session = getSession();
-  if (session && session.user) {
+  if (session) {
     const loginBtn = document.getElementById('navLoginBtn');
     const signupBtn = document.getElementById('navSignupBtn');
-    const dashboardLink = session.user.role === 'teacher' ? 'teacher-dashboard.html'
-      : session.user.role === 'admin' ? 'admin-dashboard.html'
+    const dashboardLink = session.role === 'teacher' ? 'teacher-dashboard.html'
+      : session.role === 'admin' ? 'admin-dashboard.html'
       : 'student-dashboard.html';
     if (loginBtn) loginBtn.remove();
     if (signupBtn) {
@@ -172,7 +172,7 @@
   function profileHref(id) {
     const current = getSession();
     const target = 'teacher-profile-view.html?id=' + id;
-    if (!current || !current.user) return 'signup.html?role=student&redirect=' + encodeURIComponent(target);
+    if (!current) return 'signup.html?role=student&redirect=' + encodeURIComponent(target);
     return target;
   }
 
@@ -373,7 +373,7 @@
     const open = e.target.closest('a.tl-open');
     if (open) {
       const current = getSession();
-      if (current && current.user && current.user.role !== 'student') {
+      if (current && current.role !== 'student') {
         e.preventDefault();
         showToast('Only student accounts can book a teacher. Log out and sign in as a student to continue.', true);
       }

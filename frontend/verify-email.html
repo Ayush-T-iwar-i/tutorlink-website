@@ -4,114 +4,113 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verify Email — TutorLink</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/status.css">
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar lg-nav" aria-label="Main navigation">
   <div class="container">
-    <a href="index.html" style="text-decoration:none;">
-      <div class="brand"><span class="brand-mark"></span>Tutor<em>Link</em></div>
+    <a href="index.html" class="brand" aria-label="TutorLink home">
+      <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
-    <div class="nav-links">
-      <a href="login.html">Log in</a>
+    <div class="lg-nav-actions">
+      <a href="login.html" class="btn btn-outline btn-sm">Log in</a>
     </div>
   </div>
 </nav>
 
-<div class="auth-page">
-  <div class="auth-side">
-    <div class="side-top">
-      <div class="eyebrow">Account verification</div>
-      <h2>Confirm your email address.</h2>
-      <p>Verifying your email ensures you receive important booking updates, class reminders, and receipts.</p>
+<main class="st-main" id="main">
+  <div class="st-card" id="card" data-state="loading" aria-live="polite">
+    <div class="st-icon" id="icon" aria-hidden="true"><div class="st-spinner"></div></div>
+    <h1 id="heading">Verifying your email…</h1>
+    <p id="subtext">Please wait while we confirm your verification link.</p>
+
+    <div id="msgBox" class="lg-msg st-msg" role="alert"></div>
+
+    <div class="st-actions" id="actionArea" hidden>
+      <a id="actionBtn" href="login.html" class="btn btn-primary btn-lg">Continue to TutorLink</a>
     </div>
+
+    <p class="st-links"><a href="login.html">Back to log in</a> &nbsp;&bull;&nbsp; <a href="index.html">Home</a></p>
   </div>
-
-  <div class="auth-form-wrap">
-    <div class="auth-card" style="text-align:center;">
-      <div id="statusIcon" style="font-size:48px; margin-bottom:12px;">⏳</div>
-      <h2 id="heading">Verifying your email…</h2>
-      <p class="subtitle" id="subtext">Please wait while we confirm your verification link.</p>
-
-      <div id="msgBox" class="msg-box" role="alert" style="text-align:left; margin-top:20px;"></div>
-
-      <div id="actionArea" style="margin-top:24px; display:none;">
-        <a id="actionBtn" href="login.html" class="btn btn-primary btn-block">Continue to TutorLink</a>
-      </div>
-
-      <div class="auth-footer" style="margin-top:24px;">
-        <a href="login.html">Back to log in</a> &bull; <a href="index.html">Home</a>
-      </div>
-    </div>
-  </div>
-</div>
+</main>
 
 <script src="js/api.js"></script>
 <script>
-  (async function() {
-    const heading = document.getElementById('heading');
-    const subtext = document.getElementById('subtext');
-    const statusIcon = document.getElementById('statusIcon');
-    const msgBox = document.getElementById('msgBox');
-    const actionArea = document.getElementById('actionArea');
-    const actionBtn = document.getElementById('actionBtn');
+(function () {
+  'use strict';
 
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
+  const ICONS = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16.5v.01"/><path d="M10.3 3.9L2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>'
+  };
+
+  const card = document.getElementById('card');
+  const icon = document.getElementById('icon');
+  const heading = document.getElementById('heading');
+  const subtext = document.getElementById('subtext');
+  const msgBox = document.getElementById('msgBox');
+  const actionArea = document.getElementById('actionArea');
+  const actionBtn = document.getElementById('actionBtn');
+
+  function show(state, title, sub, message, href, label) {
+    card.dataset.state = state;
+    icon.innerHTML = ICONS[state];
+    heading.textContent = title;
+    subtext.textContent = sub;
+    msgBox.className = 'lg-msg st-msg is-' + state;
+    msgBox.textContent = message || '';
+    actionBtn.href = href;
+    actionBtn.textContent = label;
+    actionArea.hidden = false;
+  }
+
+  function dashboardFor(role) {
+    if (role === 'teacher') return 'teacher-dashboard.html';
+    if (role === 'admin') return 'admin-dashboard.html';
+    return 'student-dashboard.html';
+  }
+
+  async function run() {
+    const token = new URLSearchParams(window.location.search).get('token');
 
     if (!token) {
-      statusIcon.textContent = '⚠️';
-      heading.textContent = 'Missing Token';
-      subtext.textContent = 'This verification link is invalid or incomplete.';
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = 'No verification token was provided. Please check the link in your email or log in to request a new one.';
-      actionArea.style.display = 'block';
-      actionBtn.href = 'login.html';
-      actionBtn.textContent = 'Go to Log In';
+      show('error', 'Missing token', 'This verification link is invalid or incomplete.',
+        'No verification token was provided. Please check the link in your email, or log in to ask for a new one.',
+        'login.html', 'Go to log in');
       return;
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/verify-email?token=${encodeURIComponent(token)}`);
-      const data = await res.json();
+      const res = await fetch(API_BASE + '/api/auth/verify-email?token=' + encodeURIComponent(token));
+      let data = {};
+      try { data = await res.json(); } catch (e) { /* the server sent no JSON; the status code below still tells us what happened */ }
+      if (!res.ok) throw new Error(data.error || 'Verification failed.');
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Verification failed.');
-      }
-
-      statusIcon.textContent = '✅';
-      heading.textContent = 'Email Verified!';
-      subtext.textContent = 'Your email address has been successfully verified.';
-      msgBox.className = 'msg-box success';
-      msgBox.textContent = data.message || 'Thank you for verifying your email address.';
-      actionArea.style.display = 'block';
-
-      // If user is already logged in, route to their dashboard
-      const session = getSession();
-      if (session && session.role) {
-        session.email_verified = 1;
-        saveSession(session);
-        const home = session.role === 'teacher' ? 'teacher-dashboard.html'
-          : session.role === 'admin' ? 'admin-dashboard.html'
-          : 'student-dashboard.html';
-        actionBtn.href = home;
-        actionBtn.textContent = 'Go to Dashboard';
+      // getSession() returns the saved user object itself (id, name, role, ...).
+      const user = getSession();
+      if (user) {
+        user.email_verified = 1;
+        saveSession(user);
+        show('success', 'Email verified', 'Your email address has been confirmed.',
+          data.message || 'Thank you for verifying your email address.', dashboardFor(user.role), 'Go to your dashboard');
       } else {
-        actionBtn.href = 'login.html';
-        actionBtn.textContent = 'Log In to Your Account';
+        show('success', 'Email verified', 'Your email address has been confirmed.',
+          data.message || 'Thank you for verifying your email address.', 'login.html', 'Log in to your account');
       }
     } catch (err) {
-      statusIcon.textContent = '❌';
-      heading.textContent = 'Verification Failed';
-      subtext.textContent = 'Could not verify your email address.';
-      msgBox.className = 'msg-box error';
-      msgBox.textContent = err.message || 'This verification link is invalid or has expired.';
-      actionArea.style.display = 'block';
-      actionBtn.href = 'login.html';
-      actionBtn.textContent = 'Go to Log In';
+      show('error', 'Verification failed', 'We could not verify your email address.',
+        (err && err.message) || 'This verification link is invalid or has expired.', 'login.html', 'Go to log in');
     }
-  })();
+  }
+
+  run();
+})();
 </script>
 </body>
 </html>
