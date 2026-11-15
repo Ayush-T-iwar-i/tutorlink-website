@@ -1,0 +1,26 @@
+/* Student dashboard: phone fixes (header fits the screen, Log out always reachable). Loaded after student-dashboard.css. */
+.sd-only-sm { display: none; }
+.sd-logout { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (max-width: 720px) {
+  html, body.sd { overflow-x: clip; max-width: 100%; }
+  body.sd .dashboard-header { padding: 10px 0; }
+  body.sd .dashboard-header .container { flex-wrap: nowrap; justify-content: space-between; }
+  body.sd .dashboard-header .brand { min-width: 0; flex: 0 1 auto; font-size: 19px; }
+  body.sd .dashboard-header .header-actions { flex: 0 0 auto; margin-left: auto; }
+  body.sd .dashboard-header .header-actions > * { flex: 0 0 auto; }
+  /* Log out stays in the header as a compact icon button */
+  body.sd .sd-logout { width: 34px; height: 34px; padding: 0; justify-content: center; }
+  body.sd .sd-logout-label { display: none; }
+  body.sd .notif-bell { width: 34px; height: 34px; }
+  .sd-only-sm { display: flex; }
+  body.sd .dashboard-body { padding-top: 8px !important; }
+  /* Notification list opens inside the screen, never off the edge */
+  body.sd .notif-dropdown { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; max-width: none; }
+}
+@media (max-width: 360px) {
+  body.sd .dashboard-header .brand { font-size: 17px; }
+  body.sd .dashboard-header .brand-mark { width: 28px; height: 28px; }
+  body.sd .dashboard-header .header-actions { gap: 6px; }
+  body.sd .dashboard-header .container { gap: 6px; }
+}
