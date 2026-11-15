@@ -1,0 +1,20 @@
+/* Phone fixes for pages that use the plain header (admin dashboard, privacy, terms). Load after style.css. */
+
+/* Pages whose navbar has no hamburger button: show the links inline instead of an off-canvas menu nobody can open. */
+@media (max-width: 900px) {
+  .navbar:not(:has(.nav-toggle)) .nav-links {
+    position: static; inset: auto; transform: none; visibility: visible;
+    height: auto; width: auto; padding: 0; border: 0; background: none;
+    flex-direction: row; align-items: center; gap: 4px; overflow: visible;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .navbar:not(:has(.nav-toggle)) .nav-links a:not(.btn) { width: auto; font-size: 14px; padding: 8px 10px; }
+}
+
+/* Admin header: keep brand, name and Log out on one line down to 320px. */
+@media (max-width: 480px) {
+  .dashboard-header .container { flex-wrap: nowrap; gap: 8px; }
+  .dashboard-header .brand { min-width: 0; font-size: 18px; }
+  .dashboard-header .brand span[style*="font-mono"] { display: none; }
+  .dashboard-header .header-actions { flex: 0 0 auto; margin-left: auto; gap: 8px; }
+}
