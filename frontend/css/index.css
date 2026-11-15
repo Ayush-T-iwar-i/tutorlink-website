@@ -792,3 +792,29 @@ html.ix-book-on .ix-source { display: none; }
   .ix-bookicon, .ix-seal, .ix-cover-gloss, .ix-cover-title, .ix-float, .ix-fit { animation: none !important; }
   .ix-cover-title { background-position: 40% 0; }
 }
+
+
+/* ===========================================================
+   SMOOTHNESS + HEADER
+   =========================================================== */
+/* Header slides up out of the way while scrolling down and returns on scroll up. */
+.navbar { transition: transform 0.28s ease, background var(--transition-fast); will-change: transform; }
+.navbar.nav-hidden { transform: translateY(-100%); }
+
+/* Horizontal swipes are handled by the book (page turn); vertical scrolling stays native. */
+html.ix-book-on .ix-stage { touch-action: pan-y; }
+
+/* A blurred, translucent bar over a moving 3D book is the most expensive thing on a phone. */
+html.ix-book-on .navbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(10, 10, 15, 0.96); }
+
+/* Single-page (phone) book: cheaper effects only, same look. */
+.ix-narrow .ix-front.ix-cover-face { filter: none; }
+.ix-narrow .ix-cover-face .ix-cover { box-shadow: 0 18px 30px -10px rgba(0, 0, 0, 0.65); }
+.ix-narrow .ix-fit::after { filter: none; background: radial-gradient(ellipse, rgba(0, 0, 0, 0.45), transparent 70%); }
+.ix-narrow .ix-cover-gloss, .ix-narrow .ix-cover-title, .ix-narrow .ix-seal, .ix-narrow .ix-bookicon { animation: none; }
+.ix-narrow .ix-float.is-closed { animation: none; }
+@media (max-width: 900px) {
+  .ix-stage { background: radial-gradient(ellipse 60% 55% at 50% 42%, rgba(124, 92, 252, 0.2), transparent 70%); }
+  .ix-spin-a, .ix-spin-b, .ix-glow, .ix-twinkle, .ix-bob, .ix-grow, .ix-shine { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) { .navbar { transition: none; } }

@@ -378,9 +378,70 @@
     }
   }, true);
 
+  /* ---------- horizontal gestures: swipe, arrow keys, sideways wheel turn the page ---------- */
+  var swipe = null;
+  stage.addEventListener('touchstart', function (e) {
+    if (!layout || e.touches.length !== 1) { swipe = null; return; }
+    swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (!swipe || !layout) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+    var quick = Date.now() - swipe.t < 700;
+    swipe = null;
+    if (quick && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+      goTo(clamp(Math.round(targetP) + (dx < 0 ? 1 : -1), 0, n + 1));
+    }
+  }, { passive: true });
+  stage.addEventListener('touchcancel', function () { swipe = null; }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (!layout || e.altKey || e.ctrlKey || e.metaKey) return;
+    var tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(clamp(Math.round(targetP) + 1, 0, n + 1)); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(clamp(Math.round(targetP) - 1, 0, n + 1)); }
+  });
+
+  var wheelLock = 0;
+  stage.addEventListener('wheel', function (e) {
+    if (!layout || Math.abs(e.deltaX) < 30 || Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.5) return;
+    var now = Date.now();
+    if (now - wheelLock < 500) return;
+    wheelLock = now;
+    goTo(clamp(Math.round(targetP) + (e.deltaX > 0 ? 1 : -1), 0, n + 1));
+  }, { passive: true });
+
+  /* ---------- header: slides away when scrolling down, comes back when scrolling up ---------- */
+  var lastY = window.pageYOffset;
+  var navTick = false;
+  function navSync() {
+    navTick = false;
+    if (!nav) return;
+    var y = window.pageYOffset;
+    var menuOpen = document.getElementById('navToggle') && document.getElementById('navToggle').getAttribute('aria-expanded') === 'true';
+    var dy = y - lastY;
+    if (y < 80 || menuOpen || dy < -6) nav.classList.remove('nav-hidden');
+    else if (dy > 6) nav.classList.add('nav-hidden');
+    if (Math.abs(dy) > 6 || y < 80) lastY = y;
+  }
+  window.addEventListener('scroll', function () {
+    if (!navTick) { navTick = true; window.requestAnimationFrame(navSync); }
+  }, { passive: true });
+  if (nav) nav.addEventListener('focusin', function () { nav.classList.remove('nav-hidden'); });
+
   /* ---------- lifecycle ---------- */
   var resizeRaf = 0;
+  var lastW = window.innerWidth;
+  var lastH = window.innerHeight;
   function onResize() {
+    // Phones fire "resize" every time the address bar slides away while scrolling. Rebuilding the
+    // book on each of those is what made scrolling stutter, so only real size changes count.
+    var w = window.innerWidth, h = window.innerHeight;
+    if (w === lastW && Math.abs(h - lastH) < 160) return;
+    lastW = w;
+    lastH = h;
     if (resizeRaf) return;
     resizeRaf = window.requestAnimationFrame(function () {
       resizeRaf = 0;
