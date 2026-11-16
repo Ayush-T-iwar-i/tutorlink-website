@@ -21,7 +21,7 @@
       <span class="brand-mark" aria-hidden="true"></span>Tutor<em>Link</em>
     </a>
     <div class="header-actions">
-      <a href="teacher-students.html" class="btn btn-primary btn-sm">My students</a>
+      <a href="teacher-students.html" class="btn btn-primary btn-sm tn-hide-sm">My students</a>
       <button type="button" class="btn btn-outline btn-sm pg-hide-sm" id="cmdBtn" aria-keyshortcuts="Control+K">Quick actions <kbd class="pg-kbd">Ctrl K</kbd></button>
       <div class="notif-wrap">
         <button type="button" class="notif-bell" id="notifBell" aria-label="Notifications">
@@ -40,7 +40,7 @@
         <span id="welcomeText"></span>
       </a>
       <a href="account-settings.html" class="btn btn-outline btn-sm pg-hide-sm">Settings</a>
-      <button type="button" id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+      <button type="button" id="logoutBtn" class="btn btn-outline btn-sm tn-logout" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span class="tn-logout-label">Log out</span></button>
     </div>
   </div>
 </header>
@@ -96,6 +96,14 @@
         <a class="tn-nav" href="#profile" data-route="profile">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
           <span>Your profile</span>
+        </a>
+        <a class="tn-nav tn-only-sm" href="teacher-students.html">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
+          <span>My students</span>
+        </a>
+        <a class="tn-nav tn-only-sm" href="account-settings.html">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          <span>Settings</span>
         </a>
         </nav>
       </aside>

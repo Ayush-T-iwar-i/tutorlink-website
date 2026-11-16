@@ -238,3 +238,31 @@
   .tn-two, .tn-actions { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) { .tn-actions { grid-template-columns: 1fr; } }
+
+/* ---- Header + notification bar: fit every screen (phone and laptop) ---- */
+.tn-only-sm { display: none; }
+.tn-logout { display: inline-flex; align-items: center; gap: 8px; }
+body.pg-tdash .notif-dropdown { max-height: min(70vh, 480px); overflow-y: auto; overscroll-behavior: contain; }
+body.pg-tdash .notif-dropdown * { overflow-wrap: anywhere; }
+
+@media (max-width: 720px) {
+  html, body.pg-tdash { overflow-x: clip; max-width: 100%; }
+  body.pg-tdash .dashboard-header { padding: 10px 0; }
+  body.pg-tdash .dashboard-header .container { flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+  body.pg-tdash .dashboard-header .brand { min-width: 0; flex: 0 1 auto; font-size: 19px; }
+  body.pg-tdash .dashboard-header .header-actions { flex: 0 0 auto; flex-wrap: nowrap; margin-left: auto; gap: 8px; }
+  body.pg-tdash .dashboard-header .header-actions > * { flex: 0 0 auto; }
+  .tn-hide-sm { display: none !important; }
+  .tn-only-sm { display: flex; }
+  body.pg-tdash .tn-logout { width: 34px; height: 34px; padding: 0; justify-content: center; }
+  body.pg-tdash .tn-logout-label { display: none; }
+  body.pg-tdash .notif-bell { width: 34px; height: 34px; }
+  /* Notification list opens inside the screen, never off the edge */
+  body.pg-tdash .notif-dropdown { position: fixed; left: 12px; right: 12px; top: 62px; width: auto; max-width: none; max-height: calc(100vh - 80px); max-height: calc(100dvh - 80px); }
+}
+@media (max-width: 360px) {
+  body.pg-tdash .dashboard-header .brand { font-size: 17px; }
+  body.pg-tdash .dashboard-header .brand-mark { width: 28px; height: 28px; }
+  body.pg-tdash .dashboard-header .header-actions { gap: 6px; }
+  body.pg-tdash .dashboard-header .container { gap: 6px; }
+}
