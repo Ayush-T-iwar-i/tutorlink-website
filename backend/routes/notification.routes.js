@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { verifyToken } = require('../middleware/auth.middleware');
+const { sendPushToUser } = require('../lib/push');
 
 // ---------- GET MY NOTIFICATIONS (most recent first) ----------
 // GET /api/notifications/me
@@ -56,7 +57,7 @@ module.exports = router;
  * Not mounted as a route — imported directly:
  *   const { createNotification } = require('../routes/notification.routes');
  */
-module.exports.createNotification = async function createNotification(userId, message, link) {
+module.exports.createNotification = async function createNotification(userId, message, link, pushOptions) {
   try {
     await db.query(
       'INSERT INTO notifications (user_id, message, link) VALUES (?, ?, ?)',
@@ -64,5 +65,15 @@ module.exports.createNotification = async function createNotification(userId, me
     );
   } catch (err) {
     console.error('Create notification error:', err);
+    return;
   }
+  // Also show it on the person's phone/laptop. Not awaited: it must never slow the request down.
+  // pushOptions (optional) can set { title, body, url, tag }.
+  const opts = pushOptions || {};
+  sendPushToUser(userId, {
+    title: opts.title || 'TutorLink',
+    body: opts.body || message,
+    url: opts.url || link || 'index.html',
+    tag: opts.tag,
+  });
 };

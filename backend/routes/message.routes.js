@@ -82,8 +82,16 @@ router.post('/:bookingId', verifyToken, async (req, res) => {
     const otherUserId = req.user.id === participants.student_user_id
       ? participants.teacher_user_id
       : participants.student_user_id;
-    const link = req.user.id === participants.student_user_id ? 'teacher-dashboard.html' : 'student-dashboard.html';
-    await createNotification(otherUserId, 'You have a new message.', link);
+    // The link opens the dashboard with this chat already open (see js/push.js).
+    const page = req.user.id === participants.student_user_id ? 'teacher-dashboard.html' : 'student-dashboard.html';
+    const link = `${page}?chat=${encodeURIComponent(req.params.bookingId)}`;
+    const [[sender]] = await db.query('SELECT name FROM users WHERE id = ?', [req.user.id]);
+    await createNotification(otherUserId, 'You have a new message.', link, {
+      title: (sender && sender.name) || 'New message',
+      body: message.trim(),
+      url: link,
+      tag: `chat-${req.params.bookingId}`,
+    });
 
     res.status(201).json({ id: result.insertId, message: message.trim(), created_at: new Date() });
   } catch (err) {
