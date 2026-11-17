@@ -9,6 +9,8 @@ const path = require('path');
 const db = require('./config/db');
 const logger = require('./lib/logger');
 const security = require('./config/security');
+const pushRoutes = require('./routes/push.routes');
+
 const { requestContext, bindLogContext, apiNotFound, errorHandler } = require('./middleware/request-context');
 
 // Route every console.log/warn/error through the structured logger (request ids, secret redaction).
@@ -64,6 +66,8 @@ if (corsProblem) fatal(corsProblem);
 
 // Must be the first middleware: request id, uniform error responses, request log.
 app.use(requestContext);
+
+app.use('/api/push', pushRoutes);
 
 // ---------- Gzip / Brotli compression (saves 60-80% bandwidth) ----------
 app.use(compression({
