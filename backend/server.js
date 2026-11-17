@@ -67,8 +67,6 @@ if (corsProblem) fatal(corsProblem);
 // Must be the first middleware: request id, uniform error responses, request log.
 app.use(requestContext);
 
-app.use('/api/push', pushRoutes);
-
 // ---------- Gzip / Brotli compression (saves 60-80% bandwidth) ----------
 app.use(compression({
   level: 6,                    // balanced speed vs ratio
@@ -161,6 +159,7 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/my-students', myStudentsRoutes);
 app.use('/api/my-tuition', myTuitionRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/push', pushRoutes);
 
 app.get('/health', async (req, res) => {
   const health = {
