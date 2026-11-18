@@ -19,4 +19,4 @@ Disallow: /student-tuition.html
 Disallow: /teacher-students.html
 Disallow: /teacher-profile-view.html
 
-Sitemap: https://tutorlink.example.com/sitemap.xml
+Sitemap: https://ghartutor.online/sitemap.xml
