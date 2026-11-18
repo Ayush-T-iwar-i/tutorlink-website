@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const fileStore = require('../lib/file-store');
 const { optionalText, optionalCoordinates, sendValidationError } = require('../lib/validate');
 
 // ---------- UPDATE STUDENT LOCATION (protected: own account only) ----------
@@ -82,6 +83,7 @@ router.get('/by-user/:userId', verifyToken, requireOwnUser, async (req, res) => 
 router.post('/:userId/photo', verifyToken, requireOwnUser, upload.photo.single('photo'), upload.verifyRealFileType('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
+    await fileStore.persist(`photos/${req.file.filename}`, req.file.path);
     await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
     res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
   } catch (err) {

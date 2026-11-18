@@ -208,7 +208,7 @@
     content.setAttribute('aria-busy', 'false');
     content.innerHTML = '';
 
-    var location = [t.address, t.city].filter(Boolean).join(', ') || 'Location shown on request';
+    var location = t.city || 'Location shown on request';
     var rating = Number(t.rating_avg) > 0 ? Number(t.rating_avg).toFixed(1) : null;
     var verified = !t.verification_status || t.verification_status === 'approved';
 

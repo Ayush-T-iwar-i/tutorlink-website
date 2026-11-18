@@ -9,6 +9,7 @@ const path = require('path');
 const db = require('./config/db');
 const logger = require('./lib/logger');
 const security = require('./config/security');
+const fileStore = require('./lib/file-store');
 const pushRoutes = require('./routes/push.routes');
 
 const { requestContext, bindLogContext, apiNotFound, errorHandler } = require('./middleware/request-context');
@@ -141,6 +142,11 @@ app.use(express.static(path.join(__dirname, '..', 'frontend'), {
   },
 }));
 
+// A redeploy can wipe the disk: bring a missing photo back from the database before serving it.
+app.get('/uploads/photos/:name', async (req, res, next) => {
+  await fileStore.restore('photos/' + req.params.name);
+  next();
+});
 app.use('/uploads/photos', express.static(path.join(__dirname, 'uploads', 'photos')));
 
 app.use('/api/auth', authRoutes);

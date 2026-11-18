@@ -4,6 +4,7 @@ const path = require('path');
 const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
+const fileStore = require('../lib/file-store');
 const { optionalText, sendValidationError } = require('../lib/validate');
 
 // ---------- UPLOAD VERIFICATION DOCUMENTS (protected: own account, teacher only) ----------
@@ -26,6 +27,11 @@ router.post(
 
       const updates = [];
       const params = [];
+
+      // Keep a copy in the database so the files survive a redeploy that wipes the disk.
+      for (const list of Object.values(files)) {
+        for (const f of list) await fileStore.persist(f.filename, f.path);
+      }
 
       if (files.id_proof) { updates.push('id_proof_path = ?'); params.push(files.id_proof[0].filename); }
       if (files.address_proof) { updates.push('address_proof_path = ?'); params.push(files.address_proof[0].filename); }
@@ -187,20 +193,21 @@ router.get('/nearby', async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
     const searchRadius = Math.min(100, Math.max(0.5, parseFloat(radius) || parseFloat(process.env.DEFAULT_RADIUS_KM) || 5));
 
-    // Clamped Haversine formula prevents NaN/NULL in MySQL when lat/lng are identical
+    // Clamped Haversine formula prevents NaN/NULL in MySQL when lat/lng are identical.
+    // The distance is rounded UP to the next 0.5 km so nobody can pinpoint a teacher's home by
+    // searching from several places (the exact coordinates are never sent to the browser).
     let sql = `
       SELECT
         t.id, u.name, u.profile_photo, t.qualification, t.subjects, t.grades,
-        t.experience_years, t.fee_per_hour, t.address, t.city,
+        t.experience_years, t.fee_per_hour, t.city,
         t.rating_avg, t.total_reviews,
-        t.latitude, t.longitude,
-        (6371 * ACOS(
+        (CEIL(2 * 6371 * ACOS(
           LEAST(1.0, GREATEST(-1.0,
             COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
             COS(RADIANS(t.longitude) - RADIANS(?)) +
             SIN(RADIANS(?)) * SIN(RADIANS(t.latitude))
           ))
-        )) AS distance_km
+        )) / 2) AS distance_km
       FROM teachers t
       JOIN users u ON u.id = t.user_id
       WHERE t.verification_status = 'approved'
@@ -263,7 +270,7 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const [rows] = await db.query(
       `SELECT t.id, t.qualification, t.subjects, t.grades, t.experience_years,
-              t.fee_per_hour, t.languages, t.bio, t.address, t.city, t.available_slots,
+              t.fee_per_hour, t.languages, t.bio, t.city, t.available_slots,
               t.rating_avg, t.total_reviews, u.name, u.profile_photo
        FROM teachers t JOIN users u ON u.id = t.user_id
        WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL`,
@@ -307,6 +314,7 @@ router.get('/:userId/documents/:type', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'No document of this type has been uploaded.' });
     }
 
+    await fileStore.restore(rows[0].filename);
     res.sendFile(rows[0].filename, { root: path.join(__dirname, '..', 'uploads') });
   } catch (err) {
     console.error('View document error:', err);
@@ -322,6 +330,7 @@ router.post('/:userId/photo', verifyToken, requireOwnUser,
   async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No photo was uploaded.' });
+      await fileStore.persist(`photos/${req.file.filename}`, req.file.path);
       await db.query('UPDATE users SET profile_photo = ? WHERE id = ?', [`photos/${req.file.filename}`, req.params.userId]);
       res.json({ message: 'Profile photo updated.', path: `photos/${req.file.filename}` });
     } catch (err) {
