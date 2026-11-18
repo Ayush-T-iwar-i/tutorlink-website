@@ -1,5 +1,5 @@
 /* =========================================================
-   TutorLink - student "My tuition" page
+   GharTutor - student "My tuition" page
    Place at: frontend/js/student-tuition.js
    Needs: js/api.js, js/ui.js (loaded before this file)
    Talks to: /api/my-tuition/*
@@ -444,7 +444,7 @@
     cur = null;
     $('detailView').hidden = true;
     $('listView').hidden = false;
-    document.title = 'My tuition — TutorLink';
+    document.title = 'My tuition — GharTutor';
     loadList().then(function () {
       var back = focusId || lastOpenedId;
       if (back) {
@@ -490,7 +490,7 @@
       if (!cur || cur.seq !== my) return;
       cur.data = d;
       if (d.today) TODAY = d.today;
-      document.title = (d.teacher && d.teacher.name ? d.subject + ' with ' + d.teacher.name + ' — ' : '') + 'My tuition — TutorLink';
+      document.title = (d.teacher && d.teacher.name ? d.subject + ' with ' + d.teacher.name + ' — ' : '') + 'My tuition — GharTutor';
       renderHead();
       renderTabs();
       if (full) renderPanel();

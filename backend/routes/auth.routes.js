@@ -13,7 +13,7 @@ const throttle = require('../lib/login-throttle');
 const { withTransaction } = require('../lib/tx');
 const { runAfterResponse } = require('../lib/after-response');
 
-const SUSPENDED = 'This account has been suspended. Please contact TutorLink support.';
+const SUSPENDED = 'This account has been suspended. Please contact GharTutor support.';
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // The same text for every failed login, whatever the reason (no such account, wrong password,
@@ -351,7 +351,7 @@ router.post('/google', async (req, res) => {
     const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
 
     // Never trust an email address Google itself has not verified: linking by email would otherwise let
-    // someone take over an existing TutorLink account.
+    // someone take over an existing GharTutor account.
     if (!googleId || !email || googleVerified !== true) {
       return res.status(401).json({ error: 'Your Google account does not have a verified email address.' });
     }

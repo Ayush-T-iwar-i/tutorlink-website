@@ -1,5 +1,5 @@
 /* =========================================================
-   TutorLink - teacher "My students" page
+   GharTutor - teacher "My students" page
    Place at: frontend/js/teacher-students.js
    Needs: js/api.js, js/ui.js (loaded before this file)
    Talks to: /api/my-students/*  and  PUT /api/enrollments/:id/status
@@ -468,7 +468,7 @@
     cur = null;
     $('detailView').hidden = true;
     $('listView').hidden = false;
-    document.title = 'My students — TutorLink';
+    document.title = 'My students — GharTutor';
     loadList().then(function () {
       var back = focusId || lastOpenedId;
       if (back) {
@@ -516,7 +516,7 @@
       if (!cur || cur.seq !== my) return;
       cur.data = d;
       if (d.today) TODAY = d.today;
-      document.title = (d.student && d.student.name ? d.student.name + ' — ' : '') + 'My students — TutorLink';
+      document.title = (d.student && d.student.name ? d.student.name + ' — ' : '') + 'My students — GharTutor';
       renderHead();
       renderTabs();
       if (full) renderPanel();
@@ -1005,7 +1005,7 @@
     host.appendChild(list);
 
     if (data.online_payments.length) {
-      var ob = block('Online payments through TutorLink');
+      var ob = block('Online payments through GharTutor');
       data.online_payments.forEach(function (p) {
         ob.appendChild(row(p.paid_at ? stamp(p.paid_at) : 'Payment', money(p.amount) + ' · ' + cap(String(p.status).replace(/_/g, ' '))));
       });

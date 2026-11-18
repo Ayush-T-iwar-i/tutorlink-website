@@ -26,8 +26,8 @@ if (useSmtp) {
 function parseSender(value) {
   const raw = String(value || '').trim();
   const m = raw.match(/^\s*"?([^"<]*?)"?\s*<([^<>\s]+)>\s*$/);
-  if (m) return { name: m[1].trim() || 'TutorLink', email: m[2] };
-  return { name: 'TutorLink', email: raw };
+  if (m) return { name: m[1].trim() || 'GharTutor', email: m[2] };
+  return { name: 'GharTutor', email: raw };
 }
 
 async function sendViaApi({ to, subject, html }) {
@@ -69,7 +69,7 @@ async function sendMail({ to, subject, html }) {
   if (useApi) return sendViaApi({ to, subject, html });
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || `"TutorLink" <${process.env.SMTP_USER}>`,
+    from: process.env.SMTP_FROM || `"GharTutor" <${process.env.SMTP_USER}>`,
     to,
     subject,
     html,

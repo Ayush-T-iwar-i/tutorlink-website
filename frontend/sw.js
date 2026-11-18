@@ -1,11 +1,11 @@
-/* TutorLink service worker: shows push notifications and opens the right page when one is tapped. */
+/* GharTutor service worker: shows push notifications and opens the right page when one is tapped. */
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (event) { event.waitUntil(self.clients.claim()); });
 
 self.addEventListener('push', function (event) {
   var data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
-  var title = data.title || 'TutorLink';
+  var title = data.title || 'GharTutor';
   var options = {
     body: data.body || '',
     icon: '/images/favicon-192.png',

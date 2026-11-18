@@ -78,10 +78,10 @@ async function sendDueReminders() {
         await sendMail({ to: session.teacher_email, subject: teacherEmail.subject, html: teacherEmail.html });
 
         if (session.student_phone) {
-          await sendSms(session.student_phone, `TutorLink: reminder — your class is at ${whenText}.`);
+          await sendSms(session.student_phone, `GharTutor: reminder — your class is at ${whenText}.`);
         }
         if (session.teacher_phone) {
-          await sendSms(session.teacher_phone, `TutorLink: reminder — your class is at ${whenText}.`);
+          await sendSms(session.teacher_phone, `GharTutor: reminder — your class is at ${whenText}.`);
         }
       } catch (sendErr) {
         console.error(`[reminders] sending reminder for session ${session.id} failed:`, sendErr);

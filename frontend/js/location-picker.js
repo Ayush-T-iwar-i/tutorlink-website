@@ -1,5 +1,5 @@
 /* ===========================================================
-   TutorLink — shared location picker (GPS + map pin)
+   GharTutor — shared location picker (GPS + map pin)
    Used by student-complete-profile.html and teacher-complete-profile.html.
    Needs Leaflet (window.L) loaded before it is OPENED (not before this file loads).
    The map modal markup is injected into the page the first time it is needed.

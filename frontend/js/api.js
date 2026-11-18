@@ -1,5 +1,5 @@
 // ===========================================
-// TutorLink — Shared API helper
+// GharTutor — Shared API helper
 // All fetch() calls to the backend go through here
 // ===========================================
 
@@ -40,7 +40,7 @@ function refreshSession() {
   return refreshInFlight;
 }
 
-// Drop-in replacement for fetch() against the TutorLink API: pass the path (e.g. "/api/bookings/student/me"),
+// Drop-in replacement for fetch() against the GharTutor API: pass the path (e.g. "/api/bookings/student/me"),
 // not the full URL. Use it for anything apiRequest cannot do, such as multipart file uploads.
 async function apiFetch(path, init = {}) {
   const options = { credentials: 'include', ...init }; // sends the httpOnly cookies
@@ -67,7 +67,7 @@ async function apiRequest(path, method = "GET", body = null) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (networkErr) {
-    throw new Error("Can't reach TutorLink right now. Check your connection and try again.");
+    throw new Error("Can't reach GharTutor right now. Check your connection and try again.");
   }
 
   let data = null;

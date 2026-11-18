@@ -1,5 +1,5 @@
 // ===========================================
-// TutorLink — Shared UI helpers + Motion Layer
+// GharTutor — Shared UI helpers + Motion Layer
 // Mobile nav, scroll-reveal, micro-interactions,
 // page enter, stagger lists, toasts, reduced-motion
 // ===========================================

@@ -1,5 +1,5 @@
 /* =========================================================
-   TutorLink - teacher dashboard
+   GharTutor - teacher dashboard
    Place at: frontend/js/teacher-dashboard.js
    Needs: js/api.js, js/ui.js (loaded before this file)
    ========================================================= */
@@ -637,14 +637,14 @@
   function exportRequests() {
     var list = visibleBookings();
     if (!list.length) { toast('Nothing to export for this view.', true); return; }
-    downloadCsv('tutorlink-requests-' + istNow().date + '.csv',
+    downloadCsv('ghartutor-requests-' + istNow().date + '.csv',
       ['Student', 'Subject', 'Type', 'Date', 'Time', 'Days', 'Status'],
       list.map(function (b) { return [b.student_name, b.subject, b.type, String(b.booking_date || '').slice(0, 10), b.booking_time, b.days_per_week || '', b.status]; }));
     toast('Exported ' + list.length + (list.length === 1 ? ' request' : ' requests'));
   }
   function exportEarnings() {
     if (!lastEarnings.length) { toast('No completed classes to export yet.', true); return; }
-    downloadCsv('tutorlink-earnings-' + istNow().date + '.csv',
+    downloadCsv('ghartutor-earnings-' + istNow().date + '.csv',
       ['Student', 'Subject', 'Date', 'Fee (INR)', 'Payment status'],
       lastEarnings.map(function (r) { return [r.student_name, r.subject, String(r.booking_date || '').slice(0, 10), r.fee, r.payment_status]; }));
     toast('Exported ' + lastEarnings.length + (lastEarnings.length === 1 ? ' class' : ' classes'));

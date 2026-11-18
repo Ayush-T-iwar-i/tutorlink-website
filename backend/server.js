@@ -202,7 +202,7 @@ if (process.env.NODE_ENV !== 'test') {
   }
 
   server = app.listen(PORT, () => {
-    logger.info('TutorLink backend is running', {
+    logger.info('GharTutor backend is running', {
       port: Number(PORT),
       environment: process.env.NODE_ENV || 'development',
       csp: cspMode,
@@ -230,7 +230,7 @@ if (process.env.NODE_ENV !== 'test') {
   // Docker/Kubernetes stop containers with SIGTERM: stop accepting requests, let in-flight emails and
   // refunds finish, then exit. A watchdog forces exit if something hangs.
   const shutdown = (signal) => {
-    logger.info(`${signal} received. Shutting down TutorLink backend...`);
+    logger.info(`${signal} received. Shutting down GharTutor backend...`);
     setTimeout(() => process.exit(1), 15000).unref();
     server.close(async () => {
       try { await require('./lib/after-response').drain(); } catch (_) { /* best effort */ }

@@ -1,4 +1,4 @@
-/* TutorLink home page: header that hides on scroll down, light reveal-on-scroll, dashboard-aware buttons. */
+/* GharTutor home page: header that hides on scroll down, light reveal-on-scroll, dashboard-aware buttons. */
 (function () {
   'use strict';
 

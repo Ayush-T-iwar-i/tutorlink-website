@@ -1,5 +1,5 @@
 /* ===========================================================
-   TutorLink — Student dashboard
+   GharTutor — Student dashboard
    Needs js/api.js and js/ui.js loaded first.
    Everything lives inside one function so nothing leaks into
    the global scope. Clicks use data-act attributes (no inline
@@ -900,7 +900,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'tutorlink-payments.csv';
+    a.download = 'ghartutor-payments.csv';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1653,7 +1653,7 @@
         amount: order.amount,
         currency: order.currency,
         order_id: order.order_id,
-        name: 'TutorLink',
+        name: 'GharTutor',
         description: 'Class payment',
         handler: async function (response) {
           try {

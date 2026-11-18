@@ -157,7 +157,7 @@ async function notifyNewBooking(teacherUserId, studentUserId, input) {
   });
   await sendMail({ to: teacher.email, subject, html });
   if (teacher.phone) {
-    await sendSms(teacher.phone, `TutorLink: ${studentName} requested a ${input.type} class. Log in to accept/decline.`);
+    await sendSms(teacher.phone, `GharTutor: ${studentName} requested a ${input.type} class. Log in to accept/decline.`);
   }
 }
 
@@ -390,7 +390,7 @@ async function notifyStudentOfStatus(bookingId, status) {
   await createNotification(student.user_id, `Your booking was ${status} by the teacher.`, 'student-dashboard.html');
   const { subject, html } = emailTemplates.bookingStatusChanged({ studentName: student.name, status });
   await sendMail({ to: student.email, subject, html });
-  if (student.phone) await sendSms(student.phone, `TutorLink: Your class was ${status} by the teacher.`);
+  if (student.phone) await sendSms(student.phone, `GharTutor: Your class was ${status} by the teacher.`);
 }
 
 // `SELECT b.*` also returns internal columns; never send those to clients.
@@ -504,7 +504,7 @@ router.put('/:id/payment', verifyToken, requireRole('teacher'), async (req, res)
       if (!current || current.method !== 'offline' || current.status !== 'paid') {
         throw new BookingError(409,
           current && current.method === 'razorpay'
-            ? 'This was paid online through TutorLink. Online payments cannot be changed here; cancel the class to refund the student.'
+            ? 'This was paid online through GharTutor. Online payments cannot be changed here; cancel the class to refund the student.'
             : 'There is no cash payment recorded for this booking.',
           'ONLINE_PAYMENT_LOCKED');
       }

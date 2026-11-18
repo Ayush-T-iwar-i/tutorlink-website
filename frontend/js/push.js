@@ -1,4 +1,4 @@
-/* TutorLink: phone/laptop push notifications + "open this chat" links.
+/* GharTutor: phone/laptop push notifications + "open this chat" links.
    Loaded on the student and teacher dashboards after api.js. */
 (function () {
   'use strict';
@@ -60,7 +60,7 @@
   async function init() {
     makeBox();
     if (isIos && !isStandalone) {
-      setBox('<span>To get phone notifications on iPhone, tap Share, then <b>Add to Home Screen</b>, and open TutorLink from there.</span>');
+      setBox('<span>To get phone notifications on iPhone, tap Share, then <b>Add to Home Screen</b>, and open GharTutor from there.</span>');
       return;
     }
     if (!supported) return;

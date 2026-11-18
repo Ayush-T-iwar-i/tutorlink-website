@@ -57,7 +57,7 @@ async function sendPushToUser(userId, payload) {
     );
     if (!subs.length) return;
     const body = JSON.stringify({
-      title: clip(payload.title || 'TutorLink', 60),
+      title: clip(payload.title || 'GharTutor', 60),
       body: clip(payload.body, 140),
       url: payload.url || 'index.html',
       tag: payload.tag || undefined,

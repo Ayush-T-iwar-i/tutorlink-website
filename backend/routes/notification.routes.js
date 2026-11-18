@@ -71,7 +71,7 @@ module.exports.createNotification = async function createNotification(userId, me
   // pushOptions (optional) can set { title, body, url, tag }.
   const opts = pushOptions || {};
   sendPushToUser(userId, {
-    title: opts.title || 'TutorLink',
+    title: opts.title || 'GharTutor',
     body: opts.body || message,
     url: opts.url || link || 'index.html',
     tag: opts.tag,

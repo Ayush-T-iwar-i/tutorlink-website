@@ -1,4 +1,4 @@
-/* TutorLink home page. Light on effects so it scrolls smoothly on phones; same layout logic on every screen. */
+/* GharTutor home page. Light on effects so it scrolls smoothly on phones; same layout logic on every screen. */
 
 body.hm { background: var(--bg-page); overflow-x: clip; }
 .hm h1, .hm h2, .hm h3 { font-family: var(--font-display); letter-spacing: -0.02em; color: var(--ink-950); margin: 0; }

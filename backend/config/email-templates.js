@@ -1,5 +1,5 @@
 // ============================================
-// TutorLink — Email templates
+// GharTutor — Email templates
 // Every outgoing email's HTML lives here instead of scattered inline
 // strings across route files, so copy/branding only needs updating once.
 // ============================================
@@ -16,7 +16,7 @@ function layout(bodyHtml) {
         ${bodyHtml}
       </div>
       <div style="padding-top: 16px; border-top: 1px solid #E2DFD3; font-size: 12px; color: #6C7689;">
-        You're receiving this because you have a TutorLink account.
+        You're receiving this because you have a GharTutor account.
       </div>
     </div>
   `;
@@ -24,27 +24,27 @@ function layout(bodyHtml) {
 
 const templates = {
   passwordReset: (resetLink) => ({
-    subject: 'Reset your TutorLink password',
+    subject: 'Reset your GharTutor password',
     html: layout(`
       <p>Hi,</p>
-      <p>We got a request to reset your TutorLink password. This link expires in 1 hour:</p>
+      <p>We got a request to reset your GharTutor password. This link expires in 1 hour:</p>
       <p><a href="${resetLink}" style="color:${BRAND_COLOR};">${resetLink}</a></p>
       <p>If you didn't request this, you can safely ignore this email.</p>
     `),
   }),
 
   newBookingRequest: ({ teacherName, studentName, type, subject, date, time }) => ({
-    subject: 'New booking request on TutorLink',
+    subject: 'New booking request on GharTutor',
     html: layout(`
       <p>Hi ${teacherName},</p>
       <p><strong>${studentName}</strong> requested a ${type || 'demo'} class${subject ? ' for ' + subject : ''}
          on ${date || 'a date to be confirmed'} at ${time || 'a time to be confirmed'}.</p>
-      <p>Log in to your TutorLink dashboard to accept or decline.</p>
+      <p>Log in to your GharTutor dashboard to accept or decline.</p>
     `),
   }),
 
   bookingStatusChanged: ({ studentName, status }) => ({
-    subject: `Your TutorLink booking was ${status}`,
+    subject: `Your GharTutor booking was ${status}`,
     html: layout(`
       <p>Hi ${studentName},</p>
       <p>Your class request has been <strong>${status}</strong> by the teacher.</p>
@@ -68,7 +68,7 @@ const templates = {
   }),
 
   paymentReceived: ({ teacherName }) => ({
-    subject: 'Payment received on TutorLink',
+    subject: 'Payment received on GharTutor',
     html: layout(`
       <p>Hi ${teacherName},</p>
       <p>A student just paid for their class. Check your Earnings tab for details.</p>
@@ -76,23 +76,23 @@ const templates = {
   }),
 
   emailVerification: (verifyLink) => ({
-    subject: 'Verify your TutorLink email address',
+    subject: 'Verify your GharTutor email address',
     html: layout(`
       <p>Hi,</p>
-      <p>Thank you for joining TutorLink! Please click the link below to verify your email address. This link is valid for 24 hours:</p>
+      <p>Thank you for joining GharTutor! Please click the link below to verify your email address. This link is valid for 24 hours:</p>
       <p><a href="${verifyLink}" style="display:inline-block; padding:10px 20px; background:${BRAND_COLOR}; color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">Verify Email</a></p>
       <p>Or paste this link into your browser:</p>
       <p><a href="${verifyLink}" style="color:${BRAND_COLOR};">${verifyLink}</a></p>
-      <p>If you did not sign up for TutorLink, you can safely ignore this email.</p>
+      <p>If you did not sign up for GharTutor, you can safely ignore this email.</p>
     `),
   }),
 
   // Security notification: sent after a password is changed or reset.
   passwordChanged: () => ({
-    subject: 'Your TutorLink password was changed',
+    subject: 'Your GharTutor password was changed',
     html: layout(`
       <p>Hi,</p>
-      <p>The password for your TutorLink account was just changed, and you were signed out of your other devices.</p>
+      <p>The password for your GharTutor account was just changed, and you were signed out of your other devices.</p>
       <p>If this was you, there is nothing more to do.</p>
       <p><strong>If it was not you</strong>, reset your password straight away using “Forgot password” on the login page, and contact us.</p>
     `),
