@@ -497,11 +497,70 @@
   var bookings = [];
   var filter = 'all';
 
+  /* ---------------- Active monthly plans ---------------- */
+  function planEndOf(b) {
+    var m = Number(b.duration_months);
+    var weeks = [1, 2, 3, 4, 6].indexOf(m) !== -1 ? m * 4 : 8;
+    return shiftDate(String(b.booking_date).slice(0, 10), weeks * 7 - 1);
+  }
+  function daysBetween(fromIso, toIso) {
+    var a = fromIso.split('-').map(Number), c = toIso.split('-').map(Number);
+    return Math.round((Date.UTC(c[0], c[1] - 1, c[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 864e5);
+  }
+  async function clearPlanRequest(b, btn) {
+    setBusy(btn, true);
+    try {
+      await apiRequest('/api/bookings/' + encodeURIComponent(b.id) + '/plan-request', 'DELETE');
+      toast('Marked as seen');
+      await loadBookings();
+    } catch (err) {
+      toast(err.message || 'Could not update.', true);
+      setBusy(btn, false);
+    }
+  }
+  function renderPlans() {
+    var area = $('plansArea');
+    if (!area) return;
+    clear(area);
+    var today = istNow().date;
+    var plans = bookings.filter(function (b) {
+      return b.type === 'recurring' && b.status === 'accepted' && /^\d{4}-\d{2}-\d{2}/.test(String(b.booking_date)) && planEndOf(b) >= today;
+    }).sort(function (a, b) { return cmp(planEndOf(a), planEndOf(b)); });
+    if (!plans.length) { area.appendChild(emptyState('No active monthly plans yet. When a student books a plan and you accept it, it shows here.')); return; }
+    var list = el('div', 'pg-list');
+    plans.forEach(function (b) {
+      var end = planEndOf(b);
+      var left = daysBetween(today, end);
+      var row = el('div', 'pg-row-item');
+      var info = el('div', 'pg-row-info');
+      var line = el('div');
+      line.appendChild(el('strong', '', b.student_name || 'Student'));
+      line.appendChild(document.createTextNode(' · ' + (b.subject || 'Class')));
+      info.appendChild(line);
+      var metaEl = el('div', 'pg-row-meta', [b.days_per_week, b.booking_time, planText(b), 'till ' + dayText(end) + ' (' + (left === 0 ? 'ends today' : left + (left === 1 ? ' day left' : ' days left')) + ')'].filter(Boolean).join(' · '));
+      if (left <= 7) metaEl.appendChild(el('span', 'pg-urgent', 'Ending soon'));
+      info.appendChild(metaEl);
+      if (b.plan_request) {
+        info.appendChild(el('div', 'pg-row-meta', '⚠️ Student asked to ' + b.plan_request + ' this plan' + (b.plan_request_note ? ': ' + b.plan_request_note : '') + '. Talk in chat to agree.'));
+      }
+      row.appendChild(info);
+      var side = el('div', 'pg-row-side');
+      side.appendChild(actionBtn('💬 Chat', 'btn-outline', function () { openChatModal(b.id, b.student_name); }));
+      if (b.plan_request) {
+        side.appendChild(actionBtn('Got it', 'btn-outline', function (e) { clearPlanRequest(b, e.currentTarget); }, 'Mark the request as seen'));
+      }
+      row.appendChild(side);
+      list.appendChild(row);
+    });
+    area.appendChild(list);
+  }
+
   function setStats() {
     $('statTotal').textContent = bookings.length;
     var pending = bookings.filter(function (b) { return b.status === 'requested'; }).length;
     $('statPending').textContent = pending;
     att.pending = pending;
+    renderPlans();
     renderAttention();
     updateTabs();
   }

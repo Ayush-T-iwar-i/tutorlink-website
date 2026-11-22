@@ -266,3 +266,5 @@ body.pg-tdash .notif-dropdown * { overflow-wrap: anywhere; }
   body.pg-tdash .dashboard-header .header-actions { gap: 6px; }
   body.pg-tdash .dashboard-header .container { gap: 6px; }
 }
+.pg-subhead { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: var(--ink-900); }
+.pg-subhead:first-of-type { margin-top: 0; }

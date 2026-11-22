@@ -420,7 +420,8 @@
     if (!end || s === 'declined' || s === 'cancelled') return '';
     var left = daysUntilDate(end);
     var extra = s === 'accepted' ? (left < 0 ? ' · ended' : left === 0 ? ' · ends today' : ' · ' + plural(left, 'day', 'days') + ' left') : '';
-    return '⏳ ' + planLength(b) + ' · till ' + fmtDate(end) + extra;
+    return '⏳ ' + planLength(b) + ' · till ' + fmtDate(end) + extra +
+      (b.plan_request ? ' · ' + (b.plan_request === 'pause' ? '⏸ pause' : '⏹ stop') + ' requested' : '');
   }
 
   // After a demo class: "continue with this teacher?". Before a plan ends: "renew?".
@@ -815,6 +816,12 @@
         '<button type="button" class="btn btn-ghost btn-sm" data-act="delete-review" data-id="' + id + '" aria-label="Delete review">🗑️</button>';
     }
     actions += '<button type="button" class="btn btn-ghost btn-sm" data-act="details" data-id="' + id + '">Details</button>';
+    if (status === 'accepted' && b.type === 'recurring' && planEnd(b) && daysUntilDate(planEnd(b)) >= 0) {
+      actions += b.plan_request
+        ? '<button type="button" class="btn btn-ghost btn-sm" data-act="plan-withdraw" data-id="' + id + '">Withdraw ' + esc(b.plan_request) + ' request</button>'
+        : '<button type="button" class="btn btn-ghost btn-sm" data-act="plan-pause" data-id="' + id + '">⏸ Pause</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-act="plan-stop" data-id="' + id + '">⏹ Stop plan</button>';
+    }
     if (isOpenStatus(status)) {
       actions += '<button type="button" class="btn btn-ghost btn-sm sd-danger" data-act="cancel" data-id="' + id + '">Cancel class</button>';
     }
@@ -1980,6 +1987,24 @@
       case 'renew-plan': {
         var pb = findBooking(id);
         if (pb) openBookingModal(pb.teacher_id, { from: pb });
+        break;
+      }
+      case 'plan-pause':
+      case 'plan-stop': {
+        var kind = act === 'plan-pause' ? 'pause' : 'stop';
+        var qb = findBooking(id);
+        if (!qb || !window.confirm('Ask ' + (qb.teacher_name || 'your teacher') + ' to ' + kind + ' this plan? They will be notified and you can talk in chat.')) break;
+        el.disabled = true;
+        apiRequest('/api/bookings/' + encodeURIComponent(id) + '/plan-request', 'POST', { request: kind })
+          .then(function (r) { toast((r && r.message) || 'Request sent.'); return loadBookings(); })
+          .catch(function (err) { el.disabled = false; toast(err.message || 'Could not send the request.', true); });
+        break;
+      }
+      case 'plan-withdraw': {
+        el.disabled = true;
+        apiRequest('/api/bookings/' + encodeURIComponent(id) + '/plan-request', 'DELETE')
+          .then(function () { toast('Request withdrawn.'); return loadBookings(); })
+          .catch(function (err) { el.disabled = false; toast(err.message || 'Could not withdraw.', true); });
         break;
       }
       case 'skip-plan': {

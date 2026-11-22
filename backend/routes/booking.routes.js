@@ -418,6 +418,76 @@ function stripInternal(row) {
   return rest;
 }
 
+// ---------- PAUSE / STOP REQUEST FOR A RUNNING PLAN ----------
+// POST /api/bookings/:id/plan-request   body: { request: 'pause' | 'stop', note? }   (student)
+// Does not change the booking itself: it tells the teacher, who agrees in chat. One request at a time.
+router.post('/:id/plan-request', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const kind = req.body && req.body.request;
+    let note = req.body && req.body.note;
+    if (!Number.isInteger(bookingId) || bookingId < 1) return res.status(400).json({ error: 'Invalid booking id.', code: 'VALIDATION_ERROR' });
+    if (kind !== 'pause' && kind !== 'stop') return res.status(400).json({ error: "request must be 'pause' or 'stop'.", code: 'VALIDATION_ERROR' });
+    if (note != null && typeof note !== 'string') return res.status(400).json({ error: 'note must be text.', code: 'VALIDATION_ERROR' });
+    note = note ? note.trim().slice(0, 200) : null;
+
+    const [rows] = await db.query(
+      `SELECT b.id, b.type, b.status, b.subject, b.booking_date, b.duration_months, b.plan_request,
+              t.user_id AS teacher_user_id, su.name AS student_name
+       FROM bookings b
+       JOIN students s ON s.id = b.student_id
+       JOIN users su ON su.id = s.user_id
+       JOIN teachers t ON t.id = b.teacher_id
+       WHERE b.id = ? AND s.user_id = ?`,
+      [bookingId, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found.', code: 'NOT_FOUND' });
+    const b = rows[0];
+    const end = rules.planEndDate(b);
+    if (b.type !== 'recurring' || b.status !== 'accepted' || !end || end < rules.todayInTz()) {
+      return res.status(409).json({ error: 'Only a running plan can be paused or stopped.', code: 'PLAN_NOT_ACTIVE' });
+    }
+    // Claim in one statement so a double click cannot send two requests.
+    const [upd] = await db.query(
+      'UPDATE bookings SET plan_request = ?, plan_request_note = ?, plan_request_at = NOW() WHERE id = ? AND plan_request IS NULL',
+      [kind, note, bookingId]
+    );
+    if (upd.affectedRows === 0) return res.status(409).json({ error: 'You already have a request waiting for the teacher.', code: 'REQUEST_PENDING' });
+
+    res.json({ message: kind === 'pause' ? 'Pause request sent to the teacher.' : 'Stop request sent to the teacher.' });
+    runAfterResponse(res, 'Plan request notification', () => createNotification(
+      b.teacher_user_id,
+      `${b.student_name} asked to ${kind} the ${b.subject} plan${note ? ': ' + note : '.'}`.slice(0, 250),
+      'teacher-dashboard.html#running'
+    ));
+  } catch (err) {
+    console.error('Plan request error:', err);
+    res.status(500).json({ error: 'Could not send your request.', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// DELETE /api/bookings/:id/plan-request   (the student withdraws it, or the teacher marks it as seen)
+router.delete('/:id/plan-request', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'student' && req.user.role !== 'teacher') return res.status(403).json({ error: 'Not allowed.' });
+    const bookingId = Number(req.params.id);
+    if (!Number.isInteger(bookingId) || bookingId < 1) return res.status(400).json({ error: 'Invalid booking id.', code: 'VALIDATION_ERROR' });
+    const owner = req.user.role === 'teacher'
+      ? 'JOIN teachers o ON o.id = b.teacher_id'
+      : 'JOIN students o ON o.id = b.student_id';
+    const [rows] = await db.query(
+      `SELECT b.id FROM bookings b ${owner} WHERE b.id = ? AND o.user_id = ?`,
+      [bookingId, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found.', code: 'NOT_FOUND' });
+    await db.query('UPDATE bookings SET plan_request = NULL, plan_request_note = NULL, plan_request_at = NULL WHERE id = ?', [bookingId]);
+    res.json({ message: 'Request cleared.' });
+  } catch (err) {
+    console.error('Clear plan request error:', err);
+    res.status(500).json({ error: 'Could not clear the request.', code: 'INTERNAL_ERROR' });
+  }
+});
+
 // ---------- STUDENT'S DECISION AFTER A DEMO CLASS ----------
 // PUT /api/bookings/:id/demo-decision   body: { decision: 'continue' | 'declined' }
 // Booking a plan with this teacher sets 'continue' automatically; this endpoint lets the student say
