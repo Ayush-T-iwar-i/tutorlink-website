@@ -12,6 +12,7 @@ const security = require('./config/security');
 const fileStore = require('./lib/file-store');
 const pushRoutes = require('./routes/push.routes');
 
+
 const { requestContext, bindLogContext, apiNotFound, errorHandler } = require('./middleware/request-context');
 
 // Route every console.log/warn/error through the structured logger (request ids, secret redaction).
@@ -98,6 +99,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
 app.use(bindLogContext);
+
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -212,6 +214,7 @@ if (process.env.NODE_ENV !== 'test') {
 
     require('./jobs/reminders').startReminderJob();
     require('./jobs/cleanup').startCleanupJob();
+        require('./jobs/plan-reminders').startPlanReminderJob();
   });
 
   server.on('error', (err) => {
