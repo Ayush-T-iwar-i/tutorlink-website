@@ -140,18 +140,18 @@ router.post('/', verifyToken, requireRole('student'), requireVerifiedEmail, asyn
       if (previous && previous.type === 'demo') {
         await conn.query("UPDATE bookings SET demo_decision = 'continue' WHERE id = ?", [previous.id]);
       }
-      return { bookingId: result.insertId, teacherUserId: teacher.user_id };
+      return { bookingId: result.insertId, teacherUserId: teacher.user_id, renewal: !!previous && previous.type === 'recurring' };
     });
 
     res.status(201).json({ message: 'Booking request sent.', booking_id: created.bookingId });
 
-    runAfterResponse(res, 'New-booking notification', () => notifyNewBooking(created.teacherUserId, req.user.id, input));
+    runAfterResponse(res, 'New-booking notification', () => notifyNewBooking(created.teacherUserId, req.user.id, input, created.renewal));
   } catch (err) {
     sendError(res, err, 'Could not create booking.', 'Create booking error:');
   }
 });
 
-async function notifyNewBooking(teacherUserId, studentUserId, input) {
+async function notifyNewBooking(teacherUserId, studentUserId, input, renewal) {
   const [[teacher]] = await db.query('SELECT name, email, phone FROM users WHERE id = ?', [teacherUserId]);
   const [[student]] = await db.query('SELECT name FROM users WHERE id = ?', [studentUserId]);
   const studentName = (student && student.name) || 'A student';
@@ -159,7 +159,9 @@ async function notifyNewBooking(teacherUserId, studentUserId, input) {
 
   await createNotification(
     teacherUserId,
-    input.type === 'recurring' && input.duration_months
+    renewal
+      ? `${studentName} wants to renew: ${input.duration_months || 2}-month plan for ${input.subject}.`
+      : input.type === 'recurring' && input.duration_months
       ? `${studentName} requested a ${input.duration_months}-month plan for ${input.subject}.`
       : `${studentName} requested a ${input.type} class for ${input.subject}.`,
     'teacher-dashboard.html'

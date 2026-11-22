@@ -4,6 +4,7 @@ const db = require('../config/db');
 const { verifyToken, requireRole } = require('../middleware/auth.middleware');
 const { refundAndNotify } = require('../lib/payment-jobs');
 const sessions = require('../lib/sessions');
+const rules = require('../lib/booking-rules');
 
 const REPORT_STATUSES = ['open', 'reviewed', 'resolved'];
 const USER_ROLES = ['student', 'teacher', 'admin'];
@@ -70,9 +71,31 @@ router.get('/stats', verifyToken, requireRole('admin'), async (req, res) => {
       'SELECT COUNT(*) AS signups_last_7_days FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
     );
 
+    // Monthly plans. A plan runs duration_months * 4 weeks (old bookings without a length: 8 weeks).
+    const today = rules.todayInTz();
+    const planEnd = 'DATE_ADD(booking_date, INTERVAL (COALESCE(duration_months, 2) * 28 - 1) DAY)';
+    const [[{ active_plans }]] = await db.query(
+      `SELECT COUNT(*) AS active_plans FROM bookings WHERE type = 'recurring' AND status = 'accepted' AND ${planEnd} >= ?`, [today]
+    );
+    const [[{ plans_ending_soon }]] = await db.query(
+      `SELECT COUNT(*) AS plans_ending_soon FROM bookings WHERE type = 'recurring' AND status = 'accepted'
+         AND ${planEnd} BETWEEN ? AND ?`, [today, rules.addDays(today, 7)]
+    );
+    const [[{ plan_renewals }]] = await db.query(
+      `SELECT COUNT(*) AS plan_renewals FROM bookings n JOIN bookings o ON o.id = n.continued_from
+       WHERE n.type = 'recurring' AND o.type = 'recurring' AND n.status IN ('accepted', 'completed')`
+    );
+    const [[{ demos_to_plans }]] = await db.query(
+      `SELECT COUNT(*) AS demos_to_plans FROM bookings WHERE type = 'demo' AND demo_decision = 'continue'`
+    );
+    const [[{ demos_done }]] = await db.query(
+      "SELECT COUNT(*) AS demos_done FROM bookings WHERE type = 'demo' AND status = 'completed'"
+    );
+
     res.json({
       total_students, total_teachers, approved_teachers, pending_teachers,
       total_bookings, completed_bookings, signups_last_7_days,
+      active_plans, plans_ending_soon, plan_renewals, demos_to_plans, demos_done,
     });
   } catch (err) {
     console.error('Get admin stats error:', err);

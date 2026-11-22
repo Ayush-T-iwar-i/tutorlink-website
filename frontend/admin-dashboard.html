@@ -230,6 +230,10 @@
           <div class="info-tile"><div class="label">Total bookings</div><div class="value">${s.total_bookings}</div></div>
           <div class="info-tile"><div class="label">Completed classes</div><div class="value">${s.completed_bookings}</div></div>
           <div class="info-tile"><div class="label">New signups (7 days)</div><div class="value">${s.signups_last_7_days}</div></div>
+          <div class="info-tile"><div class="label">Active monthly plans</div><div class="value">${s.active_plans || 0}</div></div>
+          <div class="info-tile"><div class="label">Plans ending in 7 days</div><div class="value">${s.plans_ending_soon || 0}</div></div>
+          <div class="info-tile"><div class="label">Plan renewals</div><div class="value">${s.plan_renewals || 0}</div></div>
+          <div class="info-tile"><div class="label">Demo → plan</div><div class="value">${s.demos_to_plans || 0} / ${s.demos_done || 0}</div></div>
         </div>`;
     } catch (err) {
       area.innerHTML = '<div class="empty-state">Could not load stats.</div>';

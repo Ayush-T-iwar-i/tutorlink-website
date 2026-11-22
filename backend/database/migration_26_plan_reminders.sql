@@ -1,0 +1,1 @@
+ALTER TABLE bookings ADD COLUMN plan_reminded TINYINT(1) NOT NULL DEFAULT 0;
