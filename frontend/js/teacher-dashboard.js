@@ -597,7 +597,7 @@
       line.appendChild(document.createTextNode(' requested a ' + (b.type || 'demo') + ' class' + (b.subject ? ' for ' + b.subject : '')));
       info.appendChild(line);
       var meta = [dateWithRel(b.booking_date), b.booking_time].filter(Boolean).join(' · ');
-      if (b.type === 'recurring' && b.days_per_week) meta += ' · ' + b.days_per_week;
+      if (b.type === 'recurring' && b.days_per_week) meta += ' · ' + b.days_per_week + ' · ' + planText(b);
       var metaEl = el('div', 'pg-row-meta', meta);
       var d = String(b.booking_date || '').slice(0, 10);
       if (b.status === 'requested' && d >= today && d <= tomorrow) metaEl.appendChild(el('span', 'pg-urgent', 'Starts soon'));
@@ -672,9 +672,15 @@
   var accept = { booking: null, busy: false };
   var acceptBackdrop = $('acceptFeeModalBackdrop');
 
+  function planText(b) {
+    if (b.type !== 'recurring') return '';
+    var m = Number(b.duration_months);
+    return [1, 2, 3, 4, 6].indexOf(m) !== -1 ? m + (m === 1 ? ' month' : ' months') : '8 weeks';
+  }
+
   function openAcceptFeeModal(b, opener) {
     accept.booking = b;
-    $('acceptSub').textContent = (b.student_name || 'The student') + (b.subject ? ' · ' + b.subject : '') + ' · ' + dateWithRel(b.booking_date) + (b.booking_time ? ' at ' + b.booking_time : '') + '. They will be asked to pay this amount.';
+    $('acceptSub').textContent = (b.student_name || 'The student') + (b.subject ? ' · ' + b.subject : '') + ' · ' + dateWithRel(b.booking_date) + (b.booking_time ? ' at ' + b.booking_time : '') + (b.type === 'recurring' ? '. Plan: ' + planText(b) + (b.days_per_week ? ' (' + b.days_per_week + ')' : '') + '. Enter ONE fee for the whole plan.' : '. They will be asked to pay this amount.');
     $('acceptFeeInput').value = '';
     var quick = $('feeQuick');
     clear(quick);

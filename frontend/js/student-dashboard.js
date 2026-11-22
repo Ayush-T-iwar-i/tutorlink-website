@@ -392,12 +392,86 @@
     id = Number(id);
     return state.bookings.find(function (b) { return Number(b.id) === id; }) || null;
   }
+  // Monthly plans: a month is 4 weekly cycles. A plan with no stored length is the old 8-week booking.
+  var PLAN_MONTHS = [1, 2, 3, 4, 6];
+  function planWeeks(b) { var m = Number(b.duration_months); return PLAN_MONTHS.indexOf(m) !== -1 ? m * 4 : 8; }
+  function planEnd(b) {
+    return b.type === 'recurring' && DATE_RE.test(String(b.booking_date || '')) ? addDays(b.booking_date, planWeeks(b) * 7 - 1) : null;
+  }
+  function planLength(b) {
+    var m = Number(b.duration_months);
+    return PLAN_MONTHS.indexOf(m) !== -1 ? m + (m === 1 ? ' month' : ' months') : '8 weeks';
+  }
+  function daysUntilDate(dateStr) {
+    var a = dateStr.split('-').map(Number);
+    var t = todayIST().split('-').map(Number);
+    return Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(t[0], t[1] - 1, t[2])) / 864e5);
+  }
   function typeLabel(b) {
     if (b.type === 'recurring') {
       var days = String(b.days_per_week || '').split(',').map(function (d) { return d.trim(); }).filter(Boolean).join(', ');
-      return 'Weekly' + (days ? ' · ' + days : '');
+      return 'Weekly' + (days ? ' · ' + days : '') + ' · ' + planLength(b);
     }
     return 'Demo class';
+  }
+  function planLine(b) {
+    var end = planEnd(b);
+    var s = bookingStatus(b);
+    if (!end || s === 'declined' || s === 'cancelled') return '';
+    var left = daysUntilDate(end);
+    var extra = s === 'accepted' ? (left < 0 ? ' · ended' : left === 0 ? ' · ends today' : ' · ' + plural(left, 'day', 'days') + ' left') : '';
+    return '⏳ ' + planLength(b) + ' · till ' + fmtDate(end) + extra;
+  }
+
+  // After a demo class: "continue with this teacher?". Before a plan ends: "renew?".
+  function demoPrompts() {
+    return state.bookings.filter(function (b) {
+      if (b.type !== 'demo' || b.demo_decision) return false;
+      var s = bookingStatus(b);
+      if (s === 'completed') return true;
+      if (s !== 'accepted') return false;
+      var at = classInstant(b.booking_date, b.booking_time);
+      return !!at && at.getTime() <= Date.now();
+    });
+  }
+  function renewPrompts() {
+    return state.bookings.filter(function (b) {
+      var s = bookingStatus(b);
+      var end = planEnd(b);
+      if (!end || (s !== 'accepted' && s !== 'completed')) return false;
+      if (daysUntilDate(end) > 7) return false;
+      return !state.bookings.some(function (x) {
+        var xs = bookingStatus(x);
+        return Number(x.continued_from) === Number(b.id) && xs !== 'declined' && xs !== 'cancelled';
+      });
+    });
+  }
+  function planItems() {
+    var items = [];
+    demoPrompts().forEach(function (b) {
+      items.push({ tone: 'info', icon: '🎓', title: 'Continue with ' + (b.teacher_name || 'your teacher') + '?',
+        text: 'Your ' + (b.subject || 'demo') + ' demo is done. Book a monthly plan to keep learning, or skip it.',
+        act: 'continue-plan', id: b.id, label: 'Yes, book a plan', act2: 'skip-plan', label2: 'No, thanks' });
+    });
+    renewPrompts().forEach(function (b) {
+      var end = planEnd(b);
+      items.push({ tone: 'warn', icon: '🔁', title: 'Renew ' + (b.subject || 'your') + ' plan with ' + (b.teacher_name || 'your teacher') + '?',
+        text: daysUntilDate(end) < 0 ? 'Your plan ended on ' + fmtDate(end) + '.' : 'Your plan ends on ' + fmtDate(end) + '. Renew to keep the same days and time.',
+        act: 'renew-plan', id: b.id, label: 'Renew plan' });
+    });
+    return items;
+  }
+  function todoHtml(items) {
+    return '<ul class="sd-todo">' + items.map(function (it) {
+      var action = it.href
+        ? '<a class="btn btn-outline btn-sm" href="' + esc(it.href) + '">' + esc(it.label) + '</a>'
+        : '<button type="button" class="btn btn-outline btn-sm" data-act="' + esc(it.act) + '"' + (it.id ? ' data-id="' + Number(it.id) + '"' : '') + '>' + esc(it.label) + '</button>';
+      if (it.act2) {
+        action += ' <button type="button" class="btn btn-ghost btn-sm" data-act="' + esc(it.act2) + '" data-id="' + Number(it.id) + '">' + esc(it.label2) + '</button>';
+      }
+      return '<li class="sd-todo-' + it.tone + '"><span class="sd-todo-ic" aria-hidden="true">' + it.icon + '</span>' +
+        '<div><strong>' + esc(it.title) + '</strong><span>' + esc(it.text) + '</span></div><div class="sd-todo-acts">' + action + '</div></li>';
+    }).join('') + '</ul>';
   }
 
   /* ---------------------------------------------------------
@@ -593,6 +667,7 @@
       items.push({ tone: 'warn', icon: '💳', title: 'Pay ' + fmtMoney(b.fee) + ' to ' + (b.teacher_name || 'your teacher'),
         text: (b.subject || 'Class') + ' · ' + fmtDate(b.booking_date), act: 'pay', id: b.id, label: 'Pay now' });
     });
+    planItems().slice(0, 3).forEach(function (it) { items.push(it); });
     state.bookings.filter(function (b) { return bookingStatus(b) === 'completed' && !b.review_id; }).slice(0, 3).forEach(function (b) {
       items.push({ tone: 'info', icon: '⭐', title: 'How was ' + (b.subject || 'your class') + ' with ' + (b.teacher_name || 'your teacher') + '?',
         text: 'A short review helps other students.', act: 'review', id: b.id, label: 'Review' });
@@ -611,13 +686,7 @@
       host.innerHTML = emptyState('✨', 'You are all caught up', 'Nothing needs your attention right now.');
       return;
     }
-    host.innerHTML = '<ul class="sd-todo">' + items.slice(0, 6).map(function (it) {
-      var action = it.href
-        ? '<a class="btn btn-outline btn-sm" href="' + esc(it.href) + '">' + esc(it.label) + '</a>'
-        : '<button type="button" class="btn btn-outline btn-sm" data-act="' + esc(it.act) + '"' + (it.id ? ' data-id="' + Number(it.id) + '"' : '') + '>' + esc(it.label) + '</button>';
-      return '<li class="sd-todo-' + it.tone + '"><span class="sd-todo-ic" aria-hidden="true">' + it.icon + '</span>' +
-        '<div><strong>' + esc(it.title) + '</strong><span>' + esc(it.text) + '</span></div>' + action + '</li>';
-    }).join('') + '</ul>';
+    host.innerHTML = todoHtml(items.slice(0, 6));
   }
 
   function renderWeek(events) {
@@ -710,7 +779,8 @@
       host.innerHTML = emptyState('🔎', 'Nothing matches', q ? 'Try a different name or subject.' : 'No classes in this view.');
       return;
     }
-    host.innerHTML = '<div class="sd-list">' + list.map(bookingCard).join('') + '</div>';
+    var prompts = planItems();
+    host.innerHTML = (prompts.length ? todoHtml(prompts) : '') + '<div class="sd-list">' + list.map(bookingCard).join('') + '</div>';
   }
 
   function bookingCard(b) {
@@ -767,7 +837,8 @@
         '<div class="sd-meta">' +
           '<span>🕒 ' + esc(b.booking_time || '—') + '</span>' +
           '<span>' + esc(typeLabel(b)) + '</span>' +
-          (feeText ? '<span>' + esc(feeText) + '</span>' : '') +
+          (planLine(b) ? '<span>' + esc(planLine(b)) + '</span>' : '') +
+          (feeText ? '<span>' + esc(feeText) + (b.type === 'recurring' && num(b.fee) > 0 && Number(b.duration_months) > 1 ? ' total (' + esc(fmtMoney(num(b.fee) / Number(b.duration_months))) + '/month)' : '') + '</span>' : '') +
         '</div>' +
         '<div class="sd-tags">' + statusTag(status) + (pay ? tag(pay.label, pay.tone) : '') + '</div>' +
         review +
@@ -1378,7 +1449,7 @@
   /* ---------------------------------------------------------
      Booking modal
      --------------------------------------------------------- */
-  var booking = { teacherId: null, type: 'demo', days: new Set(), slot: null, slotSeq: 0 };
+  var booking = { teacherId: null, type: 'demo', days: new Set(), slot: null, slotSeq: 0, months: 1, fromId: null, prefSlot: null };
 
   function slotMessage(grid, text) {
     grid.innerHTML = '';
@@ -1411,6 +1482,11 @@
       });
       grid.appendChild(btn);
     });
+    if (booking.prefSlot) { // renew / continue: re-pick the usual time when it is free
+      var pref = grid.querySelector('.slot-btn[data-slot="' + booking.prefSlot + '"]:not([disabled])');
+      booking.prefSlot = null;
+      if (pref) pref.click();
+    }
   }
 
   async function loadSlots() {
@@ -1444,6 +1520,8 @@
       b.setAttribute('aria-checked', String(b.dataset.type === type));
     });
     $('daysField').hidden = type !== 'recurring';
+    $('durationField').hidden = type !== 'recurring';
+    if (type === 'recurring') renderDurations();
     $('bookingTypeHint').textContent = type === 'recurring'
       ? 'A regular weekly class. Pick the days you want.'
       : 'A single trial class so you can meet the teacher.';
@@ -1457,6 +1535,13 @@
     renderBookingSummary();
   }
 
+  function renderDurations() {
+    $('durationRow').innerHTML = PLAN_MONTHS.map(function (m) {
+      var on = booking.months === m;
+      return '<button type="button" class="sd-day-btn' + (on ? ' is-on' : '') + '" data-months="' + m + '" aria-pressed="' + on + '">' + m + (m === 1 ? ' month' : ' months') + '</button>';
+    }).join('');
+  }
+
   function renderBookingSummary() {
     var box = $('bookingSummary');
     var date = $('bookingDate').value;
@@ -1466,16 +1551,21 @@
       : '';
     box.hidden = false;
     box.textContent = booking.type === 'recurring'
-      ? 'Weekly on ' + (days || '…') + ' at ' + booking.slot + ', starting ' + fmtDate(date) + ' for 8 weeks.'
+      ? 'Weekly on ' + (days || '…') + ' at ' + booking.slot + ', starting ' + fmtDate(date) + ' for ' + planLength({ duration_months: booking.months }) + ' (till ' + fmtDate(addDays(date, booking.months * 28 - 1)) + ').'
       : 'One demo class on ' + fmtDate(date, true) + ' at ' + booking.slot + '.';
   }
 
-  function openBookingModal(teacherId) {
-    var t = teacherCache[teacherId];
+  // opts (optional): { from: booking } to continue after a demo or renew a plan.
+  function openBookingModal(teacherId, opts) {
+    var from = opts && opts.from;
+    var t = teacherCache[teacherId] || (from ? { name: from.teacher_name, subjects: from.subject } : null);
     if (!t) { toast('Could not find that teacher. Please search again.', true); return; }
     booking.teacherId = Number(teacherId);
     booking.slot = null;
     booking.days = new Set();
+    booking.months = 1;
+    booking.fromId = from ? Number(from.id) : null;
+    booking.prefSlot = null;
     $('bookingAvatar').innerHTML = avatarInner(t.name, t.profile_photo);
     $('bookingTeacherName').textContent = t.name;
     $('bookingTeacherMeta').textContent = (t.subjects || 'Subjects not listed') + (num(t.fee_per_hour) > 0 ? ' · ' + fmtMoney(t.fee_per_hour) + '/hr' : '');
@@ -1490,7 +1580,20 @@
 
     $('bookingMsgBox').className = 'msg-box';
     $('bookingMsgBox').textContent = '';
-    setBookingType('demo');
+    if (from) {
+      $('bookingSubject').value = from.subject || $('bookingSubject').value;
+      if (from.type === 'recurring') {
+        String(from.days_per_week || '').split(',').forEach(function (d) { if (d.trim()) booking.days.add(d.trim()); });
+        var m = Number(from.duration_months);
+        booking.months = PLAN_MONTHS.indexOf(m) !== -1 ? m : 1;
+        var end = planEnd(from);
+        var start = end ? addDays(end, 1) : today;
+        dateInput.value = start < today ? today : (start > dateInput.max ? today : start);
+      }
+      booking.prefSlot = from.booking_time ? String(from.booking_time).slice(0, 5) : null;
+    }
+    setBookingType(from ? 'recurring' : 'demo');
+    if (from) $('bookingTitle').textContent = from.type === 'recurring' ? 'Renew your plan' : 'Book a monthly plan';
     $('bookingModalBackdrop').classList.add('open');
     loadSlots();
   }
@@ -1503,6 +1606,13 @@
   $('bookingTypeSeg').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-type]');
     if (b) setBookingType(b.dataset.type);
+  });
+  $('durationRow').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-months]');
+    if (!b) return;
+    booking.months = Number(b.dataset.months);
+    renderDurations();
+    renderBookingSummary();
   });
   $('daysRow').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-day]');
@@ -1534,6 +1644,8 @@
     };
     if (booking.type === 'recurring') {
       payload.days_per_week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].filter(function (d) { return booking.days.has(d); }).join(',');
+      payload.duration_months = booking.months;
+      if (booking.fromId) payload.from_booking_id = booking.fromId;
     }
 
     btn.disabled = true;
@@ -1566,6 +1678,7 @@
       '<div class="sd-tags">' + statusTag(bookingStatus(b)) + (pay ? tag(pay.label, pay.tone) : '') + '</div>' +
       '<dl class="sd-dl">' +
         '<div><dt>Fee</dt><dd>' + esc(bookingStatus(b) === 'requested' ? 'Set by the teacher when they accept' : (num(b.fee) > 0 ? fmtMoney(b.fee) : 'No charge')) + '</dd></div>' +
+        (planLine(b) ? '<div><dt>Plan</dt><dd>' + esc(planLine(b)) + '</dd></div>' : '') +
         '<div><dt>Requested on</dt><dd>' + esc(b.created_at ? new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—') + '</dd></div>' +
       '</dl>' +
       '<h4 class="sd-subhead">Sessions</h4>';
@@ -1863,6 +1976,19 @@
     var id = el.dataset.id;
     switch (act) {
       case 'pay': payNow(id); break;
+      case 'continue-plan':
+      case 'renew-plan': {
+        var pb = findBooking(id);
+        if (pb) openBookingModal(pb.teacher_id, { from: pb });
+        break;
+      }
+      case 'skip-plan': {
+        el.disabled = true;
+        apiRequest('/api/bookings/' + encodeURIComponent(id) + '/demo-decision', 'PUT', { decision: 'declined' })
+          .then(function () { toast('Okay, noted.'); return loadBookings(); })
+          .catch(function (err) { el.disabled = false; toast(err.message || 'Could not save your choice.', true); });
+        break;
+      }
       case 'chat': {
         var cb = findBooking(id);
         if (cb) openChatModal(cb.id, cb.teacher_name || 'your teacher');

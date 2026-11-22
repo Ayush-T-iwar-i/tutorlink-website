@@ -51,7 +51,7 @@ function conflictWindow(candidate) {
   const dates = rules.occurrenceDates(candidate);
   const last = dates[dates.length - 1] || candidate.booking_date;
   return {
-    from: rules.addDays(candidate.booking_date, -(rules.RECURRING_WEEKS * 7)),
+    from: rules.addDays(candidate.booking_date, -(rules.MAX_PLAN_WEEKS * 7)),
     to: last,
   };
 }
@@ -93,7 +93,7 @@ router.post('/', verifyToken, requireRole('student'), requireVerifiedEmail, asyn
 
       const win = conflictWindow(input);
       const [active] = await conn.query(
-        `SELECT id, student_id, teacher_id, type, booking_date, booking_time, days_per_week
+        `SELECT id, student_id, teacher_id, type, booking_date, booking_time, days_per_week, duration_months
          FROM bookings
          WHERE status IN ('requested', 'accepted')
            AND (teacher_id = ? OR student_id = ?)
@@ -111,19 +111,34 @@ router.post('/', verifyToken, requireRole('student'), requireVerifiedEmail, asyn
         throw new BookingError(409, 'You already have another class booked at that time.', 'STUDENT_BUSY');
       }
 
+      // "Continue after a demo" / "renew a plan": the earlier booking must be this student's, with this teacher.
+      let previous = null;
+      if (input.from_booking_id) {
+        const [prev] = await conn.query(
+          'SELECT id, type FROM bookings WHERE id = ? AND student_id = ? AND teacher_id = ? FOR UPDATE',
+          [input.from_booking_id, studentId, input.teacher_id]
+        );
+        if (prev.length === 0) throw new BookingError(400, 'The earlier class you are continuing was not found.', 'FROM_BOOKING_INVALID');
+        previous = prev[0];
+      }
+
       let result;
       try {
         [result] = await conn.query(
           `INSERT INTO bookings
-             (student_id, teacher_id, type, subject, booking_date, booking_time, days_per_week, fee)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
-          [studentId, input.teacher_id, input.type, input.subject, input.booking_date, input.booking_time, input.days_per_week]
+             (student_id, teacher_id, type, subject, booking_date, booking_time, days_per_week, duration_months, continued_from, fee)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+          [studentId, input.teacher_id, input.type, input.subject, input.booking_date, input.booking_time, input.days_per_week,
+            input.duration_months, previous ? previous.id : null]
         );
       } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
           throw new BookingError(409, 'That slot is no longer available. Please pick another time.', 'SLOT_TAKEN');
         }
         throw err;
+      }
+      if (previous && previous.type === 'demo') {
+        await conn.query("UPDATE bookings SET demo_decision = 'continue' WHERE id = ?", [previous.id]);
       }
       return { bookingId: result.insertId, teacherUserId: teacher.user_id };
     });
@@ -144,7 +159,9 @@ async function notifyNewBooking(teacherUserId, studentUserId, input) {
 
   await createNotification(
     teacherUserId,
-    `${studentName} requested a ${input.type} class for ${input.subject}.`,
+    input.type === 'recurring' && input.duration_months
+      ? `${studentName} requested a ${input.duration_months}-month plan for ${input.subject}.`
+      : `${studentName} requested a ${input.type} class for ${input.subject}.`,
     'teacher-dashboard.html'
   );
   const { subject, html } = emailTemplates.newBookingRequest({
@@ -180,10 +197,10 @@ router.get('/availability/:teacherId', verifyToken, async (req, res) => {
     if (teacherRows.length === 0) return res.status(404).json({ error: 'Teacher not found.', code: 'TEACHER_NOT_FOUND' });
 
     const [active] = await db.query(
-      `SELECT type, booking_date, booking_time, days_per_week FROM bookings
+      `SELECT type, booking_date, booking_time, days_per_week, duration_months FROM bookings
        WHERE teacher_id = ? AND status IN ('requested', 'accepted')
          AND booking_date IS NOT NULL AND booking_date BETWEEN ? AND ?`,
-      [teacherId, rules.addDays(date, -(rules.RECURRING_WEEKS * 7)), date]
+      [teacherId, rules.addDays(date, -(rules.MAX_PLAN_WEEKS * 7)), date]
     );
     const taken = new Set(
       active
@@ -303,7 +320,7 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
   try {
     const outcome = await withTransaction(db, async (conn) => {
       const [rows] = await conn.query(
-        `SELECT b.id, b.status, b.type, b.booking_date, b.booking_time, b.days_per_week,
+        `SELECT b.id, b.status, b.type, b.booking_date, b.booking_time, b.days_per_week, b.duration_months,
                 b.student_id, b.teacher_id, b.subject, b.payment_status
          FROM bookings b
          JOIN teachers t ON t.id = b.teacher_id
@@ -338,9 +355,9 @@ router.put('/:id/status', verifyToken, requireRole('teacher'), async (req, res) 
           const subject = booking.subject || 'General';
           const start = booking.booking_date || rules.todayInTz();
           const [enroll] = await conn.query(
-            `INSERT INTO enrollments (student_id, teacher_id, booking_id, subject, status, start_date)
-             VALUES (?, ?, ?, ?, 'active', ?)`,
-            [booking.student_id, booking.teacher_id, bookingId, subject, start]
+            `INSERT INTO enrollments (student_id, teacher_id, booking_id, subject, status, start_date, end_date)
+             VALUES (?, ?, ?, ?, 'active', ?, ?)`,
+            [booking.student_id, booking.teacher_id, bookingId, subject, start, rules.planEndDate({ ...booking, booking_date: start })]
           );
           await conn.query(
             `INSERT INTO courses (enrollment_id, title, subject, status, start_date)
@@ -398,6 +415,40 @@ function stripInternal(row) {
   const { slot_key, ...rest } = row; // eslint-disable-line no-unused-vars
   return rest;
 }
+
+// ---------- STUDENT'S DECISION AFTER A DEMO CLASS ----------
+// PUT /api/bookings/:id/demo-decision   body: { decision: 'continue' | 'declined' }
+// Booking a plan with this teacher sets 'continue' automatically; this endpoint lets the student say
+// "no thanks" (or "I will decide later" by never calling it). Only for the student's own demo class,
+// and only once the demo has been held (marked completed, or accepted and already started).
+router.put('/:id/demo-decision', verifyToken, requireRole('student'), async (req, res) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const decision = req.body && req.body.decision;
+    if (!Number.isInteger(bookingId) || bookingId < 1) return res.status(400).json({ error: 'Invalid booking id.', code: 'VALIDATION_ERROR' });
+    if (decision !== 'continue' && decision !== 'declined') {
+      return res.status(400).json({ error: "decision must be 'continue' or 'declined'.", code: 'VALIDATION_ERROR' });
+    }
+    const [rows] = await db.query(
+      `SELECT b.id, b.type, b.status, b.booking_date, b.booking_time
+       FROM bookings b JOIN students s ON s.id = b.student_id
+       WHERE b.id = ? AND s.user_id = ?`,
+      [bookingId, req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found.', code: 'NOT_FOUND' });
+    const b = rows[0];
+    const mins = b.booking_date ? rules.minutesUntil(b.booking_date, b.booking_time) : null;
+    const held = b.status === 'completed' || (b.status === 'accepted' && mins !== null && mins <= 0);
+    if (b.type !== 'demo' || !held) {
+      return res.status(409).json({ error: 'You can decide after your demo class has taken place.', code: 'DEMO_NOT_HELD' });
+    }
+    await db.query('UPDATE bookings SET demo_decision = ? WHERE id = ?', [decision, bookingId]);
+    res.json({ message: decision === 'continue' ? 'Great! Pick your plan to continue.' : 'Noted. You can always book this teacher again later.' });
+  } catch (err) {
+    console.error('Demo decision error:', err);
+    res.status(500).json({ error: 'Could not save your choice.', code: 'INTERNAL_ERROR' });
+  }
+});
 
 // ---------- GET ALL BOOKINGS FOR THE LOGGED-IN STUDENT ----------
 // GET /api/bookings/student/me

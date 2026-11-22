@@ -1,5 +1,3 @@
-
-
 body.sd [hidden] { display: none !important; }
 
 body.sd {
@@ -818,4 +816,10 @@ body.sd .toast { z-index: 2000; }
   .sd-view, .sd-hero-glow, .sd-skel { animation: none !important; }
   .sd-stat, .sd-teacher, .sd-heart, .sd-star, .sd-progress i { transition: none !important; }
   .sd-stat:hover, .sd-teacher:hover { transform: none; }
+}
+/* Demo follow-up / renew prompts: two buttons side by side, wrap on phones */
+.sd-todo li > .sd-todo-acts { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+@media (max-width: 560px) {
+  .sd-todo li { flex-wrap: wrap; }
+  .sd-todo li > .sd-todo-acts { flex-basis: 100%; justify-content: flex-start; }
 }

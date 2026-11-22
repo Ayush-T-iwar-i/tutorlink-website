@@ -13,6 +13,16 @@
 const APP_TIMEZONE = process.env.APP_TIMEZONE || 'Asia/Kolkata';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const RECURRING_WEEKS = 8;
+// Monthly plans a student can pick after a demo class. A month is counted as 4 weekly cycles.
+const PLAN_MONTHS = [1, 2, 3, 4, 6];
+const WEEKS_PER_MONTH = 4;
+const MAX_PLAN_WEEKS = Math.max(RECURRING_WEEKS, Math.max(...PLAN_MONTHS) * WEEKS_PER_MONTH);
+
+/** How many weekly cycles a recurring booking runs. No plan length stored = the old 8 weeks. */
+function weeksFor(durationMonths) {
+  const m = Number(durationMonths);
+  return PLAN_MONTHS.includes(m) ? m * WEEKS_PER_MONTH : RECURRING_WEEKS;
+}
 const MAX_BOOKING_DAYS_AHEAD = 180;
 
 // Used when a teacher has not configured their own availability yet (mirrors the UI default).
@@ -115,7 +125,7 @@ function parseDays(value) {
  * weekday from its start date for RECURRING_WEEKS weeks. `booking_date` may be a
  * 'YYYY-MM-DD' string.
  */
-function occurrenceDates({ type, booking_date, days_per_week }, weeks = RECURRING_WEEKS) {
+function occurrenceDates({ type, booking_date, days_per_week, duration_months }, weeks = weeksFor(duration_months)) {
   if (!booking_date) return [];
   if (type !== 'recurring') return [booking_date];
   const days = parseDays(days_per_week);
@@ -126,6 +136,12 @@ function occurrenceDates({ type, booking_date, days_per_week }, weeks = RECURRIN
     if (days.includes(weekdayOf(d))) dates.push(d);
   }
   return dates;
+}
+
+/** Last calendar day of a recurring plan (null for a demo or when there is no start date). */
+function planEndDate({ type, booking_date, duration_months }) {
+  if (type !== 'recurring' || !booking_date) return null;
+  return addDays(booking_date, weeksFor(duration_months) * 7 - 1);
 }
 
 /** Do two bookings occupy the same slot on at least one common date? */
@@ -173,15 +189,29 @@ function validateNewBooking(input, now = new Date()) {
   if (isTooFarAhead(body.booking_date, now)) return bad(`Bookings can be made at most ${MAX_BOOKING_DAYS_AHEAD} days ahead.`);
 
   let days = null;
+  let durationMonths = null;
   if (type === 'recurring') {
     const parsed = parseDays(body.days_per_week);
     if (!parsed) return bad('Choose at least one valid weekday (Mon, Tue, ...) for recurring classes.');
     days = parsed.join(',');
+    if (body.duration_months !== undefined && body.duration_months !== null && body.duration_months !== '') {
+      durationMonths = Number(body.duration_months);
+      if (!PLAN_MONTHS.includes(durationMonths)) return bad(`Plan length must be one of: ${PLAN_MONTHS.join(', ')} months.`);
+    }
+  }
+
+  let fromBookingId = null;
+  if (body.from_booking_id !== undefined && body.from_booking_id !== null && body.from_booking_id !== '') {
+    fromBookingId = Number(body.from_booking_id);
+    if (!Number.isInteger(fromBookingId) || fromBookingId < 1) return bad('from_booking_id is not valid.');
   }
 
   return {
     ok: true,
-    value: { teacher_id: teacherId, type, subject, booking_date: body.booking_date, booking_time: slot, days_per_week: days },
+    value: {
+      teacher_id: teacherId, type, subject, booking_date: body.booking_date, booking_time: slot,
+      days_per_week: days, duration_months: durationMonths, from_booking_id: fromBookingId,
+    },
   };
 }
 
@@ -200,7 +230,7 @@ function canTransition(table, from, to) {
 }
 
 module.exports = {
-  APP_TIMEZONE, WEEKDAYS, RECURRING_WEEKS, MAX_BOOKING_DAYS_AHEAD,
+  APP_TIMEZONE, WEEKDAYS, RECURRING_WEEKS, PLAN_MONTHS, WEEKS_PER_MONTH, MAX_PLAN_WEEKS, weeksFor, planEndDate, MAX_BOOKING_DAYS_AHEAD,
   DEFAULT_SLOTS, teacherSlotList, validateNewBooking,
   normalizeSlot, slotToMinutes, isValidDateString, todayInTz, addDays, weekdayOf,
   isInPast, minutesUntil, isTooFarAhead, parseDays, occurrenceDates, bookingsConflict,

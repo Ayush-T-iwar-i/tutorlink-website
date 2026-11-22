@@ -112,7 +112,7 @@ describe('validateNewBooking', () => {
   it('normalises a valid demo request and defaults type/subject', () => {
     expect(r.validateNewBooking(ok, NOW)).toEqual({
       ok: true,
-      value: { teacher_id: 3, type: 'demo', subject: 'General', booking_date: '2026-10-05', booking_time: '5:00 PM', days_per_week: null },
+      value: { teacher_id: 3, type: 'demo', subject: 'General', booking_date: '2026-10-05', booking_time: '5:00 PM', days_per_week: null, duration_months: null, from_booking_id: null },
     });
   });
   it('never carries a fee through', () => {
