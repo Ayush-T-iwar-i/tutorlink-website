@@ -61,36 +61,32 @@ router.put('/teachers/:id/verification', verifyToken, requireRole('admin'), asyn
 // GET /api/admin/stats
 router.get('/stats', verifyToken, requireRole('admin'), async (req, res) => {
   try {
-    const [[{ total_students }]] = await db.query("SELECT COUNT(*) AS total_students FROM users WHERE role = 'student'");
-    const [[{ total_teachers }]] = await db.query("SELECT COUNT(*) AS total_teachers FROM users WHERE role = 'teacher'");
-    const [[{ approved_teachers }]] = await db.query("SELECT COUNT(*) AS approved_teachers FROM teachers WHERE verification_status = 'approved'");
-    const [[{ pending_teachers }]] = await db.query("SELECT COUNT(*) AS pending_teachers FROM teachers WHERE verification_status IN ('pending','under_review')");
-    const [[{ total_bookings }]] = await db.query('SELECT COUNT(*) AS total_bookings FROM bookings');
-    const [[{ completed_bookings }]] = await db.query("SELECT COUNT(*) AS completed_bookings FROM bookings WHERE status = 'completed'");
-    const [[{ signups_last_7_days }]] = await db.query(
-      'SELECT COUNT(*) AS signups_last_7_days FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
-    );
-
-    // Monthly plans. A plan runs duration_months * 4 weeks (old bookings without a length: 8 weeks).
+    // All counts are independent, so they run at the same time instead of one after another.
     const today = rules.todayInTz();
+    // A plan runs duration_months * 4 weeks (old bookings without a length: 8 weeks).
     const planEnd = 'DATE_ADD(booking_date, INTERVAL (COALESCE(duration_months, 2) * 28 - 1) DAY)';
-    const [[{ active_plans }]] = await db.query(
-      `SELECT COUNT(*) AS active_plans FROM bookings WHERE type = 'recurring' AND status = 'accepted' AND ${planEnd} >= ?`, [today]
-    );
-    const [[{ plans_ending_soon }]] = await db.query(
-      `SELECT COUNT(*) AS plans_ending_soon FROM bookings WHERE type = 'recurring' AND status = 'accepted'
-         AND ${planEnd} BETWEEN ? AND ?`, [today, rules.addDays(today, 7)]
-    );
-    const [[{ plan_renewals }]] = await db.query(
-      `SELECT COUNT(*) AS plan_renewals FROM bookings n JOIN bookings o ON o.id = n.continued_from
-       WHERE n.type = 'recurring' AND o.type = 'recurring' AND n.status IN ('accepted', 'completed')`
-    );
-    const [[{ demos_to_plans }]] = await db.query(
-      `SELECT COUNT(*) AS demos_to_plans FROM bookings WHERE type = 'demo' AND demo_decision = 'continue'`
-    );
-    const [[{ demos_done }]] = await db.query(
-      "SELECT COUNT(*) AS demos_done FROM bookings WHERE type = 'demo' AND status = 'completed'"
-    );
+    const count = async (sql, params) => {
+      const [[row]] = await db.query(sql, params);
+      return Object.values(row)[0];
+    };
+    const [
+      total_students, total_teachers, approved_teachers, pending_teachers, total_bookings, completed_bookings,
+      signups_last_7_days, active_plans, plans_ending_soon, plan_renewals, demos_to_plans, demos_done,
+    ] = await Promise.all([
+      count("SELECT COUNT(*) FROM users WHERE role = 'student'"),
+      count("SELECT COUNT(*) FROM users WHERE role = 'teacher'"),
+      count("SELECT COUNT(*) FROM teachers WHERE verification_status = 'approved'"),
+      count("SELECT COUNT(*) FROM teachers WHERE verification_status IN ('pending','under_review')"),
+      count('SELECT COUNT(*) FROM bookings'),
+      count("SELECT COUNT(*) FROM bookings WHERE status = 'completed'"),
+      count('SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'),
+      count(`SELECT COUNT(*) FROM bookings WHERE type = 'recurring' AND status = 'accepted' AND ${planEnd} >= ?`, [today]),
+      count(`SELECT COUNT(*) FROM bookings WHERE type = 'recurring' AND status = 'accepted' AND ${planEnd} BETWEEN ? AND ?`, [today, rules.addDays(today, 7)]),
+      count(`SELECT COUNT(*) FROM bookings n JOIN bookings o ON o.id = n.continued_from
+             WHERE n.type = 'recurring' AND o.type = 'recurring' AND n.status IN ('accepted', 'completed')`),
+      count("SELECT COUNT(*) FROM bookings WHERE type = 'demo' AND demo_decision = 'continue'"),
+      count("SELECT COUNT(*) FROM bookings WHERE type = 'demo' AND status = 'completed'"),
+    ]);
 
     res.json({
       total_students, total_teachers, approved_teachers, pending_teachers,
