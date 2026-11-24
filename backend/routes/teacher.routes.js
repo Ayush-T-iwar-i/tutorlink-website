@@ -131,6 +131,22 @@ router.put('/:userId/location', verifyToken, requireOwnUser, requireRole('teache
 
 // ---------- PUBLIC TEACHER DIRECTORY (no login, no location required) ----------
 // GET /api/teachers/browse?subject=&city=&sort=rating|fee_low|fee_high|experience&page=1&limit=12
+// Optional extra filters shared by /browse and /nearby: max_fee, min_rating, min_exp, grade.
+// Invalid or empty values are simply ignored.
+function extraTeacherFilters(q) {
+  const conds = [];
+  const params = [];
+  const maxFee = parseFloat(q.max_fee);
+  if (Number.isFinite(maxFee) && maxFee > 0) { conds.push('t.fee_per_hour <= ?'); params.push(Math.min(maxFee, 100000)); }
+  const minRating = parseFloat(q.min_rating);
+  if (Number.isFinite(minRating) && minRating > 0) { conds.push('t.rating_avg >= ?'); params.push(Math.min(minRating, 5)); }
+  const minExp = parseInt(q.min_exp, 10);
+  if (Number.isInteger(minExp) && minExp > 0) { conds.push('t.experience_years >= ?'); params.push(Math.min(minExp, 60)); }
+  const grade = typeof q.grade === 'string' ? q.grade.trim().slice(0, 50) : '';
+  if (grade) { conds.push('t.grades LIKE ?'); params.push(`%${grade}%`); }
+  return { conds, params };
+}
+
 router.get('/browse', async (req, res) => {
   try {
     const { subject, city, sort = 'rating', page = 1, limit = 12 } = req.query;
@@ -143,6 +159,9 @@ router.get('/browse', async (req, res) => {
     if (subject) { conditions.push('t.subjects LIKE ?'); params.push(`%${subject.trim()}%`); }
     if (city) { conditions.push('t.city LIKE ?'); params.push(`%${city.trim()}%`); }
     conditions.push('u.suspended_at IS NULL');
+    const extra = extraTeacherFilters(req.query);
+    conditions.push(...extra.conds);
+    params.push(...extra.params);
     const whereClause = conditions.join(' AND ');
 
     const sortMap = {
@@ -150,6 +169,7 @@ router.get('/browse', async (req, res) => {
       fee_low: 't.fee_per_hour ASC',
       fee_high: 't.fee_per_hour DESC',
       experience: 't.experience_years DESC',
+      popular: 'plan_students DESC, t.rating_avg DESC, t.total_reviews DESC',
     };
     const orderBy = sortMap[sort] || sortMap.rating;
 
@@ -230,6 +250,10 @@ router.get('/nearby', async (req, res) => {
       sql += ' AND t.subjects LIKE ?';
       params.push(`%${subject.trim()}%`);
     }
+
+    const extra = extraTeacherFilters(req.query);
+    for (const c of extra.conds) sql += ' AND ' + c;
+    params.push(...extra.params);
 
     const countSql = `SELECT COUNT(*) AS total FROM (${sql} HAVING distance_km <= ?) AS matched`;
     const [[{ total }]] = await db.query(countSql, [...params, searchRadius]);

@@ -50,6 +50,32 @@ router.put('/read-all', verifyToken, async (req, res) => {
   }
 });
 
+// ---------- DELETE ONE NOTIFICATION ----------
+// DELETE /api/notifications/:id   (only your own)
+router.delete('/:id', verifyToken, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'Invalid notification id.' });
+    await db.query('DELETE FROM notifications WHERE id = ? AND user_id = ?', [id, req.user.id]);
+    res.json({ message: 'Notification deleted.' });
+  } catch (err) {
+    console.error('Delete notification error:', err);
+    res.status(500).json({ error: 'Could not delete notification.' });
+  }
+});
+
+// ---------- CLEAR ALL MY NOTIFICATIONS ----------
+// DELETE /api/notifications
+router.delete('/', verifyToken, async (req, res) => {
+  try {
+    await db.query('DELETE FROM notifications WHERE user_id = ?', [req.user.id]);
+    res.json({ message: 'All notifications cleared.' });
+  } catch (err) {
+    console.error('Clear notifications error:', err);
+    res.status(500).json({ error: 'Could not clear notifications.' });
+  }
+});
+
 module.exports = router;
 
 /**
