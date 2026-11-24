@@ -137,9 +137,11 @@ app.use(express.static(path.join(__dirname, '..', 'frontend'), {
     else if (/\.(css|js)$/.test(filePath)) {
       res.setHeader('Cache-Control', 'no-cache');
     }
-    // Images/fonts: very long cache
-    else if (/\.(woff2?|ttf|otf|eot|svg|png|jpg|jpeg|webp|ico)$/.test(filePath)) {
+    // Fonts: very long cache (file names never change)
+    else if (/\.(woff2?|ttf|otf|eot)$/.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (/\.(svg|png|jpg|jpeg|webp|ico)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   },
 }));
