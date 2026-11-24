@@ -7,6 +7,9 @@
 <meta name="theme-color" content="#0A0A0F">
 <meta name="color-scheme" content="dark">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/pages.css">
 </head>
@@ -237,6 +240,7 @@
     info.appendChild(el('p', 'pg-loc-line', '📍 ' + location));
     var badges = el('div', 'pg-badges');
     badges.appendChild(el('span', 'badge badge-rating', '★ ' + (rating || 'New') + ' (' + (t.total_reviews || 0) + ' ' + (Number(t.total_reviews) === 1 ? 'review' : 'reviews') + ')'));
+    if (Number(t.plan_students) > 0) badges.appendChild(el('span', 'badge badge-distance', '👥 ' + t.plan_students + (Number(t.plan_students) === 1 ? ' student' : ' students') + ' on monthly plans'));
     if (Number(t.experience_years) > 0) badges.appendChild(el('span', 'badge badge-distance', t.experience_years + ' ' + (Number(t.experience_years) === 1 ? 'year' : 'years') + ' experience'));
     info.appendChild(badges);
     hero.appendChild(info);

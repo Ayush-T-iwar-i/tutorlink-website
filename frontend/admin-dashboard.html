@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — GharTutor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/mobile-common.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -19,6 +22,18 @@
       <div class="user-chip">
         <span class="avatar-sm" id="avatarInitials"></span>
         <span id="welcomeText"></span>
+      </div>
+      <div class="notif-wrap">
+        <button type="button" class="notif-bell" id="notifBell" aria-label="Notifications">
+          🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-dropdown-header">
+            <span>Notifications</span>
+            <button type="button" id="markAllReadBtn">Mark all read</button>
+          </div>
+          <div id="notifList"><div class="notif-empty">Loading…</div></div>
+        </div>
       </div>
       <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
     </div>
@@ -152,6 +167,8 @@
     document.getElementById('avatarInitials').textContent =
       session.user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   }
+
+  if (session && typeof initNotificationBell === 'function') initNotificationBell();
 
   document.getElementById('logoutBtn').addEventListener('click', () => {
     clearSession();

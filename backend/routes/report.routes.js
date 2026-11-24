@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../config/db');
 const { positiveId } = require('../lib/validate');
 const { verifyToken } = require('../middleware/auth.middleware');
+const { runAfterResponse } = require('../lib/after-response');
+const { notifyAdmins } = require('../lib/admin-alerts');
 
 const REASONS = ['no_show', 'inappropriate_behaviour', 'payment_issue', 'fake_profile', 'other'];
 
@@ -53,6 +55,7 @@ router.post('/', verifyToken, async (req, res) => {
     );
 
     res.status(201).json({ message: 'Report submitted. Our team will review it shortly.' });
+    runAfterResponse(res, 'Admin report alert', () => notifyAdmins(`New report filed: ${String(reason).replace(/_/g, ' ')}.`));
   } catch (err) {
     console.error('File report error:', err);
     res.status(500).json({ error: 'Could not submit report.' });

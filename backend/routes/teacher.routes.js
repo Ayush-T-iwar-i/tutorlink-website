@@ -5,6 +5,8 @@ const db = require('../config/db');
 const { verifyToken, requireRole, requireOwnUser } = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 const fileStore = require('../lib/file-store');
+const { runAfterResponse } = require('../lib/after-response');
+const { notifyAdmins } = require('../lib/admin-alerts');
 const { optionalText, sendValidationError } = require('../lib/validate');
 
 // ---------- UPLOAD VERIFICATION DOCUMENTS (protected: own account, teacher only) ----------
@@ -48,6 +50,10 @@ router.post(
       await db.query(`UPDATE teachers SET ${updates.join(', ')} WHERE user_id = ?`, params);
 
       res.json({ message: 'Documents uploaded. Your profile will be reviewed shortly.' });
+      runAfterResponse(res, 'Admin verification alert', async () => {
+        const [u] = await db.query('SELECT name FROM users WHERE id = ?', [userId]);
+        await notifyAdmins(`${(u && u[0] && u[0].name) || 'A teacher'} submitted documents for verification.`);
+      });
     } catch (err) {
       console.error('Upload documents error:', err);
       res.status(500).json({ error: 'Could not upload documents.' });
@@ -149,7 +155,8 @@ router.get('/browse', async (req, res) => {
 
     const [rows] = await db.query(
       `SELECT t.id, u.name, u.profile_photo, t.subjects, t.grades, t.qualification, t.experience_years,
-              t.fee_per_hour, t.rating_avg, t.total_reviews, t.city
+              t.fee_per_hour, t.rating_avg, t.total_reviews, t.city,
+              (SELECT COUNT(DISTINCT pb.student_id) FROM bookings pb WHERE pb.teacher_id = t.id AND pb.type = 'recurring' AND pb.status IN ('accepted', 'completed')) AS plan_students
        FROM teachers t JOIN users u ON u.id = t.user_id
        WHERE ${whereClause}
        ORDER BY ${orderBy}
@@ -201,6 +208,7 @@ router.get('/nearby', async (req, res) => {
         t.id, u.name, u.profile_photo, t.qualification, t.subjects, t.grades,
         t.experience_years, t.fee_per_hour, t.city,
         t.rating_avg, t.total_reviews,
+        (SELECT COUNT(DISTINCT pb.student_id) FROM bookings pb WHERE pb.teacher_id = t.id AND pb.type = 'recurring' AND pb.status IN ('accepted', 'completed')) AS plan_students,
         (CEIL(2 * 6371 * ACOS(
           LEAST(1.0, GREATEST(-1.0,
             COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
@@ -271,7 +279,8 @@ router.get('/:id', async (req, res) => {
     const [rows] = await db.query(
       `SELECT t.id, t.qualification, t.subjects, t.grades, t.experience_years,
               t.fee_per_hour, t.languages, t.bio, t.city, t.available_slots,
-              t.rating_avg, t.total_reviews, u.name, u.profile_photo
+              t.rating_avg, t.total_reviews, u.name, u.profile_photo,
+              (SELECT COUNT(DISTINCT pb.student_id) FROM bookings pb WHERE pb.teacher_id = t.id AND pb.type = 'recurring' AND pb.status IN ('accepted', 'completed')) AS plan_students
        FROM teachers t JOIN users u ON u.id = t.user_id
        WHERE t.id = ? AND t.verification_status = 'approved' AND u.suspended_at IS NULL`,
       [id]

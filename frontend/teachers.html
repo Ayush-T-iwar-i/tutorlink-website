@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/teachers.css">
 
@@ -224,6 +225,7 @@
       '<div class="tl-badges">' +
         '<span class="tl-badge is-rating">★ ' + rating + ' (' + (Number(t.total_reviews) || 0) + ')</span>' +
         '<span class="tl-badge is-verified">✓ ID verified</span>' +
+        (Number(t.plan_students) > 0 ? '<span class="tl-badge">👥 ' + escapeHtml(String(Number(t.plan_students))) + (Number(t.plan_students) === 1 ? ' student' : ' students') + '</span>' : '') +
         (years > 0 ? '<span class="tl-badge">' + escapeHtml(String(years)) + ' yrs exp</span>' : '') +
         (isFinite(dist) && t.distance_km !== undefined && t.distance_km !== null ? '<span class="tl-badge is-distance">' + dist.toFixed(1) + ' km away</span>' : '') +
       '</div>' +
