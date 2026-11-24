@@ -1,8 +1,3 @@
-/* ===========================================================
-   TUTOR DIRECTORY (teachers.html)
-   Every class is prefixed tl- so nothing else on the site is affected.
-   Load it AFTER style.css.
-   =========================================================== */
 
 .tl-main { padding: 40px 0 72px; min-height: 70vh; }
 
@@ -206,6 +201,8 @@
 .tl-pager { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
 .tl-pager span { font-size: 13.5px; color: var(--ink-700); }
 
+/* Second filter row: fee, rating, experience, class */
+.tl-row-more { margin-top: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 900px) {
   .tl-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .tl-row .tl-submit { grid-column: 1 / -1; }

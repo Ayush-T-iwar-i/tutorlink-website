@@ -67,10 +67,46 @@
               <option value="fee_low">Fee: low to high</option>
               <option value="fee_high">Fee: high to low</option>
               <option value="experience">Most experienced</option>
+              <option value="popular">Most students on plans</option>
             </select>
           </div>
           <div class="tl-submit">
             <button type="submit" id="searchBtn" class="btn btn-primary">Search tutors</button>
+          </div>
+        </div>
+        <div class="tl-row tl-row-more">
+          <div class="tl-field">
+            <label for="feeFilter">Fee per hour</label>
+            <select id="feeFilter">
+              <option value="">Any</option>
+              <option value="300">Up to ₹300</option>
+              <option value="500">Up to ₹500</option>
+              <option value="800">Up to ₹800</option>
+              <option value="1000">Up to ₹1,000</option>
+              <option value="1500">Up to ₹1,500</option>
+            </select>
+          </div>
+          <div class="tl-field">
+            <label for="ratingFilter">Rating</label>
+            <select id="ratingFilter">
+              <option value="">Any</option>
+              <option value="3">3★ and above</option>
+              <option value="4">4★ and above</option>
+              <option value="4.5">4.5★ and above</option>
+            </select>
+          </div>
+          <div class="tl-field">
+            <label for="expFilter">Experience</label>
+            <select id="expFilter">
+              <option value="">Any</option>
+              <option value="2">2+ years</option>
+              <option value="5">5+ years</option>
+              <option value="10">10+ years</option>
+            </select>
+          </div>
+          <div class="tl-field">
+            <label for="gradeFilter">Class</label>
+            <input type="text" id="gradeFilter" placeholder="e.g. 10, 12, CBSE" maxlength="50" autocomplete="off">
           </div>
         </div>
       </form>
@@ -126,6 +162,10 @@
   const subjectInput = document.getElementById('subjectFilter');
   const cityInput = document.getElementById('cityFilter');
   const sortSelect = document.getElementById('sortSelect');
+  const feeFilter = document.getElementById('feeFilter');
+  const ratingFilter = document.getElementById('ratingFilter');
+  const expFilter = document.getElementById('expFilter');
+  const gradeFilter = document.getElementById('gradeFilter');
   const searchBtn = document.getElementById('searchBtn');
   const nearBtn = document.getElementById('nearBtn');
   const nearBtnLabel = document.getElementById('nearBtnLabel');
@@ -278,6 +318,10 @@
         if (city) url += '&city=' + encodeURIComponent(city);
       }
       if (subject) url += '&subject=' + encodeURIComponent(subject);
+      if (feeFilter.value) url += '&max_fee=' + encodeURIComponent(feeFilter.value);
+      if (ratingFilter.value) url += '&min_rating=' + encodeURIComponent(ratingFilter.value);
+      if (expFilter.value) url += '&min_exp=' + encodeURIComponent(expFilter.value);
+      if (gradeFilter.value.trim()) url += '&grade=' + encodeURIComponent(gradeFilter.value.trim());
 
       const data = await apiRequest(url);
       if (myRequest !== requestId) return; // a newer search replaced this one
@@ -315,6 +359,10 @@
     subjectInput.value = '';
     cityInput.value = '';
     sortSelect.value = 'rating';
+    feeFilter.value = '';
+    ratingFilter.value = '';
+    expFilter.value = '';
+    gradeFilter.value = '';
     origin = null;
     setNearStatus('', '');
     applyMode();
@@ -349,6 +397,7 @@
   // ---------- Events ----------
   form.addEventListener('submit', function (e) { e.preventDefault(); loadTeachers(1); });
   sortSelect.addEventListener('change', function () { loadTeachers(1); });
+  [feeFilter, ratingFilter, expFilter].forEach(function (s) { s.addEventListener('change', function () { loadTeachers(1); }); });
   nearBtn.addEventListener('click', useMyLocation);
   nearClear.addEventListener('click', function () {
     origin = null;
